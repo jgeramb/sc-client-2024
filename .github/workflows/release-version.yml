@@ -11,7 +11,9 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Read .version file
         id: version
         run: echo "::set-output name=version::$(cat .github/.version)"
@@ -24,11 +26,16 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
-      - uses: actions/upload-artifact@v4
+        run: |
+          mvn -B package --file pom.xml
+          mkdir artifacts/
+          mv */target/*.jar artifacts/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: artifacts
-          path: target/*.jar
+          name: jars
+          path: artifacts/*.jar
   create-release:
     needs: build
     name: Create Release
@@ -36,15 +43,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: jars
+          pattern: 'artifacts/*.jar'
+
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
           tag_name: ${{ needs.build.outputs.version }}
           release_name: Release ${{ needs.build.outputs.version }}
           body: |
             Changes in this Release
           draft: false
           prerelease: false
+          files: artifacts/*.jar
