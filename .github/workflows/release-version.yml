@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Read .version file
+      - name: Set version
         id: version
         run: echo "version=$(cat .github/.version)" >> $GITHUB_OUTPUT
 
@@ -54,8 +54,8 @@ jobs:
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ${{ needs.build.outputs.version }}
-          title: Release ${{ needs.build.outputs.version }}
+          automatic_release_tag: v${{ needs.build.outputs.version }}
+          title: v${{ needs.build.outputs.version }}
           draft: false
           prerelease: false
-          files: artifacts/*.jar
+          files: jars/*.jar
