@@ -1,0 +1,50 @@
+name: Release version
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/.version
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read .version file
+        id: version
+        run: echo "::set-output name=version::$(cat .github/.version)"
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifacts
+          path: target/*.jar
+  create-release:
+    needs: build
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.build.outputs.version }}
+          release_name: Release ${{ needs.build.outputs.version }}
+          body: |
+            Changes in this Release
+          draft: false
+          prerelease: false
