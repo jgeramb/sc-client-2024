@@ -64,15 +64,8 @@ public class SoftwareChallengeClient {
         this.client.send(packet);
     }
 
-    public void joinGame() {
+    public void joinAnyGame() {
         this.client.send(new JoinGameRequest());
-    }
-
-    public void joinGame(String gameType) {
-        final JoinGameRequest request = new JoinGameRequest();
-        request.setGameType(gameType);
-
-        this.client.send(request);
     }
 
     public void joinRoom(String roomId) {

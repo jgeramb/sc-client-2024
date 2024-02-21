@@ -4,7 +4,7 @@
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="MAIN_CLASS_NAME" value="de.teamgruen.sc.player.SoftwareChallengePlayer" />
     <module name="player" />
-    <option name="PROGRAM_PARAMETERS" value="127.0.0.1 13050 random" />
+    <option name="PROGRAM_PARAMETERS" value="-s random" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
