@@ -41,9 +41,6 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -60,3 +57,28 @@ jobs:
           draft: false
           prerelease: false
           files: artifacts/*.jar
+  deploy:
+    needs: build
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: jars
+          path: artifacts
+          pattern: '*-player.jar'
+
+      - name: Upload client
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: 'https://sc-upload.justix.dev/api/v1/upload/v${{ needs.build.outputs.version }}'
+          method: 'POST'
+          timeout: 15000
+          customHeaders: |
+            {
+              "Content-Type": "application/octet-stream",
+              "X-API-Key": "${{ secrets.UPLOAD_API_KEY }}"
+            }
+          file: artifacts/teamgruen-player.jar
