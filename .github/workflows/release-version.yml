@@ -48,6 +48,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: jars
+          path: artifacts
 
       - name: Create Release
         id: create_release
@@ -58,4 +59,4 @@ jobs:
           title: v${{ needs.build.outputs.version }}
           draft: false
           prerelease: false
-          files: jars/*.jar
+          files: artifacts/*.jar
