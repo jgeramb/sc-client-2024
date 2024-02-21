@@ -1,0 +1,27 @@
+package de.teamgruen.sc.sdk.protocol.data;
+
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
+import de.teamgruen.sc.sdk.protocol.data.board.BoardData;
+import lombok.Data;
+
+import java.util.List;
+
+@Data
+@JacksonXmlRootElement(localName = "state")
+public class State {
+
+    @JacksonXmlProperty(isAttribute = true, localName = "class")
+    private String className;
+    @JacksonXmlProperty(isAttribute = true)
+    private Team startTeam, currentTeam;
+    @JacksonXmlProperty(isAttribute = true)
+    private int turn;
+    private BoardData board;
+    @JacksonXmlProperty(localName = "ship")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    private List<ShipData> ships;
+    private Move lastMove;
+
+}
