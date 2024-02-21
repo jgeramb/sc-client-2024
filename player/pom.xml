@@ -12,16 +12,28 @@
     <artifactId>player</artifactId>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>18</maven.compiler.source>
+        <maven.compiler.target>18</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>TU-Darmstadt</id>
+            <url>https://zoidberg.ukp.informatik.tu-darmstadt.de/artifactory/public-releases/</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
             <groupId>de.teamgruen.sc</groupId>
             <artifactId>sdk</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>jargs.gnu</groupId>
+            <artifactId>jargs.gnu.jargs</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 

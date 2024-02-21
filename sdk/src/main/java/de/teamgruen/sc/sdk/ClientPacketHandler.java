@@ -34,96 +34,92 @@ public class ClientPacketHandler {
     private GameState gameState;
 
     public void handlePacket(XMLProtocolPacket xmlProtocolPacket) {
-        switch (xmlProtocolPacket) {
-            case JoinedRoomResponse packet -> {
-                final String roomId = packet.getRoomId();
+        if (xmlProtocolPacket instanceof JoinedRoomResponse packet) {
+            final String roomId = packet.getRoomId();
 
-                this.roomId = roomId;
-                this.gameHandler.onRoomJoin(roomId);
-            }
-            case RoomPacket packet -> {
-                final String roomId = packet.getRoomId();
+            this.roomId = roomId;
+            this.gameHandler.onRoomJoin(roomId);
+        } else if(xmlProtocolPacket instanceof RoomPacket packet) {
+            final String roomId = packet.getRoomId();
 
-                if (!Objects.equals(roomId, this.roomId))
+            if (!Objects.equals(roomId, this.roomId))
+                return;
+
+            final RoomMessage data = packet.getData();
+
+            if (data instanceof WelcomeMessage message)
+                this.gameState = new GameState(message.getTeam());
+            else if (data instanceof MementoMessage message) {
+                final State state = message.getState();
+                final BoardData board = state.getBoard();
+                final Board stateBoard = this.gameState.getBoard();
+                stateBoard.setNextSegmentDirection(board.getNextDirection());
+                stateBoard.updateSegments(board.getSegments());
+
+                this.gameState.updateShips(state.getShips());
+                this.gameState.setTurns(state.getTurn());
+            } else if (data instanceof MoveRequestMessage) {
+                final List<Action> actions = this.gameHandler.getNextActions(this.gameState);
+
+                if (actions.isEmpty())
                     return;
 
-                final RoomMessage data = packet.getData();
+                final Move move = new Move();
+                move.setActions(actions);
 
-                if (data instanceof WelcomeMessage message)
-                    this.gameState = new GameState(message.getTeam());
-                else if (data instanceof MementoMessage message) {
-                    final State state = message.getState();
-                    final BoardData board = state.getBoard();
-                    final Board stateBoard = this.gameState.getBoard();
-                    stateBoard.setNextSegmentDirection(board.getNextDirection());
-                    stateBoard.updateSegments(board.getSegments());
+                final MovePacket movePacket = new MovePacket();
+                movePacket.setRoomId(this.roomId);
+                movePacket.setMove(move);
 
-                    this.gameState.updateShips(state.getShips());
-                    this.gameState.setTurns(state.getTurn());
-                } else if (data instanceof MoveRequestMessage) {
-                    final List<Action> actions = this.gameHandler.getNextActions(this.gameState);
+                this.client.sendPacket(movePacket);
+            } else if (data instanceof ResultMessage message) {
+                final List<ScoreFragment> fragments = message.getDefinition().getFragments();
 
-                    if (actions.isEmpty())
+                message.getScores().getScores().forEach(entry -> {
+                    if (entry.getPlayer().getTeam() != this.gameState.getPlayerTeam())
                         return;
 
-                    final Move move = new Move();
-                    move.setActions(actions);
+                    final ScoreData score = entry.getScore();
+                    final GamePhase gamePhase = score.getCause().equals(ScoreCause.REGULAR)
+                            ? GamePhase.FINISHED
+                            : GamePhase.ABORTED;
+                    this.gameState.setGamePhase(gamePhase);
 
-                    final MovePacket movePacket = new MovePacket();
-                    movePacket.setRoomId(this.roomId);
-                    movePacket.setMove(move);
-
-                    this.client.sendPacket(movePacket);
-                } else if (data instanceof ResultMessage message) {
-                    final List<ScoreFragment> fragments = message.getDefinition().getFragments();
-
-                    message.getScores().getScores().forEach(entry -> {
-                        if (entry.getPlayer().getTeam() != this.gameState.getPlayerTeam())
+                    switch (score.getCause()) {
+                        case LEFT:
+                            this.gameHandler.onError("Player left the game");
                             return;
+                        case SOFT_TIMEOUT:
+                            this.gameHandler.onError("Response to move request took too long");
+                            return;
+                        case HARD_TIMEOUT:
+                            this.gameHandler.onError("No response to move request");
+                            return;
+                        case RULE_VIOLATION:
+                            this.gameHandler.onError("Rule violation");
+                            return;
+                        case UNKNOWN:
+                            this.gameHandler.onError("Unknown Error");
+                            return;
+                    }
 
-                        final ScoreData score = entry.getScore();
-                        final GamePhase gamePhase = score.getCause().equals(ScoreCause.REGULAR)
-                                ? GamePhase.FINISHED
-                                : GamePhase.ABORTED;
-                        this.gameState.setGamePhase(gamePhase);
+                    final Map<ScoreFragment, Integer> scores = new HashMap<>();
+                    final int[] parts = score.getParts();
 
-                        switch (score.getCause()) {
-                            case LEFT:
-                                this.gameHandler.onError("Player left the game");
-                                return;
-                            case SOFT_TIMEOUT:
-                                this.gameHandler.onError("Response to move request took too long");
-                                return;
-                            case HARD_TIMEOUT:
-                                this.gameHandler.onError("No response to move request");
-                                return;
-                            case RULE_VIOLATION:
-                                this.gameHandler.onError("Rule violation");
-                                return;
-                            case UNKNOWN:
-                                this.gameHandler.onError("Unknown Error");
-                                return;
-                        }
+                    for (int i = 0; i < fragments.size(); i++)
+                        scores.put(fragments.get(i), parts[i]);
 
-                        final Map<ScoreFragment, Integer> scores = new HashMap<>();
-                        final int[] parts = score.getParts();
-
-                        for (int i = 0; i < fragments.size(); i++)
-                            scores.put(fragments.get(i), parts[i]);
-
-                        this.gameHandler.onGameEnd(scores, message.getWinner() != null ? message.getWinner().getTeam() : null);
-                    });
-                }
+                    this.gameHandler.onGameEnd(scores, message.getWinner() != null ? message.getWinner().getTeam() : null);
+                });
             }
-            case LeftPacket ignored -> {
-                try {
-                    this.client.stop();
-                } catch (TcpCloseException ex) {
-                    this.gameHandler.onError("Failed to close connection: " + ex.getMessage());
-                }
+        } else if(xmlProtocolPacket instanceof LeftPacket) {
+            try {
+                this.client.stop();
+            } catch (TcpCloseException ex) {
+                this.gameHandler.onError("Failed to close connection: " + ex.getMessage());
             }
-            default -> this.gameHandler.onError("Unhandled packet: " + xmlProtocolPacket.getClass().getSimpleName());
-        }
+        } else
+            this.gameHandler.onError("Unhandled packet: " + xmlProtocolPacket.getClass().getSimpleName());
     }
 
 }
