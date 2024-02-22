@@ -2,16 +2,9 @@ package de.teamgruen.sc.sdk.game.board;
 
 import de.teamgruen.sc.sdk.game.util.Vector3;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
+import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 
-public record BoardSegment(BoardField[] fields, Vector3 center, Direction direction) {
+import java.util.Map;
 
-    public BoardField getFieldAt(Vector3 position) {
-        for (BoardField field : this.fields) {
-            if (field.position().equals(position))
-                return field;
-        }
-
-        return null;
-    }
-
+public record BoardSegment(Map<Vector3, Field> fields, Vector3 center, Direction direction) {
 }

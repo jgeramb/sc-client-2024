@@ -1,7 +1,7 @@
 package de.teamgruen.sc.sdk.protocol.data.actions;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import de.teamgruen.sc.sdk.game.board.Board;
+import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import lombok.Data;
 
@@ -12,7 +12,8 @@ public class Forward implements Action {
     private int distance;
 
     @Override
-    public void perform(Board board, Ship ship) {
+    public void perform(GameState gameState, Ship ship) {
+        ship.getPosition().translate(ship.getDirection().toVector3().multiply(this.distance));
     }
 
 }

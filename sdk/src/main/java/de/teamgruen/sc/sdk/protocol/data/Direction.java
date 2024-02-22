@@ -21,4 +21,13 @@ public enum Direction {
         return new Vector3((short) q, (short) r, (short) s);
     }
 
+    public static Direction fromVector3(Vector3 vector3) {
+        for (Direction direction : values()) {
+            if (direction.toVector3().equals(vector3))
+                return direction;
+        }
+
+        return null;
+    }
+
 }

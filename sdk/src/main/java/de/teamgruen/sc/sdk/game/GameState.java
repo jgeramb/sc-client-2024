@@ -1,7 +1,9 @@
 package de.teamgruen.sc.sdk.game;
 
 import de.teamgruen.sc.sdk.game.board.Board;
+import de.teamgruen.sc.sdk.game.board.BoardSegment;
 import de.teamgruen.sc.sdk.game.board.Ship;
+import de.teamgruen.sc.sdk.game.util.Vector3;
 import de.teamgruen.sc.sdk.protocol.data.ShipData;
 import de.teamgruen.sc.sdk.protocol.data.Team;
 import lombok.Data;
@@ -33,6 +35,14 @@ public class GameState {
                 .orElse(null);
     }
 
+    public Ship getPlayerShip() {
+        return this.getShip(this.playerTeam);
+    }
+
+    public List<Ship> getEnemyShips() {
+        return this.ships.stream().filter(ship -> ship.getTeam() != this.playerTeam).toList();
+    }
+
     public void updateShips(List<ShipData> shipDataList) {
         shipDataList.forEach(ship -> {
             final Ship stateShip = this.getShip(ship.getTeam());
@@ -40,10 +50,17 @@ public class GameState {
             if(stateShip == null)
                 throw new NoSuchElementException("Ship not found for team " + ship.getTeam());
 
-            if (stateShip.getPosition() != null)
-                stateShip.setPushed(!ship.getPosition().toVector3().equals(stateShip.getPosition()));
+            final Vector3 position = ship.getPosition().toVector3();
 
-            stateShip.setPosition(ship.getPosition().toVector3());
+            if (stateShip.getPosition() != null)
+                stateShip.setPushed(!position.equals(stateShip.getPosition()));
+
+            final BoardSegment segment = this.board.getSegmentOfField(position);
+
+            if(segment != null && stateShip.getVisitedSegments().stream().noneMatch(segmentCenter -> segmentCenter.equals(segment.center())))
+                stateShip.getVisitedSegments().add(segment.center());
+
+            stateShip.setPosition(position);
             stateShip.setDirection(ship.getDirection());
             stateShip.setPassengers(ship.getPassengers());
             stateShip.setCoal(ship.getCoal());

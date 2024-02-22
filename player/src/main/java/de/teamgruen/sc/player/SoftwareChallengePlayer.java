@@ -32,14 +32,14 @@ public class SoftwareChallengePlayer {
 
         LOGGER.setDebug((Boolean) parser.getOptionValue(debugOption, false));
 
-        final GameHandler gameHandler = switch ((String) parser.getOptionValue(playStyleOption, "random")) {
-            case "random" -> {
-                LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Random" + AnsiColor.RESET);
-                yield new RandomGameHandler(LOGGER);
-            }
+        final GameHandler gameHandler = switch ((String) parser.getOptionValue(playStyleOption, "simple")) {
             case "simple" -> {
                 LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Simple" + AnsiColor.RESET);
                 yield new SimpleGameHandler(LOGGER);
+            }
+            case "random" -> {
+                LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Random" + AnsiColor.RESET);
+                yield new RandomGameHandler(LOGGER);
             }
             default -> {
                 LOGGER.error("Unknown play-style: " + playStyleOption);

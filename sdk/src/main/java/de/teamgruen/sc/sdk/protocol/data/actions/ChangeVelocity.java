@@ -1,7 +1,7 @@
 package de.teamgruen.sc.sdk.protocol.data.actions;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import de.teamgruen.sc.sdk.game.board.Board;
+import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import lombok.Data;
 
@@ -12,8 +12,8 @@ public class ChangeVelocity implements Action {
     private int deltaVelocity;
 
     @Override
-    public void perform(Board board, Ship ship) {
-        ship.setSpeed((byte) (ship.getSpeed() + this.deltaVelocity));
+    public void perform(GameState gameState, Ship ship) {
+        ship.setSpeed(ship.getSpeed() + this.deltaVelocity);
     }
 
 }

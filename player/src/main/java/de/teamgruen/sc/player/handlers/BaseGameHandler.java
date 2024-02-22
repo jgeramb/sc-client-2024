@@ -10,7 +10,7 @@ import java.util.Map;
 
 public abstract class BaseGameHandler implements GameHandler {
 
-    private final Logger logger;
+    protected final Logger logger;
 
     protected BaseGameHandler(Logger logger) {
         this.logger = logger;

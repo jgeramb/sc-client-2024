@@ -58,6 +58,8 @@ public class ClientPacketHandler {
 
                 this.gameState.updateShips(state.getShips());
                 this.gameState.setTurns(state.getTurn());
+
+                this.gameHandler.onBoardUpdate(this.gameState);
             } else if (data instanceof MoveRequestMessage) {
                 final List<Action> actions = this.gameHandler.getNextActions(this.gameState);
 

@@ -20,7 +20,7 @@ public class Vector3 {
     }
 
     public Vector3 multiply(int times) {
-        Vector3 vector = this.copy();
+        final Vector3 vector = this.copy();
         vector.q *= times;
         vector.s *= times;
         vector.r *= times;
@@ -29,7 +29,7 @@ public class Vector3 {
     }
 
     public Vector3 add(Vector3 delta) {
-        Vector3 vector = this.copy();
+        final Vector3 vector = this.copy();
         vector.q += delta.q;
         vector.s += delta.s;
         vector.r += delta.r;
@@ -38,7 +38,7 @@ public class Vector3 {
     }
 
     public Vector3 subtract(Vector3 delta) {
-        Vector3 vector = this.copy();
+        final Vector3 vector = this.copy();
         vector.q -= delta.q;
         vector.s -= delta.s;
         vector.r -= delta.r;
@@ -52,19 +52,6 @@ public class Vector3 {
 
     public boolean equals(Vector3 vector) {
         return this.q == vector.q && this.s == vector.s && this.r == vector.r;
-    }
-
-    public byte toColumnIndex() {
-        if(this.q == 1 && this.s == -1)
-            return 0;
-        else if((this.q == 1 && this.s == 0) || (this.q == 0 && this.s == -1))
-            return 1;
-        else if((this.q == 0 && this.s == 1) || (this.q == -1 && this.s == 0))
-            return 2;
-        else if(this.q == -1 && this.s == 1)
-            return 3;
-
-        throw new IllegalArgumentException("Not a direction vector");
     }
 
 }

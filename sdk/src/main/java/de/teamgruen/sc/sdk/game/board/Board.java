@@ -6,38 +6,56 @@ import de.teamgruen.sc.sdk.protocol.data.board.FieldArray;
 import de.teamgruen.sc.sdk.protocol.data.board.SegmentData;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
+import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.Data;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Data
 public class Board {
 
     private final List<Vector3> counterCurrent = new ArrayList<>();
+    private final Map<Vector3, Field> fields = new HashMap<>();
     private Direction nextSegmentDirection;
     private List<BoardSegment> segments = new ArrayList<>();
 
-    public BoardField getFieldAt(Vector3 position) {
+    public BoardSegment getSegmentOfField(Vector3 position) {
         for (BoardSegment segment : this.segments) {
-            BoardField field = segment.getFieldAt(position);
-
-            if (field != null)
-                return field;
+            if(segment.fields().containsKey(position))
+                return segment;
         }
 
         return null;
     }
 
-    public Set<BoardField> getFinishFields() {
-        Set<BoardField> finishFields = new HashSet<>();
+    public Field getFieldAt(Vector3 position) {
+        return this.fields.get(position);
+    }
 
-        for (BoardSegment segment : this.segments) {
-            Arrays.stream(segment.fields())
-                    .filter(boardField -> boardField.field() instanceof Finish)
-                    .forEach(finishFields::add);
-        }
+    public Map<Vector3, Field> getAllFields(Predicate<Map.Entry<Vector3, Field>> predicate) {
+        return this.fields
+                .entrySet()
+                .stream()
+                .filter(predicate)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
 
-        return finishFields;
+    public Map<Vector3, Field> getPassengerFields() {
+        return this.getAllFields(entry -> {
+            if(entry.getValue() instanceof Passenger passenger)
+                return passenger.getPassenger() > 0;
+
+            return false;
+        });
+    }
+
+    public Map<Vector3, Field> getFinishFields() {
+        return this.getAllFields(entry -> entry.getValue() instanceof Finish);
     }
 
     public void updateCounterCurrent() {
@@ -67,8 +85,9 @@ public class Board {
     }
 
     public void updateSegments(List<SegmentData> segmentDataList) {
+        this.fields.clear();
         this.segments = segmentDataList.stream().map(segment -> {
-            final BoardField[] fields = new BoardField[20];
+            final Map<Vector3, Field> fields = new HashMap<>();
             final Direction direction = segment.getDirection();
             final Vector3 direction1 = (switch (segment.getDirection()) {
                 case RIGHT -> Direction.UP_LEFT;
@@ -88,8 +107,6 @@ public class Board {
             }).toVector3();
             final Vector3 center = segment.getCenter().toVector3();
 
-            int i = 0;
-
             for (FieldArray columns : segment.getColumns()) {
                 final Vector3 columnCenter = center.add(direction.toVector3());
                 int j = -(columns.getFields().size() - 1) / 2;
@@ -100,10 +117,12 @@ public class Board {
                     if (j != 0)
                         fieldPosition.add((j < 0 ? direction1 : direction2).multiply(Math.abs(j)));
 
-                    fields[i++] = new BoardField(fieldPosition, field);
+                    fields.put(fieldPosition, field);
                     j++;
                 }
             }
+
+            this.fields.putAll(fields);
 
             return new BoardSegment(fields, segment.getCenter().toVector3(), direction);
         }).toList();

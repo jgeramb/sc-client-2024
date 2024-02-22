@@ -1,10 +1,10 @@
 package de.teamgruen.sc.player.handlers;
 
+import de.teamgruen.sc.player.util.ActionUtil;
 import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.logging.Logger;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 
-import java.util.Collections;
 import java.util.List;
 
 public class RandomGameHandler extends BaseGameHandler {
@@ -19,7 +19,7 @@ public class RandomGameHandler extends BaseGameHandler {
 
     @Override
     public List<Action> getNextActions(GameState gameState) {
-        return Collections.emptyList();
+        return List.of(ActionUtil.getRandomAction(gameState));
     }
 
 }
