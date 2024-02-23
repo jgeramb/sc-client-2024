@@ -8,7 +8,8 @@ import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.game.util.Vector3;
 import de.teamgruen.sc.sdk.logging.Logger;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
-import de.teamgruen.sc.sdk.protocol.data.actions.*;
+import de.teamgruen.sc.sdk.protocol.data.actions.Action;
+import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
@@ -52,7 +53,12 @@ public class SimpleGameHandler extends BaseGameHandler {
         } else {
             // passengers
             board.getPassengerFields().forEach((position, field) -> {
-                final Vector3 collectPosition = position.copy().add(((Passenger) field).getDirection().toVector3());
+                final Passenger passenger = (Passenger) field;
+
+                if(passenger.getPassenger() < 1)
+                    return;
+
+                final Vector3 collectPosition = position.copy().add(passenger.getDirection().toVector3());
 
                 paths.add(PathFinder.findPath(shipPosition, collectPosition));
             });
@@ -75,143 +81,141 @@ public class SimpleGameHandler extends BaseGameHandler {
 
     @Override
     public List<Action> getNextActions(GameState gameState) {
-        final Ship ship = gameState.getPlayerShip();
+        final long startTime = System.currentTimeMillis();
 
-        if(this.nextPath == null || this.nextPath.isEmpty()) {
-            return ActionUtil.getPossibleActions(gameState)
-                    .stream()
-                    .max(Comparator.comparingInt(action -> {
-                        if(action instanceof Forward forward)
-                            return forward.getDistance();
-                        else if(action instanceof Turn turn)
-                            return Math.abs(turn.getDirection().ordinal() - ship.getDirection().ordinal());
-                        else if(action instanceof Push)
-                            return Integer.MAX_VALUE;
+        try {
+            final Ship ship = gameState.getPlayerShip();
 
-                        return 0;
-                    }))
-                    .map(Collections::singletonList)
-                    .orElseThrow();
-        }
-
-        final List<Action> actions = new ArrayList<>();
-        final List<Vector3> counterCurrent = gameState.getBoard().getCounterCurrent();
-
-        // update speed
-        final int freeAccelerations = 1;
-        final Vector3 endPosition = this.nextPath.get(this.nextPath.size() - 1);
-        final Field endField = gameState.getBoard().getFieldAt(endPosition);
-        int coal = ship.getCoal();
-        int deltaSpeed;
-
-        if((endField instanceof Finish && ship.getPassengers() >= 2) || endField instanceof Passenger) {
-            final int expectedSpeed = counterCurrent.contains(endPosition) ? 2 : 1;
-
-            deltaSpeed = expectedSpeed - ship.getSpeed();
-        } else {
-            deltaSpeed = Math.max(
-                    Math.min(this.nextPath.size() - ship.getSpeed(), freeAccelerations),
-                    -coal - freeAccelerations
-            );
-        }
-
-        if(deltaSpeed != 0) {
-            coal -= Math.abs(deltaSpeed) - freeAccelerations;
-            actions.add(ActionFactory.changeVelocity(deltaSpeed));
-        }
-
-        // move ship
-        boolean isOnCounterCurrent = counterCurrent.contains(ship.getPosition());
-        int availableMoves = ship.getSpeed() - (isOnCounterCurrent ? 1 : 0);
-        Direction direction = ship.getDirection();
-        int freeTurns = ship.isPushed() ? 2 : 1;
-        int distance = 0;
-
-        for (int i = 1; i < this.nextPath.size(); i++) {
-            distance++;
-
-            final Vector3 nextPosition = ship.getPosition();
-            final Vector3 delta = this.nextPath.get(i - 1).copy().subtract(nextPosition);
-            final Direction nextDirection = Direction.fromVector3(delta);
-
-            if(nextDirection == null) {
-                this.logger.error("Invalid direction");
-                break;
+            if (this.nextPath == null || this.nextPath.isEmpty()) {
+                return ActionUtil.getPossibleActionCombinations(gameState)
+                        .stream()
+                        .max(Comparator.comparingInt(combination ->
+                                combination.getTotalDistance(ship.getDirection()) - combination.extraCost())
+                        )
+                        .map(combination -> combination.toActions(ship))
+                        .orElseThrow();
             }
 
-            if (direction != nextDirection) {
-                final boolean turnRight = direction.ordinal() < nextDirection.ordinal();
-                int executeTurns = 0;
+            final List<Action> actions = new ArrayList<>();
+            final List<Vector3> counterCurrent = gameState.getBoard().getCounterCurrent();
 
-                for (int j = 0; j <= Math.abs(nextDirection.ordinal() - direction.ordinal()); j++) {
-                    if(freeTurns == 0) {
-                        if(coal == 0)
-                            break;
+            // update speed
+            final int freeAccelerations = 1;
+            final Vector3 endPosition = this.nextPath.get(this.nextPath.size() - 1);
+            final Field endField = gameState.getBoard().getFieldAt(endPosition);
+            int coal = ship.getCoal();
+            int deltaSpeed;
 
-                        coal--;
-                    } else
-                        freeTurns--;
+            if ((endField instanceof Finish && ship.getPassengers() >= 2) || endField instanceof Passenger) {
+                final int expectedSpeed = counterCurrent.contains(endPosition) ? 2 : 1;
 
-                    if(turnRight)
-                        executeTurns++;
-                    else
-                        executeTurns--;
+                deltaSpeed = expectedSpeed - ship.getSpeed();
+            } else
+                deltaSpeed = this.nextPath.size() - ship.getSpeed();
+
+            deltaSpeed = Math.max(Math.min(deltaSpeed, freeAccelerations), -coal - freeAccelerations);
+            deltaSpeed = Math.min(6 - ship.getSpeed(), deltaSpeed);
+
+            if (deltaSpeed != 0) {
+                coal -= Math.abs(deltaSpeed) - freeAccelerations;
+                actions.add(ActionFactory.changeVelocity(deltaSpeed));
+            }
+
+            // move ship
+            boolean isOnCounterCurrent = counterCurrent.contains(ship.getPosition());
+            int availableMoves = ship.getSpeed() - (isOnCounterCurrent ? 1 : 0);
+            Direction direction = ship.getDirection();
+            int freeTurns = ship.isPushed() ? 2 : 1;
+            int distance = 0;
+
+            for (int i = 1; i < this.nextPath.size(); i++) {
+                distance++;
+
+                final Vector3 nextPosition = ship.getPosition();
+                final Vector3 delta = this.nextPath.get(i - 1).copy().subtract(nextPosition);
+                final Direction nextDirection = Direction.fromVector3(delta);
+
+                if (nextDirection == null) {
+                    this.logger.error("Invalid direction");
+                    break;
                 }
 
-                if(distance > 1)
-                    actions.add(ActionFactory.forward(distance - 1));
+                if (direction != nextDirection) {
+                    final boolean turnRight = direction.ordinal() < nextDirection.ordinal();
+                    int executeTurns = 0;
 
-                actions.add(ActionFactory.turn(Direction.values()[direction.ordinal() - 1 + executeTurns]));
-                distance = 1;
-            }
+                    for (int j = 0; j <= Math.abs(nextDirection.ordinal() - direction.ordinal()); j++) {
+                        if (freeTurns == 0) {
+                            if (coal == 0)
+                                break;
 
-            final Ship enemyShip = gameState.getShips()
-                    .stream()
-                    .filter(currentShip -> currentShip.getPosition().equals(nextPosition))
-                    .findFirst()
-                    .orElse(null);
+                            coal--;
+                        } else
+                            freeTurns--;
 
-            if(enemyShip != null) {
-                final Map<Direction, Integer> possibleDirections = ActionUtil.getPossiblePushDirections(gameState, enemyShip);
+                        if (turnRight)
+                            executeTurns++;
+                        else
+                            executeTurns--;
+                    }
 
-                if(availableMoves > 1 && !possibleDirections.isEmpty()) {
-                    final Direction pushDirection = possibleDirections
-                            .entrySet()
-                            .stream()
-                            .max(Comparator.comparingInt(Map.Entry::getValue))
-                            .map(Map.Entry::getKey)
-                            .orElse(null);
+                    if (distance > 1)
+                        actions.add(ActionFactory.forward(distance - 1));
 
-                    actions.add(ActionFactory.push(pushDirection));
-                } else {
+                    actions.add(ActionFactory.turn(Direction.values()[direction.ordinal() - 1 + executeTurns]));
+                    distance = 1;
+                }
+
+                final Ship enemyShip = gameState.getShips()
+                        .stream()
+                        .filter(currentShip -> currentShip.getPosition().equals(nextPosition))
+                        .findFirst()
+                        .orElse(null);
+
+                if (enemyShip != null) {
+                    final Map<Direction, Integer> possibleDirections = ActionUtil.getPossiblePushDirections(gameState, enemyShip);
+
+                    if (availableMoves > 1 && !possibleDirections.isEmpty()) {
+                        final Direction pushDirection = possibleDirections
+                                .entrySet()
+                                .stream()
+                                .max(Comparator.comparingInt(Map.Entry::getValue))
+                                .map(Map.Entry::getKey)
+                                .orElse(null);
+
+                        actions.add(ActionFactory.push(pushDirection));
+                    } else {
+                        distance--;
+                        break;
+                    }
+                }
+
+                final boolean isCounterCurrent = counterCurrent.contains(nextPosition);
+
+                if (!isCounterCurrent)
+                    isOnCounterCurrent = false;
+                else if (!isOnCounterCurrent && availableMoves < 2) {
                     distance--;
                     break;
                 }
+
+                availableMoves -= isCounterCurrent ? 2 : 1;
+
+                if (availableMoves == 0)
+                    break;
             }
 
-            final boolean isCounterCurrent = counterCurrent.contains(nextPosition);
+            if (availableMoves > 0 && distance > 0)
+                actions.add(ActionFactory.forward(Math.min(distance, availableMoves)));
 
-            if(!isCounterCurrent)
-                isOnCounterCurrent = false;
-            else if (!isOnCounterCurrent && availableMoves < 2) {
-                distance--;
-                break;
-            }
+            // perform moves
+            actions.forEach(action -> action.perform(gameState, ship));
+            ship.setCoal(coal);
 
-            availableMoves -= isCounterCurrent ? 2 : 1;
-
-            if(availableMoves == 0)
-                break;
+            return actions;
+        } finally {
+            this.logger.debug("Time: " + (System.currentTimeMillis() - startTime) + "ms");
         }
-
-        if(availableMoves > 0 && distance > 0)
-            actions.add(ActionFactory.forward(Math.min(distance, availableMoves)));
-
-        // perform moves
-        actions.forEach(action -> action.perform(gameState, ship));
-        ship.setCoal(coal);
-
-        return actions;
     }
 
 }

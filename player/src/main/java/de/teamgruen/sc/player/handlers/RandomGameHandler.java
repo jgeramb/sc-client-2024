@@ -19,7 +19,14 @@ public class RandomGameHandler extends BaseGameHandler {
 
     @Override
     public List<Action> getNextActions(GameState gameState) {
-        return List.of(ActionUtil.getRandomAction(gameState));
+        final long startTime = System.currentTimeMillis();
+
+        try {
+            return ActionUtil.getRandomCombination(gameState)
+                    .toActions(gameState.getPlayerShip());
+        } finally {
+            this.logger.debug("Time: " + (System.currentTimeMillis() - startTime) + "ms");
+        }
     }
 
 }

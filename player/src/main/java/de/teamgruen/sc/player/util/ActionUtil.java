@@ -4,7 +4,6 @@ import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.game.util.Vector3;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
-import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Island;
@@ -16,19 +15,60 @@ public class ActionUtil {
 
     private static final Random RANDOM = new Random();
 
-    public static List<Action> getPossibleActions(GameState gameState) {
-        final List<Action> actions = new ArrayList<>();
-        final Ship ship = gameState.getPlayerShip();
+    public static ActionCombination getRandomCombination(GameState gameState) {
+        final List<ActionCombination> actionCombinations = getPossibleActionCombinations(gameState);
 
-        // Add all possible actions here
+        return actionCombinations.get(RANDOM.nextInt(actionCombinations.size()));
+    }
+
+    public static List<ActionCombination> getPossibleActionCombinations(GameState gameState) {
+        final List<ActionCombination> actions = new ArrayList<>();
+        final Ship ship = gameState.getPlayerShip();
+        final int direction = ship.getDirection().ordinal();
+        final int possibleTurns = 1 + ship.getCoal();
+
+        for(int i = direction - possibleTurns; i <= direction + possibleTurns; i++) {
+            final Direction currentDirection = Direction.values()[i % Direction.values().length];
+            final int turnCost = Math.max(0, Math.abs(direction - currentDirection.ordinal()) - 1);
+            final int maxSpeed = Math.min(6, ship.getSpeed() + ship.getCoal() - turnCost + 1);
+            final int minSpeed = Math.max(1, ship.getSpeed() - ship.getCoal() - turnCost - 1);
+
+            int maxDistance = getMaxDistance(gameState, ship.getPosition().copy(), currentDirection, maxSpeed);
+
+            if(maxDistance < minSpeed)
+                continue;
+
+            final int extraCost = turnCost + Math.max(0, Math.abs(maxDistance - ship.getSpeed()) - 1);
+
+            actions.add(new ActionCombination(currentDirection, maxDistance, extraCost));
+        }
 
         return actions;
     }
 
-    public static Action getRandomAction(GameState gameState) {
-        final List<Action> actions = getPossibleActions(gameState);
+    private static int getMaxDistance(GameState gameState, Vector3 position, Direction direction, int movesAvailable) {
+        final List<Vector3> counterCurrent = gameState.getBoard().getCounterCurrent();
+        final Vector3 directionVector = direction.toVector3();
 
-        return actions.get(RANDOM.nextInt(actions.size()));
+        int distance = 0;
+        boolean isCounterCurrent = counterCurrent.contains(position);
+
+        while(movesAvailable > 0) {
+            position.add(directionVector);
+
+            final Field field = gameState.getBoard().getFieldAt(position);
+
+            if(field instanceof Island || field instanceof Passenger)
+                break;
+
+            if(!isCounterCurrent && (isCounterCurrent = counterCurrent.contains(position)))
+                movesAvailable--;
+
+            movesAvailable--;
+            distance++;
+        }
+
+        return distance;
     }
 
     public static Map<Direction, Integer> getPossiblePushDirections(GameState gameState, Ship enemyShip) {
