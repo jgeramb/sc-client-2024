@@ -13,8 +13,8 @@ public class Passenger implements Field {
     private int passenger;
 
     @Override
-    public boolean isPassable() {
-        return false;
+    public boolean isObstacle() {
+        return true;
     }
 
 }

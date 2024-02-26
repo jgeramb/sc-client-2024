@@ -182,7 +182,7 @@ public class GameState {
 
             final Field field = this.board.getFieldAt(position);
 
-            if(field == null || !field.isPassable()) {
+            if(field == null || field.isObstacle()) {
                 advanceInfo.setResult(AdvanceInfo.Result.BLOCKED);
                 break;
             }
@@ -283,7 +283,7 @@ public class GameState {
             final Vector3 pushPosition = position.copy().add(currentDirection.toVector3());
             final Field pushField = this.board.getFieldAt(pushPosition);
 
-            if(pushField == null || !pushField.isPassable())
+            if(pushField == null || pushField.isObstacle())
                 continue;
 
             final int counterCurrentBonus = this.board.isCounterCurrent(pushPosition) ? 1 : 0;

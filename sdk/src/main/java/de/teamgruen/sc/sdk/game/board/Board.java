@@ -30,7 +30,7 @@ public class Board {
     public boolean isBlocked(Vector3 position) {
         final Field field = this.getFieldAt(position);
 
-        return field == null || !field.isPassable();
+        return field == null || field.isObstacle();
     }
 
     public int getSegmentIndex(Vector3 fieldPosition) {

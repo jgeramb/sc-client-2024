@@ -6,8 +6,8 @@ import lombok.Data;
 public class Water implements Field {
 
     @Override
-    public boolean isPassable() {
-        return true;
+    public boolean isObstacle() {
+        return false;
     }
 
 }

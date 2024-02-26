@@ -6,8 +6,8 @@ import lombok.Data;
 public class Island implements Field {
 
     @Override
-    public boolean isPassable() {
-        return false;
+    public boolean isObstacle() {
+        return true;
     }
 
 }
