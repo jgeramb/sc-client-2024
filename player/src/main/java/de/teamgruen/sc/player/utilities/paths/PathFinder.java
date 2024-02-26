@@ -99,14 +99,13 @@ public class PathFinder {
                         Math.abs(start.getR() - end.getR())
                 )
         );
-        final int requiredTurns;
-        final Direction startDirection = Direction.fromVector3(start);
-        final Direction endDirection = Direction.fromVector3(end);
+        int requiredTurns;
 
-        if (startDirection != null && endDirection != null)
-            requiredTurns = Math.abs(startDirection.ordinal() - endDirection.ordinal());
-        else
+        try {
+            requiredTurns = Direction.fromVector3(start).costTo(Direction.fromVector3(end));
+        } catch (IllegalArgumentException ignore) {
             requiredTurns = 0;
+        }
 
         return manhattenDistance + requiredTurns;
     }
