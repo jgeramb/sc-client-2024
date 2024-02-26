@@ -1,6 +1,6 @@
 package de.teamgruen.sc.sdk.protocol.data;
 
-import de.teamgruen.sc.sdk.game.util.Vector3;
+import de.teamgruen.sc.sdk.game.Vector3;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -18,7 +18,21 @@ public enum Direction {
     private final int q, r, s;
 
     public Vector3 toVector3() {
-        return new Vector3((short) q, (short) r, (short) s);
+        return new Vector3(this.q, this.r, this.s);
+    }
+
+    public Direction rotate(int delta) {
+        return values()[Math.floorMod(this.ordinal() + delta, values().length)];
+    }
+
+    public int delta(Direction direction) {
+        final int delta = Math.floorMod(direction.ordinal() - this.ordinal(), values().length);
+
+        return (delta > values().length / 2) ? delta - values().length : delta;
+    }
+
+    public int costTo(Direction direction) {
+        return Math.abs(this.delta(direction));
     }
 
     public static Direction fromVector3(Vector3 vector3) {

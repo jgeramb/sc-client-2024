@@ -14,6 +14,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
@@ -23,6 +24,7 @@ public class XMLTcpClient {
 
     private Socket socket;
     private final Queue<XMLProtocolPacket> requestQueue = new LinkedBlockingQueue<>();
+    private final Object requestLock = new Object();
     private Thread readThread, writeThread;
 
     private final String host;
@@ -51,7 +53,9 @@ public class XMLTcpClient {
                     long readStart = System.currentTimeMillis();
 
                     if(nRead == buffer.length) {
-                        while(in.available() > 0 || builder.charAt(builder.length() - 1) != '>') {
+                        final String tagName = Objects.requireNonNull(PacketSerializationUtil.parseXMLTagName(builder.toString()));
+
+                        while(in.available() > 0 || !builder.toString().contains("</" + tagName + ">")) {
                             nRead = in.read(buffer);
 
                             builder.append(new String(buffer, 0, nRead, StandardCharsets.UTF_8));
@@ -83,7 +87,7 @@ public class XMLTcpClient {
                     }
                 }
             } catch (IOException ex) {
-                if(errorListener != null)
+                if(errorListener != null && !ex.getMessage().equals("Socket closed"))
                     errorListener.accept("Failed to read from InputStream: " + ex.getMessage());
             }
         }, "ReadThread");
@@ -96,8 +100,16 @@ public class XMLTcpClient {
                 out.flush();
 
                 while(this.isConnected()) {
-                    if(this.requestQueue.isEmpty())
-                        continue;
+                    if(this.requestQueue.isEmpty()) {
+                        synchronized (this.requestLock) {
+                            try {
+                                this.requestLock.wait();
+                            } catch (InterruptedException ex) {
+                                if(errorListener != null && ex.getMessage() != null)
+                                    errorListener.accept("Writing was interrupted: " + ex.getMessage());
+                            }
+                        }
+                    }
 
                     final XMLProtocolPacket packet = this.requestQueue.poll();
 
@@ -149,6 +161,10 @@ public class XMLTcpClient {
 
     public void send(XMLProtocolPacket... packets) {
         this.requestQueue.addAll(List.of(packets));
+
+        synchronized (this.requestLock) {
+            this.requestLock.notify();
+        }
     }
 
 }

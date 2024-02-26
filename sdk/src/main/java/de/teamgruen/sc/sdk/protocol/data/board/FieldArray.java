@@ -28,7 +28,7 @@ public class FieldArray {
                 "water", Water.class,
                 "island", Island.class,
                 "passenger", Passenger.class,
-                "finish", Finish.class
+                "goal", Finish.class
         );
 
         public Deserializer() {
@@ -51,7 +51,7 @@ public class FieldArray {
                 Water.class, "water",
                 Island.class, "island",
                 Passenger.class, "passenger",
-                Finish.class, "finish"
+                Finish.class, "goal"
         );
 
         public Serializer() {

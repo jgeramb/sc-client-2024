@@ -2,6 +2,7 @@ package de.teamgruen.sc.sdk;
 
 import de.teamgruen.sc.sdk.game.GameHandler;
 import de.teamgruen.sc.sdk.game.GamePhase;
+import de.teamgruen.sc.sdk.game.GameResult;
 import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.board.Board;
 import de.teamgruen.sc.sdk.protocol.XMLProtocolPacket;
@@ -20,9 +21,8 @@ import de.teamgruen.sc.sdk.protocol.room.RoomPacket;
 import de.teamgruen.sc.sdk.protocol.room.messages.*;
 import lombok.RequiredArgsConstructor;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @RequiredArgsConstructor
@@ -47,9 +47,11 @@ public class ClientPacketHandler {
 
             final RoomMessage data = packet.getData();
 
-            if (data instanceof WelcomeMessage message)
+            if (data instanceof WelcomeMessage message) {
                 this.gameState = new GameState(message.getTeam());
-            else if (data instanceof MementoMessage message) {
+
+                this.gameHandler.onGameStart(this.gameState);
+            } else if (data instanceof MementoMessage message) {
                 final State state = message.getState();
                 final BoardData board = state.getBoard();
                 final Board stateBoard = this.gameState.getBoard();
@@ -57,7 +59,8 @@ public class ClientPacketHandler {
                 stateBoard.updateSegments(board.getSegments());
 
                 this.gameState.updateShips(state.getShips());
-                this.gameState.setTurns(state.getTurn());
+                this.gameState.setTurn(state.getTurn());
+                this.gameState.setCurrentTeam(state.getCurrentTeam());
 
                 this.gameHandler.onBoardUpdate(this.gameState);
             } else if (data instanceof MoveRequestMessage) {
@@ -98,20 +101,26 @@ public class ClientPacketHandler {
                             this.gameHandler.onError("No response to move request");
                             return;
                         case RULE_VIOLATION:
-                            this.gameHandler.onError("Rule violation");
+                            this.gameHandler.onError("Rule violation: " + score.getReason());
                             return;
                         case UNKNOWN:
                             this.gameHandler.onError("Unknown Error");
                             return;
                     }
 
-                    final Map<ScoreFragment, Integer> scores = new HashMap<>();
+                    final LinkedHashMap<ScoreFragment, Integer> scores = new LinkedHashMap<>();
                     final int[] parts = score.getParts();
 
                     for (int i = 0; i < fragments.size(); i++)
                         scores.put(fragments.get(i), parts[i]);
 
-                    this.gameHandler.onGameEnd(scores, message.getWinner() != null ? message.getWinner().getTeam() : null);
+                    final GameResult result = message.getWinner() == null
+                            ? GameResult.DRAW
+                            : this.gameState.getPlayerTeam() == message.getWinner().getTeam()
+                                ? GameResult.WIN
+                                : GameResult.LOOSE;
+
+                    this.gameHandler.onGameEnd(scores, result);
                 });
             }
         } else if(xmlProtocolPacket instanceof LeftPacket) {

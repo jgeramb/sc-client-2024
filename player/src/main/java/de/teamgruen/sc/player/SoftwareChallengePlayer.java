@@ -1,6 +1,6 @@
 package de.teamgruen.sc.player;
 
-import de.teamgruen.sc.player.handlers.RandomGameHandler;
+import de.teamgruen.sc.player.handlers.AdvancedGameHandler;
 import de.teamgruen.sc.player.handlers.SimpleGameHandler;
 import de.teamgruen.sc.sdk.SoftwareChallengeClient;
 import de.teamgruen.sc.sdk.game.GameHandler;
@@ -32,17 +32,18 @@ public class SoftwareChallengePlayer {
 
         LOGGER.setDebug((Boolean) parser.getOptionValue(debugOption, false));
 
-        final GameHandler gameHandler = switch ((String) parser.getOptionValue(playStyleOption, "simple")) {
+        final String playStyle = (String) parser.getOptionValue(playStyleOption, "simple");
+        final GameHandler gameHandler = switch (playStyle) {
             case "simple" -> {
                 LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Simple" + AnsiColor.RESET);
                 yield new SimpleGameHandler(LOGGER);
             }
-            case "random" -> {
-                LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Random" + AnsiColor.RESET);
-                yield new RandomGameHandler(LOGGER);
+            case "advanced" -> {
+                LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Advanced" + AnsiColor.RESET);
+                yield new AdvancedGameHandler(LOGGER);
             }
             default -> {
-                LOGGER.error("Unknown play-style: " + playStyleOption);
+                LOGGER.error("Unknown play-style: " + playStyle);
                 yield null;
             }
         };

@@ -82,7 +82,7 @@ public class PacketSerializationUtil {
         return annotation.localName();
     }
 
-    private static String parseXMLTagName(String xml) {
+    public static String parseXMLTagName(String xml) {
         final Matcher matcher = XML_TAG_PATTERN.matcher(xml);
 
         if (matcher.find())

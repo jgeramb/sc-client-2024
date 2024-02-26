@@ -4,4 +4,10 @@ import lombok.Data;
 
 @Data
 public class Finish implements Field {
+
+    @Override
+    public boolean isPassable() {
+        return true;
+    }
+
 }

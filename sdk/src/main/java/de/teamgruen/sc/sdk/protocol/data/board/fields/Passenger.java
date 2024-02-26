@@ -12,4 +12,9 @@ public class Passenger implements Field {
     @JacksonXmlProperty(isAttribute = true)
     private int passenger;
 
+    @Override
+    public boolean isPassable() {
+        return false;
+    }
+
 }

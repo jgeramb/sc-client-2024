@@ -1,6 +1,6 @@
-package de.teamgruen.sc.player.util;
+package de.teamgruen.sc.player.utilities.paths;
 
-import de.teamgruen.sc.sdk.game.util.Vector3;
+import de.teamgruen.sc.sdk.game.Vector3;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 

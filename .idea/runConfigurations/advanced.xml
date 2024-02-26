@@ -1,10 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="random-player" type="Application" factoryName="Application">
+  <configuration default="false" name="advanced" type="Application" factoryName="Application">
     <option name="ALTERNATIVE_JRE_PATH" value="openjdk-21" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="MAIN_CLASS_NAME" value="de.teamgruen.sc.player.SoftwareChallengePlayer" />
     <module name="player" />
-    <option name="PROGRAM_PARAMETERS" value="-s random" />
+    <option name="PROGRAM_PARAMETERS" value="-s advanced" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

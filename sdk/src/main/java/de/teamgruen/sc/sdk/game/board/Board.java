@@ -1,40 +1,69 @@
 package de.teamgruen.sc.sdk.game.board;
 
-import de.teamgruen.sc.sdk.game.util.Vector3;
+import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.board.FieldArray;
 import de.teamgruen.sc.sdk.protocol.data.board.SegmentData;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@Data
 public class Board {
 
-    private final List<Vector3> counterCurrent = new ArrayList<>();
+    @Getter
     private final Map<Vector3, Field> fields = new HashMap<>();
-    private Direction nextSegmentDirection;
+    private final List<Vector3> counterCurrent = new ArrayList<>();
     private List<BoardSegment> segments = new ArrayList<>();
+    @Getter @Setter
+    private Direction nextSegmentDirection;
 
-    public BoardSegment getSegmentOfField(Vector3 position) {
-        for (BoardSegment segment : this.segments) {
-            if(segment.fields().containsKey(position))
-                return segment;
+    public boolean isCounterCurrent(Vector3 position) {
+        return this.counterCurrent.stream().anyMatch(position::equals);
+    }
+
+    public boolean isBlocked(Vector3 position) {
+        final Field field = this.getFieldAt(position);
+
+        return field == null || !field.isPassable();
+    }
+
+    public int getSegmentIndex(Vector3 fieldPosition) {
+        for (int i = 0; i < this.segments.size(); i++) {
+            if(this.segments.get(i).fields().keySet().stream().anyMatch(fieldPosition::equals))
+                return i;
         }
 
-        return null;
+        throw new IllegalArgumentException("Field is not part of any segment");
+    }
+
+    public int getSegmentColumn(Vector3 fieldPosition) {
+        for (BoardSegment segment : this.segments) {
+            int i = 0;
+
+            for (Map.Entry<Vector3, Field> entry : segment.fields().entrySet()) {
+                if(entry.getKey().equals(fieldPosition))
+                    return i / 5 /* rows */;
+
+                i++;
+            }
+        }
+
+        return -1;
     }
 
     public Field getFieldAt(Vector3 position) {
-        return this.fields.get(position);
+        for (Map.Entry<Vector3, Field> entry : this.fields.entrySet()) {
+            if(entry.getKey().equals(position))
+                return entry.getValue();
+        }
+
+        return null;
     }
 
     public Map<Vector3, Field> getAllFields(Predicate<Map.Entry<Vector3, Field>> predicate) {
@@ -63,12 +92,10 @@ public class Board {
 
         for (int j = 0; j < this.segments.size(); j++) {
             final BoardSegment segment = this.segments.get(j);
+            final Vector3 turnPosition = segment.center().copy();
 
             // add the two fields before the turn
-            final Vector3 segmentCenter = segment.center();
-            this.counterCurrent.add(segmentCenter);
-
-            final Vector3 turnPosition = segmentCenter.copy().add(segment.direction().toVector3());
+            this.counterCurrent.add(turnPosition.copy().subtract(segment.direction().toVector3()));
             this.counterCurrent.add(turnPosition);
 
             // add the next two fields after the turn
@@ -87,39 +114,28 @@ public class Board {
     public void updateSegments(List<SegmentData> segmentDataList) {
         this.fields.clear();
         this.segments = segmentDataList.stream().map(segment -> {
-            final Map<Vector3, Field> fields = new HashMap<>();
+            final LinkedHashMap<Vector3, Field> fields = new LinkedHashMap<>();
             final Direction direction = segment.getDirection();
-            final Vector3 direction1 = (switch (segment.getDirection()) {
-                case RIGHT -> Direction.UP_LEFT;
-                case DOWN_RIGHT -> Direction.UP_RIGHT;
-                case DOWN_LEFT -> Direction.RIGHT;
-                case LEFT -> Direction.DOWN_RIGHT;
-                case UP_LEFT -> Direction.DOWN_LEFT;
-                case UP_RIGHT -> Direction.LEFT;
-            }).toVector3();
-            final Vector3 direction2 = (switch (segment.getDirection()) {
-                case RIGHT -> Direction.DOWN_LEFT;
-                case DOWN_RIGHT -> Direction.LEFT;
-                case DOWN_LEFT -> Direction.UP_LEFT;
-                case LEFT -> Direction.UP_RIGHT;
-                case UP_LEFT -> Direction.RIGHT;
-                case UP_RIGHT -> Direction.DOWN_RIGHT;
-            }).toVector3();
-            final Vector3 center = segment.getCenter().toVector3();
+            final Vector3 direction1 = direction.rotate(-2).toVector3();
+            final Vector3 direction2 = direction.rotate(2).toVector3();
+            final Vector3 center = segment.getCenter().toVector3().subtract(direction.toVector3());
 
             for (FieldArray columns : segment.getColumns()) {
-                final Vector3 columnCenter = center.add(direction.toVector3());
                 int j = -(columns.getFields().size() - 1) / 2;
 
                 for (Field field : columns.getFields()) {
-                    Vector3 fieldPosition = columnCenter.copy();
+                    Vector3 fieldPosition = center.copy();
 
-                    if (j != 0)
-                        fieldPosition.add((j < 0 ? direction1 : direction2).multiply(Math.abs(j)));
+                    if (j != 0) {
+                        final Vector3 offsetVector = j < 0 ? direction1 : direction2;
+                        fieldPosition.add(offsetVector.copy().multiply(Math.abs(j)));
+                    }
 
                     fields.put(fieldPosition, field);
                     j++;
                 }
+
+                center.add(direction.toVector3());
             }
 
             this.fields.putAll(fields);

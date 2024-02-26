@@ -12,8 +12,9 @@ public class Forward implements Action {
     private int distance;
 
     @Override
-    public void perform(GameState gameState, Ship ship) {
-        ship.getPosition().translate(ship.getDirection().toVector3().multiply(this.distance));
+    public void perform(GameState gameState) {
+        final Ship ship = gameState.getPlayerShip();
+        ship.getPosition().add(ship.getDirection().toVector3().multiply(this.distance));
     }
 
 }

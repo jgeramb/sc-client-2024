@@ -4,4 +4,10 @@ import lombok.Data;
 
 @Data
 public class Water implements Field {
+
+    @Override
+    public boolean isPassable() {
+        return true;
+    }
+
 }

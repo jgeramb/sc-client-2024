@@ -1,7 +1,7 @@
 package de.teamgruen.sc.sdk.protocol.data;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import de.teamgruen.sc.sdk.game.util.Vector3;
+import de.teamgruen.sc.sdk.game.Vector3;
 import lombok.Data;
 
 @Data

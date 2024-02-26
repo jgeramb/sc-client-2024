@@ -1,9 +1,8 @@
-package de.teamgruen.sc.player.util;
+package de.teamgruen.sc.player.utilities.paths;
 
 import de.teamgruen.sc.sdk.game.GameState;
-import de.teamgruen.sc.sdk.game.util.Vector3;
+import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
-import de.teamgruen.sc.sdk.protocol.data.board.fields.Water;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
@@ -96,8 +95,8 @@ public class PathFinder {
         final int manhattenDistance = Math.max(
                 Math.abs(start.getQ() - end.getQ()),
                 Math.max(
-                        Math.abs(start.getR() - end.getR()),
-                        Math.abs(start.getS() - end.getS())
+                        Math.abs(start.getS() - end.getS()),
+                        Math.abs(start.getR() - end.getR())
                 )
         );
         final int requiredTurns;
@@ -134,7 +133,7 @@ public class PathFinder {
     }
 
     private static PathNode createPathNode(Vector3 position) {
-        return new PathNode(position, !(gameState.getBoard().getFieldAt(position) instanceof Water));
+        return new PathNode(position, gameState.getBoard().isBlocked(position));
     }
 
 }

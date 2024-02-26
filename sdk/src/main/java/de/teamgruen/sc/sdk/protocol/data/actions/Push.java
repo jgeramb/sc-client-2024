@@ -13,7 +13,8 @@ public class Push implements Action {
     private Direction direction;
 
     @Override
-    public void perform(GameState gameState, Ship ship) {
+    public void perform(GameState gameState) {
+        final Ship ship = gameState.getPlayerShip();
         final Ship enemyShip = gameState.getShips()
                 .stream()
                 .filter(currentShip -> currentShip.getPosition().equals(ship.getPosition()))
@@ -22,7 +23,7 @@ public class Push implements Action {
 
         if (enemyShip != null) {
             enemyShip.setPushed(true);
-            enemyShip.getPosition().translate(this.direction.toVector3());
+            enemyShip.getPosition().add(this.direction.toVector3());
         }
     }
 

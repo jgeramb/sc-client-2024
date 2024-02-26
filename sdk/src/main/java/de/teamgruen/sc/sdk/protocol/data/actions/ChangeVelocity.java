@@ -12,7 +12,8 @@ public class ChangeVelocity implements Action {
     private int deltaVelocity;
 
     @Override
-    public void perform(GameState gameState, Ship ship) {
+    public void perform(GameState gameState) {
+        final Ship ship = gameState.getPlayerShip();
         ship.setSpeed(ship.getSpeed() + this.deltaVelocity);
     }
 
