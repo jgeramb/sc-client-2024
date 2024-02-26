@@ -11,7 +11,6 @@ import de.teamgruen.sc.sdk.protocol.XMLProtocolPacket;
 import de.teamgruen.sc.sdk.protocol.data.Move;
 import de.teamgruen.sc.sdk.protocol.data.actions.*;
 import de.teamgruen.sc.sdk.protocol.exceptions.SerializationException;
-import lombok.Data;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -19,15 +18,13 @@ import javax.xml.stream.XMLStreamWriter;
 import java.io.IOException;
 import java.util.Map;
 
-@Data
 @JacksonXmlRootElement(localName = "room")
-public class MovePacket implements XMLProtocolPacket {
-
-    @JacksonXmlProperty(isAttribute = true)
-    private String roomId;
-    @JacksonXmlProperty(localName = "data")
-    @JsonSerialize(using = MovePacket.MoveSerializer.class)
-    private Move move;
+public record MovePacket(@JacksonXmlProperty(isAttribute = true)
+                         String roomId,
+                         @JacksonXmlProperty(localName = "data")
+                         @JsonSerialize(using = MovePacket.MoveSerializer.class)
+                         Move move
+) implements XMLProtocolPacket {
 
     public static class MoveSerializer extends StdSerializer<Move> {
 
@@ -53,7 +50,7 @@ public class MovePacket implements XMLProtocolPacket {
                 toXmlGenerator.setNextName(new QName("actions"));
                 jsonGenerator.writeStartObject();
 
-                for (Action action : move.getActions()) {
+                for (Action action : move.actions()) {
                     jsonGenerator.writeFieldName(SUB_TYPES.get(action.getClass()));
                     serializerProvider.defaultSerializeValue(action, jsonGenerator);
                 }

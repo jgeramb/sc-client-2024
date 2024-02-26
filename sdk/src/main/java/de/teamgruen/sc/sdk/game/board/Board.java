@@ -7,35 +7,23 @@ import de.teamgruen.sc.sdk.protocol.data.board.SegmentData;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+@Data
 public class Board {
 
-    @Getter
     private final Map<Vector3, Field> fields = new HashMap<>();
     private final List<Vector3> counterCurrent = new ArrayList<>();
     private List<BoardSegment> segments = new ArrayList<>();
-    @Getter @Setter
     private Direction nextSegmentDirection;
-
-    public boolean isCounterCurrent(Vector3 position) {
-        return this.counterCurrent.stream().anyMatch(position::equals);
-    }
-
-    public boolean isBlocked(Vector3 position) {
-        final Field field = this.getFieldAt(position);
-
-        return field == null || field.isObstacle();
-    }
 
     public int getSegmentIndex(Vector3 fieldPosition) {
         for (int i = 0; i < this.segments.size(); i++) {
-            if(this.segments.get(i).fields().keySet().stream().anyMatch(fieldPosition::equals))
+            if(this.segments.get(i).fields().containsKey(fieldPosition))
                 return i;
         }
 
@@ -44,26 +32,23 @@ public class Board {
 
     public int getSegmentColumn(Vector3 fieldPosition) {
         for (BoardSegment segment : this.segments) {
-            int i = 0;
+            final int index = List.copyOf(segment.fields().keySet()).indexOf(fieldPosition);
 
-            for (Map.Entry<Vector3, Field> entry : segment.fields().entrySet()) {
-                if(entry.getKey().equals(fieldPosition))
-                    return i / 5 /* rows */;
-
-                i++;
-            }
+            if(index != -1)
+                return index / 5 /* rows*/;
         }
 
-        return -1;
+        throw new IllegalArgumentException("Field is not part of any segment");
+    }
+
+    public boolean isBlocked(Vector3 position) {
+        final Field field = this.getFieldAt(position);
+
+        return field == null || field.isObstacle();
     }
 
     public Field getFieldAt(Vector3 position) {
-        for (Map.Entry<Vector3, Field> entry : this.fields.entrySet()) {
-            if(entry.getKey().equals(position))
-                return entry.getValue();
-        }
-
-        return null;
+        return this.fields.get(position);
     }
 
     public Map<Vector3, Field> getAllFields(Predicate<Map.Entry<Vector3, Field>> predicate) {
@@ -75,16 +60,18 @@ public class Board {
     }
 
     public Map<Vector3, Field> getPassengerFields() {
-        return this.getAllFields(entry -> {
-            if(entry.getValue() instanceof Passenger passenger)
-                return passenger.getPassenger() > 0;
-
-            return false;
-        });
+        return this.getAllFields(entry ->
+                entry.getValue() instanceof Passenger passenger
+                        && passenger.getPassenger() > 0
+        );
     }
 
     public Map<Vector3, Field> getFinishFields() {
         return this.getAllFields(entry -> entry.getValue() instanceof Finish);
+    }
+
+    public boolean isCounterCurrent(Vector3 position) {
+        return this.counterCurrent.contains(position);
     }
 
     public void updateCounterCurrent() {

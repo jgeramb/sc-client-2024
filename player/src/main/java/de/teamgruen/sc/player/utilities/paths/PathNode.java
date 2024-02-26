@@ -10,10 +10,10 @@ public class PathNode {
 
     private final Vector3 position;
     private final boolean isObstacle;
-    private int gCost, hCost;
+    private int graphCost, heuristicCost;
 
-    public int getFCost() {
-        return this.gCost + this.hCost;
+    public int getTotalCost() {
+        return this.graphCost + this.heuristicCost;
     }
 
 }

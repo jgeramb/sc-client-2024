@@ -4,18 +4,13 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import de.teamgruen.sc.sdk.protocol.data.actions.*;
 import de.teamgruen.sc.sdk.protocol.serialization.SubTypeListDeserializer;
-import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Data
 @JsonDeserialize(using = Move.Deserializer.class)
-public class Move {
-
-    @JacksonXmlElementWrapper
-    private List<Action> actions;
+public record Move(@JacksonXmlElementWrapper List<Action> actions) {
 
     public static class Deserializer extends SubTypeListDeserializer<Move, Action> {
 
@@ -32,10 +27,7 @@ public class Move {
 
         @Override
         public Move getNewInstance() {
-            Move move = new Move();
-            move.actions = new ArrayList<>();
-
-            return move;
+            return new Move(new ArrayList<>());
         }
 
     }

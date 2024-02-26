@@ -35,15 +35,13 @@ public class SoftwareChallengeClient {
         this.client.connect(packetQueue::add, this.gameHandler::onError);
 
         new Thread(() -> {
-            Thread.currentThread().setName("PacketHandler");
-
             while(this.client != null) {
                 final XMLProtocolPacket xmlProtocolPacket = packetQueue.poll();
 
                 if (xmlProtocolPacket == null)
                     continue;
 
-                packetHandler.handlePacket(xmlProtocolPacket);
+                new Thread(() -> packetHandler.handlePacket(xmlProtocolPacket), "PacketHandler").start();
             }
         }).start();
     }
@@ -69,17 +67,11 @@ public class SoftwareChallengeClient {
     }
 
     public void joinRoom(String roomId) {
-        final JoinRoomRequest request = new JoinRoomRequest();
-        request.setRoomId(roomId);
-
-        this.client.send(request);
+        this.client.send(new JoinRoomRequest(roomId));
     }
 
     public void joinPreparedRoom(String reservationCode) {
-        final JoinPreparedRoomRequest request = new JoinPreparedRoomRequest();
-        request.setReservationCode(reservationCode);
-
-        this.client.send(request);
+        this.client.send(new JoinPreparedRoomRequest(reservationCode));
     }
 
 }

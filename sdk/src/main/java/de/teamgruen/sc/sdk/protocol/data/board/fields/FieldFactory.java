@@ -13,11 +13,7 @@ public class FieldFactory {
     }
 
     public static Passenger passenger(Direction direction, int passengers) {
-        Passenger field = new Passenger();
-        field.setDirection(direction);
-        field.setPassenger(passengers);
-
-        return field;
+        return new Passenger(direction, passengers);
     }
 
     public static Finish finish() {

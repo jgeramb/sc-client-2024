@@ -11,17 +11,12 @@ import lombok.RequiredArgsConstructor;
 public class Ship {
 
     private final Team team;
-    private boolean pushed = false;
-    private int passengers = 0, coal = 6, speed = 1;
+    private int passengers = 0, coal = 6, speed = 1, freeTurns = 1, points = 0;
     private Direction direction = Direction.RIGHT;
     private Vector3 position = null;
 
     public boolean hasEnoughPassengers() {
         return this.passengers >= 2;
-    }
-
-    public int getFreeTurns() {
-        return this.pushed ? 2 : 1;
     }
 
 }

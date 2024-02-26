@@ -16,7 +16,7 @@ public class Logger {
             OPEN_BRACKET = AnsiColor.BLACK + "[" + AnsiColor.RESET,
             CLOSE_BRACKET = AnsiColor.BLACK + "]" + AnsiColor.RESET,
             COLON = AnsiColor.BLACK + ":" + AnsiColor.RESET;
-
+    
     private final OutputStream out;
     @Setter
     private boolean debug;

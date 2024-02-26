@@ -8,19 +8,21 @@ import de.teamgruen.sc.sdk.protocol.data.Team;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.*;
 
-@Data
+@Getter
+@Setter
 public class GameState {
 
-    private final Board board = new Board();
-    private final List<Ship> ships = new ArrayList<>();
-    private final Team playerTeam;
-    private GamePhase gamePhase = GamePhase.LOBBY;
-    private Team currentTeam;
-    private int turn;
+    protected final Board board = new Board();
+    protected final List<Ship> ships = new ArrayList<>();
+    protected final Team playerTeam;
+    protected GamePhase gamePhase = GamePhase.LOBBY;
+    protected Team currentTeam;
+    protected int turn;
 
     public GameState(Team playerTeam) {
         this.playerTeam = playerTeam;
@@ -51,26 +53,23 @@ public class GameState {
             if(stateShip == null)
                 throw new NoSuchElementException("Ship not found for team " + ship.getTeam());
 
-            final Vector3 position = ship.getPosition().toVector3();
-
-            if (stateShip.getPosition() != null)
-                stateShip.setPushed(!position.equals(stateShip.getPosition()));
-
-            stateShip.setPosition(position);
+            stateShip.setPosition(ship.getPosition().toVector3());
             stateShip.setDirection(ship.getDirection());
             stateShip.setPassengers(ship.getPassengers());
             stateShip.setCoal(ship.getCoal());
             stateShip.setSpeed(ship.getSpeed());
+            stateShip.setFreeTurns(ship.getFreeTurns());
+            stateShip.setPoints(ship.getPoints());
         });
     }
 
-    public List<Move> getAdvanceMoves(Vector3 position,
-                                      Direction shipDirection,
-                                      int freeTurns,
-                                      int freeAcceleration,
-                                      int minMovementPoints,
-                                      int maxMovementPoints,
-                                      int maxCoal) {
+    public List<Move> getMoves(Vector3 position,
+                               Direction shipDirection,
+                               int freeTurns,
+                               int freeAcceleration,
+                               int minMovementPoints,
+                               int maxMovementPoints,
+                               int maxCoal) {
         final List<Move> moves = new ArrayList<>();
 
         this.getDirectionCosts(shipDirection, position, maxCoal + freeTurns).forEach((turnDirection, turnCost) -> {
@@ -141,7 +140,7 @@ public class GameState {
                 };
 
                 if (lookForMoves && (movementPoints <= minMovementPoints || extraCost < freeAcceleration)) {
-                    getAdvanceMoves(
+                    getMoves(
                             endPosition,
                             turnDirection,
                             currentFreeTurns,

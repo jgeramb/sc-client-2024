@@ -24,21 +24,21 @@ public class PathFinder {
 
         final PathNode endNode = getOrCreateNode(end);
         PathNode currentNode = getOrCreateNode(start);
-        currentNode.setGCost(0);
-        currentNode.setHCost(getEstimatedPathCost(start, end));
+        currentNode.setGraphCost(0);
+        currentNode.setHeuristicCost(getEstimatedPathCost(start, end));
 
         openNodes.add(currentNode);
 
         while(!openNodes.isEmpty()) {
             // Sort open nodes by fCost (ascending)
-            openNodes.sort(Comparator.comparingInt(PathNode::getFCost));
-            openNodes.sort(Comparator.comparingInt(PathNode::getGCost).reversed());
+            openNodes.sort(Comparator.comparingInt(PathNode::getTotalCost));
+            openNodes.sort(Comparator.comparingInt(PathNode::getGraphCost).reversed());
             currentNode = openNodes.get(0);
 
             openNodes.remove(currentNode);
             closedNodes.add(currentNode);
 
-            int g = currentNode.getGCost() + 1;
+            int g = currentNode.getGraphCost() + 1;
 
             // Check if end is reached
             if(closedNodes.contains(endNode))
@@ -52,12 +52,12 @@ public class PathFinder {
                     continue;
 
                 if (!openNodes.contains(neighbour)) {
-                    neighbour.setGCost(g);
-                    neighbour.setHCost(getEstimatedPathCost(neighbour.getPosition(), end));
+                    neighbour.setGraphCost(g);
+                    neighbour.setHeuristicCost(getEstimatedPathCost(neighbour.getPosition(), end));
 
                     openNodes.add(neighbour);
-                } else if (neighbour.getFCost() > g + neighbour.getHCost())
-                    neighbour.setGCost(g);
+                } else if (neighbour.getTotalCost() > g + neighbour.getHeuristicCost())
+                    neighbour.setGraphCost(g);
             }
         }
 
@@ -68,14 +68,14 @@ public class PathFinder {
 
             finalPath.add(end);
 
-            for (int i = endNode.getGCost() - 1; i >= 0; i--) {
+            for (int i = endNode.getGraphCost() - 1; i >= 0; i--) {
                 final int currentG = i;
                 final List<PathNode> currentNeighbours = getNeighbours(currentNode);
 
                 currentNode = closedNodes
                         .stream()
                         .filter(currentNeighbours::contains)
-                        .filter(node -> node.getGCost() == currentG)
+                        .filter(node -> node.getGraphCost() == currentG)
                         .findFirst()
                         .orElse(null);
 

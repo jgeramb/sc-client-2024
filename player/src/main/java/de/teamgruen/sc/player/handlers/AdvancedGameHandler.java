@@ -107,36 +107,32 @@ public class AdvancedGameHandler extends BaseGameHandler {
 
     @Override
     public List<Action> getNextActions(GameState gameState) {
+        final long startTime = System.nanoTime();
         final Ship ship = gameState.getPlayerShip();
 
-        if(!this.ready.get()) {
-            synchronized (this.readyLock) {
-                try {
+        try {
+            if(!this.ready.get()) {
+                synchronized (this.readyLock) {
                     this.readyLock.wait();
-                } catch (InterruptedException ignore) {
                 }
             }
-        }
 
-        if(this.nextPath == null || this.nextPath.isEmpty()) {
-            final Optional<Move> optionalMove = MoveUtil.getMostEfficientMove(gameState);
+            if(this.nextPath == null || this.nextPath.isEmpty()) {
+                final Optional<Move> optionalMove = MoveUtil.getMostEfficientMove(gameState);
 
-            if(optionalMove.isEmpty()) {
-                this.onError("No actions available");
-                return Collections.emptyList();
+                if(optionalMove.isEmpty()) {
+                    this.onError("No actions available");
+                    return Collections.emptyList();
+                }
+
+                final Move move = optionalMove.get();
+                final List<Action> actions = move.getActions();
+                actions.forEach(action -> action.perform(gameState));
+                ship.setCoal(ship.getCoal() - move.getCoalCost(ship));
+
+                return actions;
             }
 
-            final Move move = optionalMove.get();
-            final List<Action> actions = move.getActions();
-            actions.forEach(action -> action.perform(gameState));
-            ship.setCoal(ship.getCoal() - move.getCoalCost(ship));
-
-            return actions;
-        }
-
-        final long startTime = System.currentTimeMillis();
-
-        try {
             final Board board = gameState.getBoard();
             final List<Action> actions = new ArrayList<>();
 
@@ -175,11 +171,6 @@ public class AdvancedGameHandler extends BaseGameHandler {
                 final Vector3 nextPosition = ship.getPosition();
                 final Vector3 delta = this.nextPath.get(i - 1).copy().subtract(nextPosition);
                 final Direction nextDirection = Direction.fromVector3(delta);
-
-                if (nextDirection == null) {
-                    this.logger.error("Invalid endDirection");
-                    break;
-                }
 
                 if (direction != nextDirection) {
                     if (distance > 1)
@@ -235,10 +226,13 @@ public class AdvancedGameHandler extends BaseGameHandler {
             ship.setCoal(coal);
 
             return actions;
+        } catch (InterruptedException ignore) {
         } finally {
             this.ready.set(false);
-            this.logger.debug("Time: " + (System.currentTimeMillis() - startTime) + "ms");
+            this.logger.debug("Time: " + String.format("%,d", System.nanoTime() - startTime) + "ns");
         }
+
+        return Collections.emptyList();
     }
 
 }

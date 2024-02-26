@@ -1,11 +1,13 @@
 package de.teamgruen.sc.sdk.game;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
-import java.util.Objects;
-
-@Data
+@Getter
+@ToString
+@EqualsAndHashCode
 @AllArgsConstructor
 public class Vector3 {
 
@@ -46,21 +48,6 @@ public class Vector3 {
 
     public Vector3 copy() {
         return new Vector3(this.q, this.r, this.s);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Vector3 vector3 = (Vector3) o;
-
-        return this.q == vector3.q && this.r == vector3.r && this.s == vector3.s;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(this.q, this.r, this.s);
     }
 
 }

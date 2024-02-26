@@ -14,17 +14,9 @@ public class Push implements Action {
 
     @Override
     public void perform(GameState gameState) {
-        final Ship ship = gameState.getPlayerShip();
-        final Ship enemyShip = gameState.getShips()
-                .stream()
-                .filter(currentShip -> currentShip.getPosition().equals(ship.getPosition()))
-                .findFirst()
-                .orElse(null);
-
-        if (enemyShip != null) {
-            enemyShip.setPushed(true);
-            enemyShip.getPosition().add(this.direction.toVector3());
-        }
+        final Ship enemyShip = gameState.getEnemyShip();
+        enemyShip.getPosition().add(this.direction.toVector3());
+        enemyShip.setFreeTurns(2);
     }
 
 }

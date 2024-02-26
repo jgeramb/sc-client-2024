@@ -59,7 +59,7 @@ public class MoveUtil {
         final boolean mustFollowEnemy = enemySegmentIndex > playerSegmentIndex + 2;
         final int maxCoal = Math.min(ship.getCoal(), moreCoal ? 2 : 1);
 
-        final List<Move> moves = new ArrayList<>(gameState.getAdvanceMoves(
+        final List<Move> moves = new ArrayList<>(gameState.getMoves(
                 position,
                 ship.getDirection(),
                 ship.getFreeTurns(),
@@ -69,7 +69,7 @@ public class MoveUtil {
                 maxCoal
         ));
 
-        if(moves.isEmpty() && !moreCoal)
+        if(moves.isEmpty() && !moreCoal && ship.getCoal() > 1)
             return getPossibleMoves(gameState, true);
 
         moves.forEach(move -> {

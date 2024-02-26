@@ -2,9 +2,7 @@ package de.teamgruen.sc.sdk.protocol.data;
 
 import de.teamgruen.sc.sdk.game.Vector3;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 
-@Getter
 @AllArgsConstructor
 public enum Direction {
 
@@ -35,13 +33,13 @@ public enum Direction {
         return Math.abs(this.delta(direction));
     }
 
-    public static Direction fromVector3(Vector3 vector3) {
+    public static Direction fromVector3(Vector3 vector) {
         for (Direction direction : values()) {
-            if (direction.toVector3().equals(vector3))
+            if (direction.toVector3().equals(vector))
                 return direction;
         }
 
-        return null;
+        throw new IllegalArgumentException("Vector is not a direction: " + vector);
     }
 
 }

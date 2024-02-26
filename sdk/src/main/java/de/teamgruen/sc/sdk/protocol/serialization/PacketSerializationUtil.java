@@ -40,6 +40,9 @@ public class PacketSerializationUtil {
     }
 
     public static LinkedList<XMLProtocolPacket> deserialize(String xml) throws DeserializationException {
+        if(xml == null)
+            throw new IllegalArgumentException("XML cannot be null");
+
         LinkedList<XMLProtocolPacket> packets = new LinkedList<>();
 
         while(!xml.isBlank()) {
