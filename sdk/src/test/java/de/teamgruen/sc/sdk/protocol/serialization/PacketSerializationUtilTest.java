@@ -9,6 +9,7 @@ import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.board.BoardData;
 import de.teamgruen.sc.sdk.protocol.data.scores.*;
 import de.teamgruen.sc.sdk.protocol.exceptions.DeserializationException;
+import de.teamgruen.sc.sdk.protocol.exceptions.SerializationException;
 import de.teamgruen.sc.sdk.protocol.requests.JoinGameRequest;
 import de.teamgruen.sc.sdk.protocol.requests.JoinPreparedRoomRequest;
 import de.teamgruen.sc.sdk.protocol.requests.JoinRoomRequest;
@@ -20,6 +21,7 @@ import de.teamgruen.sc.sdk.protocol.room.messages.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -45,6 +47,16 @@ public class PacketSerializationUtilTest {
     @Test
     public void testParseXMLTagName_Valid2() {
         assertEquals("tag", PacketSerializationUtil.parseXMLTagName("<tag attr=\"value\">"));
+    }
+
+    @Test
+    public void testDeserialize_Null() {
+        assertThrows(IllegalArgumentException.class, () -> PacketSerializationUtil.deserialize(null));
+    }
+
+    @Test
+    public void testDeserialize_Invalid() {
+        assertThrows(IllegalArgumentException.class, () -> PacketSerializationUtil.deserialize("<"));
     }
 
     @Test
@@ -216,6 +228,11 @@ public class PacketSerializationUtilTest {
     }
 
     @Test
+    public void testDeserialize_Move_Null() {
+        assertThrows(DeserializationException.class, () -> PacketSerializationUtil.deserialize("<room roomId=\"test\"><data class=\"memento\"><state class=\"state\"><lastMove><actions><null/></actions></lastMove></state></data></room>"));
+    }
+
+    @Test
     public void testSerialize_Move() {
         final String xml = PacketSerializationUtil.serialize(new MovePacket("test", new Move(Arrays.asList(
                 ActionFactory.changeVelocity(1),
@@ -228,8 +245,20 @@ public class PacketSerializationUtilTest {
     }
 
     @Test
+    public void testSerialize_Move_Null() {
+        assertThrows(SerializationException.class, () -> PacketSerializationUtil.serialize(
+                new MovePacket("test", new Move(Collections.singletonList(null)))
+        ));
+    }
+
+    @Test
     public void testSerialize_JoinGame() {
-        assertEquals("<join/>", PacketSerializationUtil.serialize(new JoinGameRequest()));
+        assertEquals("<join/>", PacketSerializationUtil.serialize(new JoinGameRequest(null)));
+    }
+
+    @Test
+    public void testSerialize_JoinGame_GameType() {
+        assertEquals("<join gameType=\"test\"/>", PacketSerializationUtil.serialize(new JoinGameRequest("test")));
     }
 
     @Test

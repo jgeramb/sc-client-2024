@@ -13,9 +13,7 @@ import de.teamgruen.sc.sdk.protocol.data.actions.*;
 import de.teamgruen.sc.sdk.protocol.exceptions.SerializationException;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import java.io.IOException;
 import java.util.Map;
 
 @JacksonXmlRootElement(localName = "room")
@@ -57,7 +55,7 @@ public record MovePacket(@JacksonXmlProperty(isAttribute = true)
 
                 jsonGenerator.writeEndObject();
                 staxWriter.writeEndElement();
-            } catch (XMLStreamException | IOException ex) {
+            } catch (Exception ex) {
                 throw new SerializationException(ex);
             }
         }

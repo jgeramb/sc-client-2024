@@ -14,6 +14,7 @@ import de.teamgruen.sc.sdk.protocol.room.RoomPacket;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -77,12 +78,7 @@ public class PacketSerializationUtil {
     }
 
     private static String getRootTag(Class<? extends XMLProtocolPacket> clazz) {
-        JacksonXmlRootElement annotation = clazz.getAnnotation(JacksonXmlRootElement.class);
-
-        if (annotation == null)
-            return null;
-
-        return annotation.localName();
+        return Objects.requireNonNull(clazz.getAnnotation(JacksonXmlRootElement.class)).localName();
     }
 
     public static String parseXMLTagName(String xml) {
