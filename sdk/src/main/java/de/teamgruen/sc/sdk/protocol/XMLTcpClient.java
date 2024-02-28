@@ -2,7 +2,6 @@ package de.teamgruen.sc.sdk.protocol;
 
 import de.teamgruen.sc.sdk.protocol.exceptions.DeserializationException;
 import de.teamgruen.sc.sdk.protocol.exceptions.SerializationException;
-import de.teamgruen.sc.sdk.protocol.exceptions.TcpCloseException;
 import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
 import de.teamgruen.sc.sdk.protocol.serialization.PacketSerializationUtil;
 import lombok.NonNull;
@@ -42,6 +41,9 @@ public class XMLTcpClient {
 
         // read packets
         this.readThread = new Thread(() -> {
+            if(!this.isConnected())
+                return;
+
             try(InputStream in = this.socket.getInputStream()) {
                 boolean protocolInitiated = false;
 
@@ -55,18 +57,19 @@ public class XMLTcpClient {
                     if(nRead == buffer.length) {
                         final String tagName = Objects.requireNonNull(PacketSerializationUtil.parseXMLTagName(builder.toString()));
 
-                        while(in.available() > 0 || !builder.toString().contains("</" + tagName + ">")) {
+                        boolean endTagMissing = false;
+
+                        while(in.available() > 0 || (endTagMissing = !builder.toString().contains("</" + tagName + ">"))) {
                             nRead = in.read(buffer);
 
                             builder.append(new String(buffer, 0, nRead, StandardCharsets.UTF_8));
 
-                            if(System.currentTimeMillis() - readStart > 2_500) {
-                                if(errorListener != null)
-                                    errorListener.accept("No valid XML received within 2.5 seconds");
-
-                                return;
-                            }
+                            if(System.currentTimeMillis() - readStart > 2_500)
+                                break;
                         }
+
+                        if(endTagMissing)
+                            continue;
                     }
 
                     String xml = builder.toString().strip();
@@ -87,7 +90,7 @@ public class XMLTcpClient {
                     }
                 }
             } catch (IOException ex) {
-                if(errorListener != null && !ex.getMessage().equals("Socket closed"))
+                if(errorListener != null && !ex.getMessage().contains("closed") && !ex.getMessage().contains("reset"))
                     errorListener.accept("Failed to read from InputStream: " + ex.getMessage());
             }
         }, "ReadThread");
@@ -95,6 +98,9 @@ public class XMLTcpClient {
 
         // write packets
         this.writeThread = new Thread(() -> {
+            if(!this.isConnected())
+                return;
+
             try(PrintWriter out = new PrintWriter(this.socket.getOutputStream())) {
                 out.print("<protocol>");
                 out.flush();
@@ -126,20 +132,19 @@ public class XMLTcpClient {
                     }
                 }
             } catch (IOException ex) {
-                if(errorListener != null)
+                if(errorListener != null && !ex.getMessage().contains("closed") && !ex.getMessage().contains("reset"))
                     errorListener.accept("Failed to write to OutputStream: " + ex.getMessage());
             }
         }, "WriteThread");
         this.writeThread.start();
     }
 
-    public void disconnect() throws TcpCloseException {
+    public void disconnect() {
         if(!this.isConnected()) return;
 
         try {
             this.socket.close();
-        } catch (IOException ex) {
-            throw new TcpCloseException(ex);
+        } catch (IOException ignore) {
         } finally {
             this.socket = null;
 

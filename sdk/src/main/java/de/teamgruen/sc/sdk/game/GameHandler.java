@@ -9,15 +9,27 @@ import java.util.List;
 public interface GameHandler {
 
     // lobby
-    void onRoomJoin(String roomId);
+    default void onRoomJoin(String roomId) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
 
     // game
-    void onGameStart(GameState gameState);
-    void onBoardUpdate(GameState gameState);
-    List<Action> getNextActions(GameState gameState);
-    void onGameEnd(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result);
+    default void onGameStart(GameState gameState) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+    default void onBoardUpdate(GameState gameState) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+    default List<Action> getNextActions(GameState gameState) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+    default void onGameEnd(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
 
     // other
-    void onError(String message);
+    default void onError(String message) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
 
 }

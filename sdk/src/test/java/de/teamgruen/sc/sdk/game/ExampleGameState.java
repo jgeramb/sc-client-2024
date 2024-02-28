@@ -2,6 +2,7 @@ package de.teamgruen.sc.sdk.game;
 
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.Position;
+import de.teamgruen.sc.sdk.protocol.data.ShipData;
 import de.teamgruen.sc.sdk.protocol.data.Team;
 import de.teamgruen.sc.sdk.protocol.data.board.FieldArray;
 import de.teamgruen.sc.sdk.protocol.data.board.SegmentData;
@@ -73,6 +74,33 @@ public class ExampleGameState extends GameState {
         ));
 
         return segmentData;
+    }
+
+    public static List<ShipData> getSampleShips() {
+        return List.of(
+                getShip(Team.ONE, new Vector3(5, 0, -5), Direction.LEFT, 1, 5, 2, 2, 16),
+                getShip(Team.TWO, new Vector3(4, 0, -4), Direction.RIGHT, 2, 6, 1, 1, 10)
+        );
+    }
+
+    private static ShipData getShip(Team team,
+                                    Vector3 position,
+                                    Direction direction,
+                                    int speed, int coal,
+                                    int passengers,
+                                    int freeTurns,
+                                    int points) {
+        final ShipData ship = new ShipData();
+        ship.setTeam(team);
+        ship.setPosition(new Position(position.getQ(), position.getR(), position.getS()));
+        ship.setDirection(direction);
+        ship.setSpeed(speed);
+        ship.setCoal(coal);
+        ship.setPassengers(passengers);
+        ship.setFreeTurns(freeTurns);
+        ship.setPoints(points);
+
+        return ship;
     }
 
 }

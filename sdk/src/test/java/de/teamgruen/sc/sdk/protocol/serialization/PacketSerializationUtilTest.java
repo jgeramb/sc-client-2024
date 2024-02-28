@@ -1,9 +1,11 @@
 package de.teamgruen.sc.sdk.protocol.serialization;
 
 import de.teamgruen.sc.sdk.game.ExampleGameState;
-import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.protocol.XMLProtocolPacket;
-import de.teamgruen.sc.sdk.protocol.data.*;
+import de.teamgruen.sc.sdk.protocol.data.Direction;
+import de.teamgruen.sc.sdk.protocol.data.Move;
+import de.teamgruen.sc.sdk.protocol.data.State;
+import de.teamgruen.sc.sdk.protocol.data.Team;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.board.BoardData;
@@ -23,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -153,19 +154,12 @@ public class PacketSerializationUtilTest {
         assertEquals(Team.ONE, state.getStartTeam());
         assertEquals(Team.ONE, state.getCurrentTeam());
         assertEquals(6, state.getTurn());
+        assertEquals(ExampleGameState.getSampleShips(), state.getShips());
 
         final BoardData board = state.getBoard();
 
         assertEquals(ExampleGameState.getSampleSegments(), board.getSegments());
         assertEquals(Direction.DOWN_LEFT, board.getNextDirection());
-
-        final List<ShipData> ships = state.getShips();
-        final ShipData[] expectedShipDataArray = {
-                getShip(Team.ONE, new Vector3(5, 0, -5), Direction.LEFT, 1, 5, 2, 2, 16),
-                getShip(Team.TWO, new Vector3(4, 0, -4), Direction.RIGHT, 2, 6, 1, 1, 10)
-        };
-
-        assertArrayEquals(expectedShipDataArray, ships.toArray(new ShipData[0]));
 
         final Move lastMove = state.getLastMove();
         final Action[] expectedActions = {
@@ -280,26 +274,6 @@ public class PacketSerializationUtilTest {
                 new ScorePlayer(playerName, team),
                 new ScoreData(ScoreCause.REGULAR, reason, parts)
         );
-    }
-
-    private static ShipData getShip(Team team,
-                                    Vector3 position,
-                                    Direction direction,
-                                    int speed, int coal,
-                                    int passengers,
-                                    int freeTurns,
-                                    int points) {
-        final ShipData ship = new ShipData();
-        ship.setTeam(team);
-        ship.setPosition(new Position(position.getQ(), position.getR(), position.getS()));
-        ship.setDirection(direction);
-        ship.setSpeed(speed);
-        ship.setCoal(coal);
-        ship.setPassengers(passengers);
-        ship.setFreeTurns(freeTurns);
-        ship.setPoints(points);
-
-        return ship;
     }
 
 }

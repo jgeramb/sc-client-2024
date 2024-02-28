@@ -6,13 +6,12 @@ import de.teamgruen.sc.sdk.SoftwareChallengeClient;
 import de.teamgruen.sc.sdk.game.GameHandler;
 import de.teamgruen.sc.sdk.logging.AnsiColor;
 import de.teamgruen.sc.sdk.logging.Logger;
-import de.teamgruen.sc.sdk.protocol.exceptions.TcpCloseException;
 import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
 import jargs.gnu.CmdLineParser;
 
 public class SoftwareChallengePlayer {
 
-    private static final Logger LOGGER = new Logger();
+    private static final Logger LOGGER = new Logger(System.out);
 
     public static void main(String[] args) {
         final CmdLineParser parser = new CmdLineParser();
@@ -55,13 +54,7 @@ public class SoftwareChallengePlayer {
         final int port = (Integer) parser.getOptionValue(portOption, 13050);
         final SoftwareChallengeClient client = new SoftwareChallengeClient(host, port, gameHandler);
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                client.stop();
-            } catch (TcpCloseException ex) {
-                LOGGER.error("Error while disconnecting from server: " + ex.getMessage());
-            }
-        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(client::stop));
 
         try {
             client.start();

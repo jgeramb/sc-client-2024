@@ -13,7 +13,6 @@ import de.teamgruen.sc.sdk.protocol.data.board.BoardData;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreCause;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreData;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreFragment;
-import de.teamgruen.sc.sdk.protocol.exceptions.TcpCloseException;
 import de.teamgruen.sc.sdk.protocol.responses.JoinedRoomResponse;
 import de.teamgruen.sc.sdk.protocol.room.LeftPacket;
 import de.teamgruen.sc.sdk.protocol.room.MovePacket;
@@ -116,13 +115,9 @@ public class ClientPacketHandler {
                     this.gameHandler.onGameEnd(scores, result);
                 });
             }
-        } else if(xmlProtocolPacket instanceof LeftPacket) {
-            try {
-                this.client.stop();
-            } catch (TcpCloseException ex) {
-                this.gameHandler.onError("Failed to close connection: " + ex.getMessage());
-            }
-        } else
+        } else if(xmlProtocolPacket instanceof LeftPacket)
+            this.client.stop();
+        else
             this.gameHandler.onError("Unhandled packet: " + xmlProtocolPacket.getClass().getSimpleName());
     }
 

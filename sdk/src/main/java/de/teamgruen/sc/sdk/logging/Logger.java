@@ -21,10 +21,6 @@ public class Logger {
     @Setter
     private boolean debug;
 
-    public Logger() {
-        this(System.out);
-    }
-
     public void info(String message) {
         this.log(Level.INFO, message);
     }
