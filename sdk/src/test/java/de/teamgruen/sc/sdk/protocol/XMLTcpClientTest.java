@@ -1,8 +1,10 @@
 package de.teamgruen.sc.sdk.protocol;
 
+import de.teamgruen.sc.sdk.protocol.data.Move;
 import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
 import de.teamgruen.sc.sdk.protocol.requests.JoinGameRequest;
 import de.teamgruen.sc.sdk.protocol.responses.JoinedRoomResponse;
+import de.teamgruen.sc.sdk.protocol.room.MovePacket;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -11,10 +13,14 @@ import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class XMLTcpClientTest {
@@ -22,41 +28,15 @@ public class XMLTcpClientTest {
     private static final String HOST = "localhost";
 
     @Test
-    public void testConnect() throws IOException {
-        final Object readyLock = new Object(), connectLock = new Object();
-
-        new Thread(() -> {
-            try(ServerSocket serverSocket = new ServerSocket(20_000)) {
-                synchronized (readyLock) {
-                    readyLock.notify();
-                }
-
-                serverSocket.accept();
-
-                synchronized (connectLock) {
-                    connectLock.wait();
-                }
-            } catch (IOException | InterruptedException ignore) {
-            }
-        }).start();
-
-        synchronized (readyLock) {
-            try {
-                readyLock.wait();
-            } catch (InterruptedException ignore) {
-            }
-        }
-
-        final XMLTcpClient client = new XMLTcpClient(HOST, 20_000);
-        client.connect(packet -> {}, null);
-
-        assertTrue(client.isConnected());
-
-        synchronized (connectLock) {
-            connectLock.notify();
-        }
-
-        client.disconnect();
+    public void testConnect() {
+        openConnection(
+                20_000,
+                error -> {},
+                Collections.emptyList(),
+                socket -> {},
+                (client, packet) -> {},
+                (socket, xml) -> {}
+        );
     }
 
     @Test
@@ -67,12 +47,89 @@ public class XMLTcpClientTest {
     }
 
     @Test
-    public void testReadAndWrite() throws IOException {
-        final List<XMLProtocolPacket> receivedPackets = new ArrayList<>();
+    public void testReadAndWrite() {
+        final AtomicBoolean packetReceived = new AtomicBoolean(false),
+                protocolInitiated = new AtomicBoolean(false);
+
+        openConnection(
+                20_002,
+                error -> {},
+                List.of(new JoinGameRequest("test")),
+                socket -> {},
+                (client, packet) -> {
+                    if (packet instanceof JoinedRoomResponse) {
+                        packetReceived.set(true);
+
+                        client.disconnect();
+                    }
+                },
+                (socket, xml) -> {
+                    try {
+                        if (xml.equals("<protocol>")) {
+                            protocolInitiated.set(true);
+
+                            socket.getOutputStream().write(("<buffer>" + "x".repeat(512) + "</buffer>").getBytes());
+                            socket.getOutputStream().flush();
+                        } else if (protocolInitiated.get() && xml.equals("<join gameType=\"test\"/>")) {
+                            socket.getOutputStream().write("<protocol><joined roomId=\"test\"/>".getBytes());
+                            socket.getOutputStream().flush();
+                        }
+                    } catch (IOException ignore) {
+                    }
+                }
+        );
+
+        assertTrue(packetReceived.get());
+    }
+
+    @Test
+    public void testWrite_SerializationException() {
+        final AtomicBoolean errorReceived = new AtomicBoolean(false);
+
+        openConnection(
+                20_003,
+                error -> errorReceived.set(true),
+                List.of(new MovePacket("test", new Move(null))),
+                socket -> {},
+                (client, packet) -> {},
+                (socket, xml) -> {}
+        );
+
+        assertTrue(errorReceived.get());
+    }
+
+    @Test
+    public void testRead_DeserializationException() {
+        final AtomicBoolean errorReceived = new AtomicBoolean(false);
+
+        openConnection(
+                20_004,
+                error -> errorReceived.set(true),
+                List.of(new JoinGameRequest(null)),
+                socket -> {
+                    try {
+                        socket.getOutputStream().write("<protocol><invalid/>".getBytes());
+                        socket.getOutputStream().flush();
+                    } catch (IOException ignore) {
+                    }
+                },
+                (client, packet) -> {},
+                (socket, xml) -> {}
+        );
+
+        assertTrue(errorReceived.get());
+    }
+
+    private static void openConnection(int port,
+                                       Consumer<String> errorHandler,
+                                       List<XMLProtocolPacket> packetsToSend,
+                                       Consumer<Socket> clientConnectHook,
+                                       BiConsumer<XMLTcpClient, XMLProtocolPacket> packetHandler,
+                                       BiConsumer<Socket, String> serverXmlHandler) {
         final Object readyLock = new Object(), connectLock = new Object(), readLock = new Object();
 
         new Thread(() -> {
-            try(ServerSocket serverSocket = new ServerSocket(20_002)) {
+            try(ServerSocket serverSocket = new ServerSocket(port)) {
                 synchronized (readyLock) {
                     readyLock.notify();
                 }
@@ -83,10 +140,11 @@ public class XMLTcpClientTest {
                     connectLock.wait();
                 }
 
+                clientConnectHook.accept(socket);
+
                 final InputStream inputStream = socket.getInputStream();
                 final byte[] buffer = new byte[512];
                 int nRead;
-                boolean protocolInitiated = false;
 
                 while((nRead = inputStream.read(buffer)) > 0) {
                     StringBuilder builder = new StringBuilder(new String(buffer, 0, nRead, StandardCharsets.UTF_8));
@@ -99,17 +157,7 @@ public class XMLTcpClientTest {
                         }
                     }
 
-                    final String xml = builder.toString();
-
-                    if (xml.equals("<protocol>")) {
-                        protocolInitiated = true;
-
-                        socket.getOutputStream().write(("<buffer>" + "x".repeat(512) + "</buffer>").getBytes());
-                        socket.getOutputStream().flush();
-                    } else if (protocolInitiated && xml.equals("<join gameType=\"test\"/>")) {
-                        socket.getOutputStream().write("<protocol><joined roomId=\"test\"/>".getBytes());
-                        socket.getOutputStream().flush();
-                    }
+                    serverXmlHandler.accept(socket, builder.toString());
                 }
 
                 synchronized (readLock) {
@@ -124,28 +172,28 @@ public class XMLTcpClientTest {
                 readyLock.wait();
             }
 
-            final XMLTcpClient client = new XMLTcpClient(HOST, 20_002);
-            client.connect(packet -> {
-                if(packet instanceof JoinedRoomResponse) {
-                    receivedPackets.add(packet);
+            final XMLTcpClient client = new XMLTcpClient(HOST, port);
+            client.connect(packet -> packetHandler.accept(client, packet), (message) -> {
+                if(errorHandler != null)
+                    errorHandler.accept(message);
 
-                    client.disconnect();
-                }
-            }, message -> {});
+                client.disconnect();
+            });
 
             synchronized (connectLock) {
                 connectLock.notify();
             }
 
-            client.send(new JoinGameRequest("test"));
+            if(packetsToSend.isEmpty())
+                return;
+
+            client.send(packetsToSend.toArray(new XMLProtocolPacket[0]));
 
             synchronized (readLock) {
                 readLock.wait();
             }
-        } catch (InterruptedException ignore) {
+        } catch (TcpConnectException | InterruptedException ignore) {
         }
-
-        assertFalse(receivedPackets.isEmpty());
     }
 
 }

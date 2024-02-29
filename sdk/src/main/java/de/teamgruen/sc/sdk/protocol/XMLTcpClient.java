@@ -40,7 +40,7 @@ public class XMLTcpClient {
         }
 
         // read packets
-        this.readThread = new Thread(() -> {
+        (this.readThread = new Thread(() -> {
             if(!this.isConnected())
                 return;
 
@@ -57,19 +57,12 @@ public class XMLTcpClient {
                     if(nRead == buffer.length) {
                         final String tagName = Objects.requireNonNull(PacketSerializationUtil.parseXMLTagName(builder.toString()));
 
-                        boolean endTagMissing = false;
-
-                        while(in.available() > 0 || (endTagMissing = !builder.toString().contains("</" + tagName + ">"))) {
+                        while(System.currentTimeMillis() - readStart <= 2_500
+                                && (in.available() > 0 || !builder.toString().contains("</" + tagName + ">"))) {
                             nRead = in.read(buffer);
 
                             builder.append(new String(buffer, 0, nRead, StandardCharsets.UTF_8));
-
-                            if(System.currentTimeMillis() - readStart > 2_500)
-                                break;
                         }
-
-                        if(endTagMissing)
-                            continue;
                     }
 
                     String xml = builder.toString().strip();
@@ -90,14 +83,13 @@ public class XMLTcpClient {
                     }
                 }
             } catch (IOException ex) {
-                if(errorListener != null && !ex.getMessage().contains("closed") && !ex.getMessage().contains("reset"))
+                if(errorListener != null && ex.getMessage() != null && !ex.getMessage().contains("closed") && !ex.getMessage().contains("reset"))
                     errorListener.accept("Failed to read from InputStream: " + ex.getMessage());
             }
-        }, "ReadThread");
-        this.readThread.start();
+        }, "ReadThread")).start();
 
         // write packets
-        this.writeThread = new Thread(() -> {
+        (this.writeThread = new Thread(() -> {
             if(!this.isConnected())
                 return;
 
@@ -108,12 +100,7 @@ public class XMLTcpClient {
                 while(this.isConnected()) {
                     if(this.requestQueue.isEmpty()) {
                         synchronized (this.requestLock) {
-                            try {
-                                this.requestLock.wait();
-                            } catch (InterruptedException ex) {
-                                if(errorListener != null && ex.getMessage() != null)
-                                    errorListener.accept("Writing was interrupted: " + ex.getMessage());
-                            }
+                            this.requestLock.wait();
                         }
                     }
 
@@ -131,12 +118,11 @@ public class XMLTcpClient {
                         }
                     }
                 }
-            } catch (IOException ex) {
-                if(errorListener != null && !ex.getMessage().contains("closed") && !ex.getMessage().contains("reset"))
+            } catch (InterruptedException | IOException ex) {
+                if(errorListener != null && ex.getMessage() != null && !ex.getMessage().contains("closed") && !ex.getMessage().contains("reset"))
                     errorListener.accept("Failed to write to OutputStream: " + ex.getMessage());
             }
-        }, "WriteThread");
-        this.writeThread.start();
+        }, "WriteThread")).start();
     }
 
     public void disconnect() {
