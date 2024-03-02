@@ -74,6 +74,9 @@ public class Board {
         return this.counterCurrent.contains(position);
     }
 
+    /**
+     * Updates the counterCurrent list for the current segments
+     */
     public void updateCounterCurrent() {
         this.counterCurrent.clear();
 
@@ -98,6 +101,10 @@ public class Board {
         }
     }
 
+    /**
+     * Updates the segments and the counterCurrent list
+     * @param segmentDataList the new segments
+     */
     public void updateSegments(List<SegmentData> segmentDataList) {
         this.fields.clear();
         this.segments = segmentDataList.stream().map(segment -> {

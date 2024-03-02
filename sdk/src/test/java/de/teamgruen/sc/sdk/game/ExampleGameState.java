@@ -27,35 +27,28 @@ public class ExampleGameState extends GameState {
     }
 
     public static List<SegmentData> getSampleSegments() {
-        final Field water = FieldFactory.water(), island = FieldFactory.island();
+        final Field water = FieldFactory.water(),
+                island = FieldFactory.island(),
+                finish = FieldFactory.finish();
 
         return List.of(
-                /*
-                I 0 0 0
-                  0 I 0 0
-                    0 0 I 0
-                  0 0 0 I
-                0 0 0 0
-                */
                 getSegmentData(2, 0, -2, Direction.RIGHT,
-                        island, water, water, water, water,
+                        water, water, water, water, water,
+                        water, water, water, water, water,
                         water, island, water, water, water,
-                        water, water, island, water, water,
-                        water, water, water, island, water
+                        water, water, water, water, water
                 ),
-                /*
-                0         0
-                0 P     0 0
-                0 0  0  0 0
-                0 0  P  P P
-                  0  0  0
-                     0
-                */
                 getSegmentData(2, 4, -6, Direction.DOWN_RIGHT,
-                        water, water, water, FieldFactory.passenger(Direction.UP_LEFT, 1), water,
-                        water, water, FieldFactory.passenger(Direction.UP_RIGHT, 1), water, water,
                         water, FieldFactory.passenger(Direction.RIGHT, 1), water, water, water,
-                        FieldFactory.passenger(Direction.DOWN_RIGHT, 1), water, water, water, FieldFactory.finish()
+                        water, water, water, water, water,
+                        water, water, water, water, island,
+                        water, water, water, water, water
+                ),
+                getSegmentData(-2, 8, -6, Direction.DOWN_LEFT,
+                        FieldFactory.passenger(Direction.UP_LEFT, 1), water, water, island, water,
+                        water, water, water, water, island,
+                        water, water, water, water, water,
+                        water, finish, finish, finish, water
                 )
         );
     }

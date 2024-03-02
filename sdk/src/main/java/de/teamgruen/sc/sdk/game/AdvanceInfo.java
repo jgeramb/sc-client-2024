@@ -17,6 +17,13 @@ public class AdvanceInfo {
         this.distance++;
     }
 
+    /**
+     * Returns the end position of the advance.
+     *
+     * @param position  the start position
+     * @param direction the direction of the advance
+     * @return the end position
+     */
     public Vector3 getEndPosition(Vector3 position, Direction direction) {
         return position.copy().add(direction.toVector3().multiply(this.distance));
     }

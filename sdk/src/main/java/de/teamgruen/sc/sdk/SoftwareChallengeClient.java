@@ -22,6 +22,10 @@ public class SoftwareChallengeClient {
     @Setter
     private XMLTcpClient client;
 
+    /*
+     * @throws IllegalStateException if the client is already started
+     * @throws IllegalArgumentException if no GameHandler is provided
+     **/
     public void start() throws TcpConnectException {
         if(this.client != null)
             throw new IllegalStateException("Client already started");
@@ -47,6 +51,9 @@ public class SoftwareChallengeClient {
         }).start();
     }
 
+    /*
+     * @throws IllegalStateException if the client is not started
+     **/
     public void stop() {
         if(this.client == null)
             throw new IllegalStateException("Client not started");
@@ -58,6 +65,9 @@ public class SoftwareChallengeClient {
         }
     }
 
+    /*
+     * @throws IllegalStateException if the client is not started
+     **/
     public void sendPacket(XMLProtocolPacket packet) {
         if(this.client == null)
             throw new IllegalStateException("Client not started");

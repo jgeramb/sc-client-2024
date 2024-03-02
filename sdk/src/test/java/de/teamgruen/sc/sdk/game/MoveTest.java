@@ -138,21 +138,21 @@ public class MoveTest {
 
     @Test
     public void testGetMinTurns_Zero() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(1, -1, 0), Direction.RIGHT);
 
         assertEquals(0, move.getMinTurns(new ExampleGameState()));
     }
 
     @Test
     public void testGetMinTurns_One() {
-        final Move move = new Move(new Vector3(1, -1, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(2, -1, -1), Direction.RIGHT);
 
         assertEquals(1, move.getMinTurns(new ExampleGameState()));
     }
 
     @Test
     public void testGetMinTurns_Two() {
-        final Move move = new Move(new Vector3(4, 3, -7), Direction.DOWN_RIGHT);
+        final Move move = new Move(new Vector3(-1, 5, -4), Direction.DOWN_RIGHT);
 
         assertEquals(2, move.getMinTurns(new ExampleGameState()));
     }

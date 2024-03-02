@@ -32,6 +32,13 @@ public class PacketSerializationUtil {
         );
     }
 
+    /**
+     * Serializes a packet to XML.
+     *
+     * @param packet the packet to serialize
+     * @return The XML representation of the packet
+     * @throws SerializationException if the packet could not be serialized
+     */
     public static String serialize(Object packet) throws SerializationException {
         try {
             return XML_MAPPER.writeValueAsString(packet).strip();
@@ -40,6 +47,13 @@ public class PacketSerializationUtil {
         }
     }
 
+    /**
+     * Deserializes an XML string to a list of packets.
+     *
+     * @param xml the XML to deserialize
+     * @return The deserialized packets
+     * @throws DeserializationException if the XML could not be deserialized
+     */
     public static LinkedList<XMLProtocolPacket> deserialize(String xml) throws DeserializationException {
         if(xml == null)
             throw new IllegalArgumentException("XML cannot be null");
@@ -64,6 +78,13 @@ public class PacketSerializationUtil {
         return packets;
     }
 
+    /**
+     * Deserializes an XML string to a packet.
+     *
+     * @param xml the XML to deserialize
+     * @return The deserialized packet
+     * @throws DeserializationException if the XML could not be deserialized
+     */
     private static XMLProtocolPacket deserializeXML(String rootTag, String xml) throws DeserializationException {
         try {
             final Class<? extends XMLProtocolPacket> packetType = INCOMING_PACKET_TYPES.stream()
@@ -77,10 +98,23 @@ public class PacketSerializationUtil {
         }
     }
 
-    private static String getRootTag(Class<? extends XMLProtocolPacket> clazz) {
+    /**
+     * Gets the root tag of a packet class.
+     *
+     * @param clazz the packet class
+     * @throws NullPointerException if the class does not provide a root tag annotation
+     * @return The root tag of the packet class
+     */
+    private static String getRootTag(Class<? extends XMLProtocolPacket> clazz) throws NullPointerException {
         return Objects.requireNonNull(clazz.getAnnotation(JacksonXmlRootElement.class)).localName();
     }
 
+    /**
+     * Parses the tag name of an XML string.
+     *
+     * @param xml the XML to parse
+     * @return The tag name of the XML object
+     */
     public static String parseXMLTagName(String xml) {
         final Matcher matcher = XML_TAG_PATTERN.matcher(xml);
 

@@ -29,6 +29,13 @@ public class XMLTcpClient {
     private final String host;
     private final int port;
 
+    /**
+     * Connects to the server and starts the read and write threads.
+     *
+     * @param responseListener the listener for incoming packets
+     * @param errorListener the listener for errors
+     * @throws TcpConnectException if the connection fails
+     */
     public void connect(@NonNull Consumer<XMLProtocolPacket> responseListener,
                         Consumer<String> errorListener) throws TcpConnectException {
         try {
@@ -125,6 +132,9 @@ public class XMLTcpClient {
         }, "WriteThread")).start();
     }
 
+    /**
+     * Disconnects from the server and stops the read and write threads.
+     */
     public void disconnect() {
         if(!this.isConnected()) return;
 

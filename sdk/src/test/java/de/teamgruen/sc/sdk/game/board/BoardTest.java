@@ -4,6 +4,7 @@ import de.teamgruen.sc.sdk.game.ExampleGameState;
 import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
+import de.teamgruen.sc.sdk.protocol.data.board.fields.Island;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ public class BoardTest {
         final LinkedHashMap<Vector3, Field> actualFields = actualSegment.fields();
         final Map.Entry<Vector3, Field> actualField = actualFields.entrySet()
                 .stream()
-                .filter(entry -> entry.getKey().equals(new Vector3(2, 4, -6)))
+                .filter(entry -> entry.getKey().equals(new Vector3(3, 2, -5)))
                 .findFirst()
                 .orElse(null);
 
@@ -50,7 +51,7 @@ public class BoardTest {
 
         final Passenger actualPassenger = (Passenger) actualField.getValue();
 
-        assertEquals(Direction.UP_RIGHT, actualPassenger.getDirection());
+        assertEquals(Direction.RIGHT, actualPassenger.getDirection());
     }
 
     @Test
@@ -63,7 +64,11 @@ public class BoardTest {
                 new Vector3(2, 3, -5),
                 new Vector3(2, 4, -6),
                 new Vector3(1, 5, -6),
-                new Vector3(0, 6, -6)
+                new Vector3(0, 6, -6),
+                new Vector3(-1, 7, -6),
+                new Vector3(-2, 8, -6),
+                new Vector3(-3, 9, -6),
+                new Vector3(-4, 10, -6)
         );
 
         assertArrayEquals(vectorsToArray(expected), vectorsToArray(this.board.getCounterCurrent()));
@@ -76,24 +81,24 @@ public class BoardTest {
 
     @Test
     public void testGetFinishFields() {
-        assertTrue(this.board.getFinishFields().containsKey(new Vector3(0, 6, -6)));
+        assertTrue(this.board.getFinishFields().containsKey(new Vector3(-4, 10, -6)));
     }
 
     @Test
     public void testGetPassengerFields() {
-        final Field actualField = this.board.getPassengerFields().get(new Vector3(4, 4, -8));
+        final Field actualField = this.board.getPassengerFields().get(new Vector3(1, 7, -8));
 
         assertNotNull(actualField);
         assertInstanceOf(Passenger.class, actualField);
-        assertEquals(Direction.DOWN_RIGHT, ((Passenger) actualField).getDirection());
+        assertEquals(Direction.UP_LEFT, ((Passenger) actualField).getDirection());
     }
 
     @Test
     public void testGetFieldAt() {
-        final Field actualField = this.board.getFieldAt(new Vector3(2, 4, -6));
+        final Field actualField = this.board.getFieldAt(new Vector3(-1, 6, -5));
 
         assertNotNull(actualField);
-        assertInstanceOf(Passenger.class, actualField);
+        assertInstanceOf(Island.class, actualField);
     }
 
     @Test
@@ -103,12 +108,12 @@ public class BoardTest {
 
     @Test
     public void testIsBlocked_Island() {
-        assertTrue(this.board.isBlocked(new Vector3(1, -2, 1)));
+        assertTrue(this.board.isBlocked(new Vector3(-2, 6, -4)));
     }
 
     @Test
     public void testIsBlocked_Passenger() {
-        assertTrue(this.board.isBlocked(new Vector3(2, 4, -6)));
+        assertTrue(this.board.isBlocked(new Vector3(1, 7, -8)));
     }
 
     @Test
