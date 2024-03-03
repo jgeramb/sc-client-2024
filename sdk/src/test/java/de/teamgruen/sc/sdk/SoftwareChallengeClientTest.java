@@ -185,7 +185,7 @@ public class SoftwareChallengeClientTest {
                     assertInstanceOf(PrepareRoomRequest.class, packets[0]);
 
                     final PrepareRoomRequest request = (PrepareRoomRequest) packets[0];
-                    assertEquals("default", request.gameType());
+                    assertEquals("swc_2024_mississippi_queen", request.gameType());
 
                     final List<RoomSlot> expectedRoomSlots = List.of(
                             new RoomSlot("Player 1", true, true),

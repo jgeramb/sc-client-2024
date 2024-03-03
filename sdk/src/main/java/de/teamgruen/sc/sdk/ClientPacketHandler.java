@@ -35,6 +35,7 @@ public class ClientPacketHandler {
 
     private final SoftwareChallengeClient client;
     private final GameHandler gameHandler;
+    private final Object roomUpdateLock = new Object();
     private String roomId;
     private GameState gameState;
 
@@ -59,7 +60,8 @@ public class ClientPacketHandler {
         } else if(xmlProtocolPacket instanceof RoomPacket packet) {
             final String roomId = packet.getRoomId();
 
-            if (!Objects.equals(roomId, this.roomId) && !(this.gameHandler instanceof AdminGameHandler))
+            if ((this.roomId != null && !Objects.equals(roomId, this.roomId))
+                    && !(this.gameHandler instanceof AdminGameHandler))
                 return;
 
             final RoomMessage data = packet.getData();
@@ -68,7 +70,21 @@ public class ClientPacketHandler {
                 this.gameState = new GameState(message.getTeam());
 
                 this.gameHandler.onGameStart(this.gameState);
+
+                synchronized (this.roomUpdateLock) {
+                    this.roomUpdateLock.notifyAll();
+                }
             } else if (data instanceof MementoMessage message) {
+                synchronized (this.roomUpdateLock) {
+                    if(this.gameState == null) {
+                        try {
+                            this.roomUpdateLock.wait();
+                        } catch (InterruptedException ignore) {
+                            return;
+                        }
+                    }
+                }
+
                 final State state = message.getState();
                 final BoardData board = state.getBoard();
                 final Board stateBoard = this.gameState.getBoard();
@@ -88,11 +104,6 @@ public class ClientPacketHandler {
 
                 this.client.sendPacket(new MovePacket(this.roomId, new Move(actions)));
             } else if (data instanceof ResultMessage message) {
-                if(gameHandler instanceof AdminGameHandler adminGameHandler) {
-                    adminGameHandler.onGameEnd();
-                    return;
-                }
-
                 final List<ScoreFragment> fragments = message.getDefinition().getFragments();
 
                 message.getScores().getScores().forEach(entry -> {

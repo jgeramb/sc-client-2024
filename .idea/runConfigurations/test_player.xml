@@ -3,7 +3,7 @@
     <module name="player" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="de.teamgruen.sc.player.clients.*" />
+        <option name="PATTERN" value="de.teamgruen.sc.player.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

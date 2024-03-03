@@ -17,11 +17,6 @@ public class GameHandlerTest {
     }
 
     @Test
-    public void testDefaultOnGameEnd() {
-        assertThrows(UnsupportedOperationException.class, () -> (new GameHandler() {}).onGameEnd());
-    }
-
-    @Test
     public void testDefaultOnBoardUpdate() {
         assertThrows(UnsupportedOperationException.class, () -> (new GameHandler() {}).onBoardUpdate(null));
     }

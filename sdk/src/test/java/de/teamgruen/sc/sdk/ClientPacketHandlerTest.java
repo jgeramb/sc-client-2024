@@ -174,6 +174,35 @@ public class ClientPacketHandlerTest {
     }
 
     @Test
+    public void testHandlePacket_Room_MementoMessage_Interrupted() throws InterruptedException {
+        final ClientPacketHandler handler = new ClientPacketHandler(null, new GameHandler() {
+            @Override
+            public void onRoomJoin(String roomId) {
+            }
+        });
+        handler.handlePacket(new JoinedRoomResponse("test"));
+
+        final Object lock = new Object();
+        final Thread thread = new Thread(() -> {
+            synchronized (lock) {
+                lock.notify();
+            }
+
+            handler.handlePacket(new RoomPacket(
+                    "test",
+                    new MementoMessage(null)
+            ));
+        });
+        thread.start();
+
+        synchronized (lock) {
+            lock.wait();
+        }
+
+        thread.interrupt();
+    }
+
+    @Test
     public void testHandlePacket_Room_MementoMessage() {
         final AtomicBoolean called = new AtomicBoolean(false);
         final List<SegmentData> sampleSegments = ExampleGameState.getSampleSegments();
@@ -231,7 +260,7 @@ public class ClientPacketHandlerTest {
             }
         });
         handler.handlePacket(new JoinedRoomResponse("test"));
-        handler.handlePacket(new RoomPacket("test", new WelcomeMessage(Team.ONE)));
+        new Thread(() -> handler.handlePacket(new RoomPacket("test", new WelcomeMessage(Team.ONE)))).start();
         handler.handlePacket(new RoomPacket(
                 "test",
                 new MementoMessage(new State(
@@ -281,20 +310,6 @@ public class ClientPacketHandlerTest {
             handler.handlePacket(new RoomPacket("test", new MoveRequestMessage()));
 
         assertTrue(requestedAction.get() && sentPacket.get());
-    }
-
-    @Test
-    public void testHandlePacket_Room_Result_Admin() {
-        final AtomicBoolean called = new AtomicBoolean(false);
-
-        new ClientPacketHandler(null, new AdminGameHandler() {
-            @Override
-            public void onGameEnd() {
-                called.set(true);
-            }
-        }).handlePacket(getResultPacket(ScoreCause.UNKNOWN, Team.ONE));
-
-        assertTrue(called.get());
     }
 
     @Test

@@ -25,11 +25,6 @@ public abstract class BaseGameHandler implements GameHandler {
     }
 
     @Override
-    public void onGameEnd() {
-        this.logger.info("Game ended");
-    }
-
-    @Override
     public void onRoomJoin(String roomId) {
         this.logger.info("Joined room " + AnsiColor.PURPLE + roomId + AnsiColor.RESET);
     }
@@ -66,7 +61,7 @@ public abstract class BaseGameHandler implements GameHandler {
             }
         });
 
-        final String horizontalLine = AnsiColor.BLACK + "―".repeat(7 + maxValueLength.get()) + AnsiColor.RESET;
+        final String horizontalLine = AnsiColor.BLACK + "―".repeat(12 + maxValueLength.get()) + AnsiColor.RESET;
 
         this.logger.info(horizontalLine);
         scores.forEach((scoreFragment, score) -> {

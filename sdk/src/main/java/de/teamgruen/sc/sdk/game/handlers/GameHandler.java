@@ -19,9 +19,6 @@ public interface GameHandler {
     default void onGameStart(GameState gameState) {
         throw new UnsupportedOperationException("Not implemented");
     }
-    default void onGameEnd() {
-        throw new UnsupportedOperationException("Not implemented");
-    }
     default void onBoardUpdate(GameState gameState) {
         throw new UnsupportedOperationException("Not implemented");
     }

@@ -19,9 +19,12 @@ public class SoftwareChallengePlayer {
         final CmdLineParser.Option debugOption = parser.addBooleanOption('d', "debug");
         final CmdLineParser.Option hostOption = parser.addStringOption('h', "host");
         final CmdLineParser.Option portOption = parser.addIntegerOption('p', "port");
+
+        final CmdLineParser.Option playStyleOption = parser.addStringOption('s', "play-style");
+        final CmdLineParser.Option gameTypeOption = parser.addStringOption('g', "game-type");
         final CmdLineParser.Option reservationOption = parser.addStringOption('r', "reservation");
         final CmdLineParser.Option roomOption = parser.addStringOption('R', "room");
-        final CmdLineParser.Option playStyleOption = parser.addStringOption('s', "play-style");
+
         final CmdLineParser.Option testsOption = parser.addIntegerOption('t', "tests");
         final CmdLineParser.Option passwordOption = parser.addStringOption('P', "password");
         try {
@@ -68,10 +71,13 @@ public class SoftwareChallengePlayer {
                 final PlayerClient client = new PlayerClient(host, port, gameHandler);
                 client.connect();
 
+                final String gameType = (String) parser.getOptionValue(gameTypeOption, null);
                 final String reservation = (String) parser.getOptionValue(reservationOption, null);
                 final String room = (String) parser.getOptionValue(roomOption, null);
 
-                if (reservation != null)
+                if (gameType != null)
+                    client.joinGame(gameType);
+                else if (reservation != null)
                     client.joinPreparedRoom(reservation);
                 else if (room != null)
                     client.joinRoom(room);

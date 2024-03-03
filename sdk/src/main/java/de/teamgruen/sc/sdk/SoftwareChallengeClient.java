@@ -59,7 +59,7 @@ public class SoftwareChallengeClient {
 
     public void prepareRoom(String password) {
         this.client.send(new AuthenticationRequest(password));
-        this.client.send(new PrepareRoomRequest("default", false, List.of(
+        this.client.send(new PrepareRoomRequest("swc_2024_mississippi_queen", false, List.of(
                 new RoomSlot("Player 1", true, true),
                 new RoomSlot("Player 2", true, true)
         )));
