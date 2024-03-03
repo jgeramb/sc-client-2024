@@ -16,6 +16,7 @@ public class Client {
 
     protected void connect(GameHandler gameHandler) throws TcpConnectException {
         this.client = new SoftwareChallengeClient(host, port, gameHandler);
+        this.client.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
@@ -23,8 +24,6 @@ public class Client {
             } catch (IOException ignore) {
             }
         }));
-
-        this.client.start();
     }
 
     public void disconnect() throws IOException {
