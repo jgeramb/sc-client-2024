@@ -1,5 +1,7 @@
-package de.teamgruen.sc.sdk.game;
+package de.teamgruen.sc.sdk.game.handlers;
 
+import de.teamgruen.sc.sdk.game.GameResult;
+import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreFragment;
 
@@ -17,13 +19,16 @@ public interface GameHandler {
     default void onGameStart(GameState gameState) {
         throw new UnsupportedOperationException("Not implemented");
     }
+    default void onGameEnd() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
     default void onBoardUpdate(GameState gameState) {
         throw new UnsupportedOperationException("Not implemented");
     }
     default List<Action> getNextActions(GameState gameState) {
         throw new UnsupportedOperationException("Not implemented");
     }
-    default void onGameEnd(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
+    default void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
         throw new UnsupportedOperationException("Not implemented");
     }
 

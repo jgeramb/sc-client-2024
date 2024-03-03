@@ -1,4 +1,4 @@
-package de.teamgruen.sc.sdk.game;
+package de.teamgruen.sc.sdk.game.handlers;
 
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +17,11 @@ public class GameHandlerTest {
     }
 
     @Test
+    public void testDefaultOnGameEnd() {
+        assertThrows(UnsupportedOperationException.class, () -> (new GameHandler() {}).onGameEnd());
+    }
+
+    @Test
     public void testDefaultOnBoardUpdate() {
         assertThrows(UnsupportedOperationException.class, () -> (new GameHandler() {}).onBoardUpdate(null));
     }
@@ -27,8 +32,8 @@ public class GameHandlerTest {
     }
 
     @Test
-    public void testDefaultOnGameEnd() {
-        assertThrows(UnsupportedOperationException.class, () -> (new GameHandler() {}).onGameEnd(null, null));
+    public void testDefaultOnResults() {
+        assertThrows(UnsupportedOperationException.class, () -> (new GameHandler() {}).onResults(null, null));
     }
 
     @Test

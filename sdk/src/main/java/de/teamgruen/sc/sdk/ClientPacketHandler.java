@@ -1,11 +1,15 @@
 package de.teamgruen.sc.sdk;
 
-import de.teamgruen.sc.sdk.game.GameHandler;
 import de.teamgruen.sc.sdk.game.GamePhase;
 import de.teamgruen.sc.sdk.game.GameResult;
 import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.board.Board;
+import de.teamgruen.sc.sdk.game.handlers.AdminGameHandler;
+import de.teamgruen.sc.sdk.game.handlers.GameHandler;
 import de.teamgruen.sc.sdk.protocol.XMLProtocolPacket;
+import de.teamgruen.sc.sdk.protocol.admin.AdminXMLProtocolPacket;
+import de.teamgruen.sc.sdk.protocol.admin.PlayerJoinedRoomResponse;
+import de.teamgruen.sc.sdk.protocol.admin.PreparedRoomResponse;
 import de.teamgruen.sc.sdk.protocol.data.Move;
 import de.teamgruen.sc.sdk.protocol.data.State;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
@@ -13,6 +17,7 @@ import de.teamgruen.sc.sdk.protocol.data.board.BoardData;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreCause;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreData;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreFragment;
+import de.teamgruen.sc.sdk.protocol.responses.ErrorPacket;
 import de.teamgruen.sc.sdk.protocol.responses.JoinedRoomResponse;
 import de.teamgruen.sc.sdk.protocol.room.LeftPacket;
 import de.teamgruen.sc.sdk.protocol.room.MovePacket;
@@ -34,7 +39,19 @@ public class ClientPacketHandler {
     private GameState gameState;
 
     public void handlePacket(XMLProtocolPacket xmlProtocolPacket) {
-        if (xmlProtocolPacket instanceof JoinedRoomResponse packet) {
+        if(xmlProtocolPacket instanceof ErrorPacket packet)
+            this.gameHandler.onError(packet.getMessage());
+        else if(xmlProtocolPacket instanceof AdminXMLProtocolPacket) {
+            if(!(this.gameHandler instanceof AdminGameHandler adminGameHandler))
+                throw new IllegalStateException("Admin packet received but game handler is not an admin handler");
+
+            if(xmlProtocolPacket instanceof PreparedRoomResponse packet)
+                adminGameHandler.onRoomCreated(packet.getRoomId(), packet.getReservations());
+            else if(xmlProtocolPacket instanceof PlayerJoinedRoomResponse packet)
+                adminGameHandler.onPlayerJoined(packet.getPlayerCount());
+            else
+                this.gameHandler.onError("Unhandled admin packet: " + xmlProtocolPacket.getClass().getSimpleName());
+        } else if (xmlProtocolPacket instanceof JoinedRoomResponse packet) {
             final String roomId = packet.getRoomId();
 
             this.roomId = roomId;
@@ -42,7 +59,7 @@ public class ClientPacketHandler {
         } else if(xmlProtocolPacket instanceof RoomPacket packet) {
             final String roomId = packet.getRoomId();
 
-            if (!Objects.equals(roomId, this.roomId))
+            if (!Objects.equals(roomId, this.roomId) && !(this.gameHandler instanceof AdminGameHandler))
                 return;
 
             final RoomMessage data = packet.getData();
@@ -71,6 +88,11 @@ public class ClientPacketHandler {
 
                 this.client.sendPacket(new MovePacket(this.roomId, new Move(actions)));
             } else if (data instanceof ResultMessage message) {
+                if(gameHandler instanceof AdminGameHandler adminGameHandler) {
+                    adminGameHandler.onGameEnd();
+                    return;
+                }
+
                 final List<ScoreFragment> fragments = message.getDefinition().getFragments();
 
                 message.getScores().getScores().forEach(entry -> {
@@ -113,7 +135,7 @@ public class ClientPacketHandler {
                                 ? GameResult.WIN
                                 : GameResult.LOOSE;
 
-                    this.gameHandler.onGameEnd(scores, result);
+                    this.gameHandler.onResults(scores, result);
                 });
             }
         } else if(xmlProtocolPacket instanceof LeftPacket) {

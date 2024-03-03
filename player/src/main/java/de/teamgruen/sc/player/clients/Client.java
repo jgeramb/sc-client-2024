@@ -1,0 +1,34 @@
+package de.teamgruen.sc.player.clients;
+
+import de.teamgruen.sc.sdk.SoftwareChallengeClient;
+import de.teamgruen.sc.sdk.game.handlers.GameHandler;
+import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
+import lombok.RequiredArgsConstructor;
+
+import java.io.IOException;
+
+@RequiredArgsConstructor
+public class Client {
+
+    protected final String host;
+    protected final int port;
+    protected SoftwareChallengeClient client;
+
+    protected void connect(GameHandler gameHandler) throws TcpConnectException {
+        this.client = new SoftwareChallengeClient(host, port, gameHandler);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                this.disconnect();
+            } catch (IOException ignore) {
+            }
+        }));
+
+        this.client.start();
+    }
+
+    public void disconnect() throws IOException {
+        this.client.stop();
+    }
+
+}

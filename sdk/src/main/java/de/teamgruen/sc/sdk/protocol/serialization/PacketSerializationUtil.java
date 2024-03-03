@@ -5,8 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import de.teamgruen.sc.sdk.protocol.XMLProtocolPacket;
+import de.teamgruen.sc.sdk.protocol.admin.PlayerJoinedRoomResponse;
+import de.teamgruen.sc.sdk.protocol.admin.PreparedRoomResponse;
 import de.teamgruen.sc.sdk.protocol.exceptions.DeserializationException;
 import de.teamgruen.sc.sdk.protocol.exceptions.SerializationException;
+import de.teamgruen.sc.sdk.protocol.responses.ErrorPacket;
 import de.teamgruen.sc.sdk.protocol.responses.JoinedRoomResponse;
 import de.teamgruen.sc.sdk.protocol.room.LeftPacket;
 import de.teamgruen.sc.sdk.protocol.room.RoomPacket;
@@ -26,9 +29,13 @@ public class PacketSerializationUtil {
 
     static {
         INCOMING_PACKET_TYPES = List.of(
+                ErrorPacket.class,
                 JoinedRoomResponse.class,
                 RoomPacket.class,
-                LeftPacket.class
+                LeftPacket.class,
+                // admin
+                PreparedRoomResponse.class,
+                PlayerJoinedRoomResponse.class
         );
     }
 

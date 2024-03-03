@@ -94,8 +94,13 @@ public class XMLTcpClient {
                     }
                 }
             } catch (IOException ex) {
-                if(errorListener != null && ex.getMessage() != null && !ex.getMessage().contains("closed") && !ex.getMessage().contains("reset"))
-                    errorListener.accept("Failed to read from InputStream: " + ex.getMessage());
+                if(errorListener == null || ex.getMessage() == null)
+                    return;
+
+                if(ex.getMessage().contains("closed") || ex.getMessage().contains("reset"))
+                    return;
+
+                errorListener.accept("Failed to read from InputStream: " + ex.getMessage());
             }
         }, "ReadThread")).start();
 
@@ -129,8 +134,13 @@ public class XMLTcpClient {
                     }
                 }
             } catch (InterruptedException | IOException | RuntimeException ex) {
-                if(errorListener != null && ex.getMessage() != null && !ex.getMessage().contains("closed") && !ex.getMessage().contains("reset"))
-                    errorListener.accept("Failed to write to OutputStream: " + ex.getMessage());
+                if(errorListener == null || ex.getMessage() == null)
+                    return;
+
+                if(ex.getMessage().contains("closed") || ex.getMessage().contains("reset"))
+                    return;
+
+                errorListener.accept("Failed to write to OutputStream: " + ex.getMessage());
             }
         }, "WriteThread")).start();
     }

@@ -1,11 +1,15 @@
 package de.teamgruen.sc.sdk;
 
 import de.teamgruen.sc.sdk.game.ExampleGameState;
-import de.teamgruen.sc.sdk.game.GameHandler;
 import de.teamgruen.sc.sdk.game.GameResult;
 import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.board.Ship;
+import de.teamgruen.sc.sdk.game.handlers.AdminGameHandler;
+import de.teamgruen.sc.sdk.game.handlers.GameHandler;
 import de.teamgruen.sc.sdk.protocol.XMLProtocolPacket;
+import de.teamgruen.sc.sdk.protocol.admin.AdminXMLProtocolPacket;
+import de.teamgruen.sc.sdk.protocol.admin.PlayerJoinedRoomResponse;
+import de.teamgruen.sc.sdk.protocol.admin.PreparedRoomResponse;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.ShipData;
 import de.teamgruen.sc.sdk.protocol.data.State;
@@ -17,6 +21,7 @@ import de.teamgruen.sc.sdk.protocol.data.board.FieldArray;
 import de.teamgruen.sc.sdk.protocol.data.board.SegmentData;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.scores.*;
+import de.teamgruen.sc.sdk.protocol.responses.ErrorPacket;
 import de.teamgruen.sc.sdk.protocol.responses.JoinedRoomResponse;
 import de.teamgruen.sc.sdk.protocol.room.LeftPacket;
 import de.teamgruen.sc.sdk.protocol.room.MovePacket;
@@ -34,6 +39,76 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ClientPacketHandlerTest {
+
+    @Test
+    public void testHandlePacket_Error() {
+        final AtomicBoolean called = new AtomicBoolean(false);
+
+        new ClientPacketHandler(null, new AdminGameHandler() {
+            @Override
+            public void onError(String message) {
+                assertEquals("test", message);
+
+                called.set(true);
+            }
+        }).handlePacket(new ErrorPacket("test"));
+
+        assertTrue(called.get());
+    }
+
+    @Test
+    public void testHandlePacket_NoAdminGameHandler() {
+        final ClientPacketHandler packetHandler = new ClientPacketHandler(null, new GameHandler() {});
+
+        assertThrows(IllegalStateException.class, () -> packetHandler.handlePacket(new PlayerJoinedRoomResponse("test", 2)));
+    }
+
+    @Test
+    public void testHandlePacket_PreparedRoom() {
+        final AtomicBoolean called = new AtomicBoolean(false);
+
+        new ClientPacketHandler(null, new AdminGameHandler() {
+            @Override
+            public void onRoomCreated(String roomId, List<String> reservations) {
+                assertEquals("test", roomId);
+                assertEquals(List.of("test1", "test2"), reservations);
+
+                called.set(true);
+            }
+        }).handlePacket(new PreparedRoomResponse("test", List.of("test1", "test2")));
+
+        assertTrue(called.get());
+    }
+
+    @Test
+    public void testHandlePacket_PlayerJoinedRoom() {
+        final AtomicBoolean called = new AtomicBoolean(false);
+
+        new ClientPacketHandler(null, new AdminGameHandler() {
+            @Override
+            public void onPlayerJoined(int playerCount) {
+                assertEquals(2, playerCount);
+
+                called.set(true);
+            }
+        }).handlePacket(new PlayerJoinedRoomResponse("test", 2));
+
+        assertTrue(called.get());
+    }
+
+    @Test
+    public void testHandlePacket_UnknownAdmin() {
+        final AtomicBoolean called = new AtomicBoolean(false);
+
+        new ClientPacketHandler(null, new AdminGameHandler() {
+            @Override
+            public void onError(String message) {
+                called.set(true);
+            }
+        }).handlePacket(new AdminXMLProtocolPacket() {});
+
+        assertTrue(called.get());
+    }
 
     @Test
     public void testHandlePacket_JoinedRoom() {
@@ -209,6 +284,20 @@ public class ClientPacketHandlerTest {
     }
 
     @Test
+    public void testHandlePacket_Room_Result_Admin() {
+        final AtomicBoolean called = new AtomicBoolean(false);
+
+        new ClientPacketHandler(null, new AdminGameHandler() {
+            @Override
+            public void onGameEnd() {
+                called.set(true);
+            }
+        }).handlePacket(getResultPacket(ScoreCause.UNKNOWN, Team.ONE));
+
+        assertTrue(called.get());
+    }
+
+    @Test
     public void testHandlePacket_Room_Result() {
         final AtomicBoolean called = new AtomicBoolean(false);
 
@@ -222,7 +311,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameEnd(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
+            public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
                 final List<ScoreFragment> expectedFragments = getSampleFragments();
                 final LinkedHashMap<ScoreFragment, Integer> expectedScoresMap = new LinkedHashMap<>();
                 expectedScoresMap.put(expectedFragments.get(0), 1);
@@ -382,7 +471,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameEnd(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
+            public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
                 assertEquals(GameResult.LOOSE, result);
 
                 called.set(true);
@@ -409,7 +498,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameEnd(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
+            public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
                 assertEquals(GameResult.DRAW, result);
 
                 called.set(true);

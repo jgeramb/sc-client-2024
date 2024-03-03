@@ -2,10 +2,11 @@ package de.teamgruen.sc.sdk.protocol.serialization;
 
 import de.teamgruen.sc.sdk.game.ExampleGameState;
 import de.teamgruen.sc.sdk.protocol.XMLProtocolPacket;
-import de.teamgruen.sc.sdk.protocol.data.Direction;
-import de.teamgruen.sc.sdk.protocol.data.Move;
-import de.teamgruen.sc.sdk.protocol.data.State;
-import de.teamgruen.sc.sdk.protocol.data.Team;
+import de.teamgruen.sc.sdk.protocol.admin.AuthenticationRequest;
+import de.teamgruen.sc.sdk.protocol.admin.PlayerJoinedRoomResponse;
+import de.teamgruen.sc.sdk.protocol.admin.PrepareRoomRequest;
+import de.teamgruen.sc.sdk.protocol.admin.PreparedRoomResponse;
+import de.teamgruen.sc.sdk.protocol.data.*;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.board.BoardData;
@@ -15,6 +16,7 @@ import de.teamgruen.sc.sdk.protocol.exceptions.SerializationException;
 import de.teamgruen.sc.sdk.protocol.requests.JoinGameRequest;
 import de.teamgruen.sc.sdk.protocol.requests.JoinPreparedRoomRequest;
 import de.teamgruen.sc.sdk.protocol.requests.JoinRoomRequest;
+import de.teamgruen.sc.sdk.protocol.responses.ErrorPacket;
 import de.teamgruen.sc.sdk.protocol.responses.JoinedRoomResponse;
 import de.teamgruen.sc.sdk.protocol.room.LeftPacket;
 import de.teamgruen.sc.sdk.protocol.room.MovePacket;
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -66,6 +69,18 @@ public class PacketSerializationUtilTest {
     }
 
     @Test
+    public void testDeserialize_ErrorPacket() {
+        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<errorpacket message=\"test\" />");
+
+        assertEquals(1, packets.size());
+        assertInstanceOf(ErrorPacket.class, packets.get(0));
+
+        final ErrorPacket packet = (ErrorPacket) packets.get(0);
+
+        assertEquals("test", packet.getMessage());
+    }
+
+    @Test
     public void testDeserialize_Joined() {
         final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<joined roomId=\"test\"/>");
 
@@ -75,6 +90,32 @@ public class PacketSerializationUtilTest {
         final JoinedRoomResponse packet = (JoinedRoomResponse) packets.get(0);
 
         assertEquals("test", packet.getRoomId());
+    }
+
+    @Test
+    public void testDeserialize_Prepared() {
+        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<prepared roomId=\"test\"><reservation>test2</reservation><reservation>test3</reservation></prepared>");
+
+        assertEquals(1, packets.size());
+        assertInstanceOf(PreparedRoomResponse.class, packets.get(0));
+
+        final PreparedRoomResponse packet = (PreparedRoomResponse) packets.get(0);
+
+        assertEquals("test", packet.getRoomId());
+        assertEquals(List.of("test2", "test3"), packet.getReservations());
+    }
+
+    @Test
+    public void testDeserialize_PlayerJoinedRoom() {
+        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<joinedGameRoom roomId=\"test\" playerCount=\"2\"/>");
+
+        assertEquals(1, packets.size());
+        assertInstanceOf(PlayerJoinedRoomResponse.class, packets.get(0));
+
+        final PlayerJoinedRoomResponse packet = (PlayerJoinedRoomResponse) packets.get(0);
+
+        assertEquals("test", packet.getRoomId());
+        assertEquals(2, packet.getPlayerCount());
     }
 
     @Test
@@ -267,6 +308,21 @@ public class PacketSerializationUtilTest {
         final String xml = PacketSerializationUtil.serialize(new JoinRoomRequest("test"));
 
         assertEquals("<joinRoom roomId=\"test\"/>", xml);
+    }
+
+    @Test
+    public void testSerialize_Authenticate() {
+        assertEquals("<authenticate password=\"test\"/>", PacketSerializationUtil.serialize(new AuthenticationRequest("test")));
+    }
+
+    @Test
+    public void testSerialize_PrepareRoom() {
+        final PrepareRoomRequest packet = new PrepareRoomRequest("test", true, List.of(
+                new RoomSlot("test2", true, true),
+                new RoomSlot("test3", false, false)
+        ));
+
+        assertEquals("<prepare gameType=\"test\" pause=\"true\"><slot displayName=\"test2\" canTimeout=\"true\" reserved=\"true\"/><slot displayName=\"test3\" canTimeout=\"false\" reserved=\"false\"/></prepare>", PacketSerializationUtil.serialize(packet));
     }
 
     private static ScoreEntry getScoreEntry(String playerName, Team team, String reason, int[] parts) {

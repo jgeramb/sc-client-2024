@@ -1,8 +1,8 @@
 package de.teamgruen.sc.player.handlers;
 
-import de.teamgruen.sc.sdk.game.GameHandler;
 import de.teamgruen.sc.sdk.game.GameResult;
 import de.teamgruen.sc.sdk.game.GameState;
+import de.teamgruen.sc.sdk.game.handlers.GameHandler;
 import de.teamgruen.sc.sdk.logging.AnsiColor;
 import de.teamgruen.sc.sdk.logging.Logger;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreFragment;
@@ -25,12 +25,17 @@ public abstract class BaseGameHandler implements GameHandler {
     }
 
     @Override
+    public void onGameEnd() {
+        this.logger.info("Game ended");
+    }
+
+    @Override
     public void onRoomJoin(String roomId) {
         this.logger.info("Joined room " + AnsiColor.PURPLE + roomId + AnsiColor.RESET);
     }
 
     @Override
-    public void onGameEnd(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
+    public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
         final int maxNameLength = scores.keySet()
                 .stream()
                 .mapToInt(scoreFragment -> scoreFragment.getName().length())

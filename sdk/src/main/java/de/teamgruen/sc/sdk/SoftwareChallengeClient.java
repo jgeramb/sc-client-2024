@@ -1,8 +1,11 @@
 package de.teamgruen.sc.sdk;
 
-import de.teamgruen.sc.sdk.game.GameHandler;
+import de.teamgruen.sc.sdk.game.handlers.GameHandler;
 import de.teamgruen.sc.sdk.protocol.XMLProtocolPacket;
 import de.teamgruen.sc.sdk.protocol.XMLTcpClient;
+import de.teamgruen.sc.sdk.protocol.admin.AuthenticationRequest;
+import de.teamgruen.sc.sdk.protocol.admin.PrepareRoomRequest;
+import de.teamgruen.sc.sdk.protocol.data.RoomSlot;
 import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
 import de.teamgruen.sc.sdk.protocol.requests.JoinGameRequest;
 import de.teamgruen.sc.sdk.protocol.requests.JoinPreparedRoomRequest;
@@ -11,6 +14,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.IOException;
+import java.util.List;
 
 public class SoftwareChallengeClient {
 
@@ -51,6 +55,14 @@ public class SoftwareChallengeClient {
             throw new IllegalStateException("Client not started");
 
         this.client.disconnect();
+    }
+
+    public void prepareRoom(String password) {
+        this.client.send(new AuthenticationRequest(password));
+        this.client.send(new PrepareRoomRequest("default", false, List.of(
+                new RoomSlot("Player 1", true, true),
+                new RoomSlot("Player 2", true, true)
+        )));
     }
 
     public void sendPacket(XMLProtocolPacket packet) {

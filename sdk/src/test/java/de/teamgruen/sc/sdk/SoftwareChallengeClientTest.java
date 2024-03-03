@@ -1,9 +1,12 @@
 package de.teamgruen.sc.sdk;
 
-import de.teamgruen.sc.sdk.game.GameHandler;
+import de.teamgruen.sc.sdk.game.handlers.GameHandler;
 import de.teamgruen.sc.sdk.protocol.TestSocket;
 import de.teamgruen.sc.sdk.protocol.XMLProtocolPacket;
 import de.teamgruen.sc.sdk.protocol.XMLTcpClient;
+import de.teamgruen.sc.sdk.protocol.admin.AuthenticationRequest;
+import de.teamgruen.sc.sdk.protocol.admin.PrepareRoomRequest;
+import de.teamgruen.sc.sdk.protocol.data.RoomSlot;
 import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
 import de.teamgruen.sc.sdk.protocol.requests.JoinGameRequest;
 import de.teamgruen.sc.sdk.protocol.requests.JoinPreparedRoomRequest;
@@ -30,9 +33,19 @@ public class SoftwareChallengeClientTest {
 
     @Test
     public void testStart_Closed() {
+        final SoftwareChallengeClient client = new SoftwareChallengeClient("localhost", 13050, new GameHandler() {});
+        client.getClient().setSocket(new TestSocket(
+                true,
+                false,
+                false,
+                false,
+                new LinkedList<>(),
+                xml -> {}
+        ));
+
         assertThrows(
                 TcpConnectException.class,
-                new SoftwareChallengeClient("localhost", 13050, new GameHandler() {})::start
+                client::start
         );
     }
 
@@ -149,6 +162,46 @@ public class SoftwareChallengeClientTest {
         client.sendPacket(new RoomPacket());
 
         assertTrue(sent.get());
+    }
+
+    @Test
+    public void testPrepareRoom() {
+        final AtomicBoolean authenticated = new AtomicBoolean(false),
+                prepared = new AtomicBoolean(false);
+        final SoftwareChallengeClient client = new SoftwareChallengeClient("", 0, null);
+        client.setClient(new XMLTcpClient("", 0) {
+            @Override
+            public void send(XMLProtocolPacket... packets) {
+                assertTrue(packets.length > 0);
+
+                if(!authenticated.get()) {
+                    assertInstanceOf(AuthenticationRequest.class, packets[0]);
+
+                    final AuthenticationRequest request = (AuthenticationRequest) packets[0];
+                    assertEquals("test", request.password());
+
+                    authenticated.set(true);
+                } else if(!prepared.get()) {
+                    assertInstanceOf(PrepareRoomRequest.class, packets[0]);
+
+                    final PrepareRoomRequest request = (PrepareRoomRequest) packets[0];
+                    assertEquals("default", request.gameType());
+
+                    final List<RoomSlot> expectedRoomSlots = List.of(
+                            new RoomSlot("Player 1", true, true),
+                            new RoomSlot("Player 2", true, true)
+                    );
+
+                    assertEquals(expectedRoomSlots, request.slots());
+
+                    prepared.set(true);
+                }
+            }
+        });
+        client.prepareRoom("test");
+
+        assertTrue(authenticated.get());
+        assertTrue(prepared.get());
     }
 
     @Test
