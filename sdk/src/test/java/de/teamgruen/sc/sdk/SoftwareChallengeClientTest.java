@@ -1,6 +1,7 @@
 package de.teamgruen.sc.sdk;
 
 import de.teamgruen.sc.sdk.game.GameHandler;
+import de.teamgruen.sc.sdk.protocol.TestSocket;
 import de.teamgruen.sc.sdk.protocol.XMLProtocolPacket;
 import de.teamgruen.sc.sdk.protocol.XMLTcpClient;
 import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
@@ -11,8 +12,8 @@ import de.teamgruen.sc.sdk.protocol.room.RoomPacket;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,51 +32,58 @@ public class SoftwareChallengeClientTest {
     public void testStart_Closed() {
         assertThrows(
                 TcpConnectException.class,
-                new SoftwareChallengeClient("localhost", 20_000, new GameHandler() {})::start
+                new SoftwareChallengeClient("localhost", 13050, new GameHandler() {})::start
         );
     }
 
     @Test
     public void testStart_AlreadyStarted() throws IOException {
-        try(ServerSocket ignored = new ServerSocket(20_001)) {
-            final SoftwareChallengeClient client = new SoftwareChallengeClient("localhost", 20_001, new GameHandler() {});
-            client.start();
+        final SoftwareChallengeClient client = new SoftwareChallengeClient("localhost", 13050, new GameHandler() {});
+        client.getClient().setSocket(new TestSocket(
+                false,
+                false,
+                false,
+                false,
+                new LinkedList<>(),
+                xml -> {}
+        ));
+        client.start();
 
-            assertThrows(IllegalStateException.class, client::start);
-        }
+        assertThrows(IllegalStateException.class, client::start);
     }
 
     @Test
     public void testStart() throws IOException, InterruptedException {
-        final AtomicBoolean joined = new AtomicBoolean(false);
-        final Object receiveLock = new Object();
+        final Object lock = new Object();
+        final AtomicBoolean roomJoined = new AtomicBoolean(false);
 
-        try(ServerSocket ignored = new ServerSocket(20_002)) {
-            new SoftwareChallengeClient("localhost", 20_002, new GameHandler() {
-                @Override
-                public void onRoomJoin(String roomId) {
-                    assertEquals("test", roomId);
+        final SoftwareChallengeClient client = new SoftwareChallengeClient("localhost", 13050, new GameHandler() {
+            @Override
+            public void onRoomJoin(String roomId) {
+                assertEquals("test", roomId);
 
-                    joined.set(true);
+                roomJoined.set(true);
 
-                    synchronized (receiveLock) {
-                        receiveLock.notify();
-                    }
+                synchronized (lock) {
+                    lock.notify();
                 }
-            }).start();
-
-            final Socket socket = ignored.accept();
-            assertNotNull(socket);
-
-            socket.getOutputStream().write("<protocol><joined roomId=\"test\"/>".getBytes());
-            socket.getOutputStream().flush();
-
-            synchronized (receiveLock) {
-                receiveLock.wait();
             }
+        });
+        client.getClient().setSocket(new TestSocket(
+                false,
+                false,
+                false,
+                false,
+                new LinkedList<>(List.of("<protocol>", "<joined roomId=\"test\"/>")),
+                xml -> {}
+        ));
+        client.start();
+
+        synchronized (lock) {
+            lock.wait(250);
         }
 
-        assertTrue(joined.get());
+        assertTrue(roomJoined.get());
     }
 
     @Test
@@ -87,27 +95,42 @@ public class SoftwareChallengeClientTest {
     }
 
     @Test
-    public void testStop() throws IOException {
-        try(ServerSocket ignored = new ServerSocket(20_003)) {
-            final SoftwareChallengeClient client = new SoftwareChallengeClient("localhost", 20_003, new GameHandler() {
-                @Override
-                public void onError(String message) {
-                }
-            });
-            client.start();
+    public void testStop_Error() throws IOException {
+        final SoftwareChallengeClient client = new SoftwareChallengeClient("localhost", 13050, new GameHandler() {
+            @Override
+            public void onError(String message) {
+            }
+        });
+        client.getClient().setSocket(new TestSocket(
+                false,
+                true,
+                false,
+                false,
+                new LinkedList<>(),
+                xml -> {}
+        ));
+        client.start();
 
-            ignored.accept();
-
-            client.stop();
-        }
+        assertThrows(IOException.class, client::stop);
     }
 
     @Test
-    public void testSendPacket_NotStarted() {
-        assertThrows(
-                IllegalStateException.class,
-                () -> new SoftwareChallengeClient("", 0, null).sendPacket(new XMLProtocolPacket() {})
-        );
+    public void testStop() throws IOException {
+        final SoftwareChallengeClient client = new SoftwareChallengeClient("localhost", 13050, new GameHandler() {
+            @Override
+            public void onError(String message) {
+            }
+        });
+        client.getClient().setSocket(new TestSocket(
+                false,
+                false,
+                false,
+                false,
+                new LinkedList<>(),
+                xml -> {}
+        ));
+        client.start();
+        client.stop();
     }
 
     @Test

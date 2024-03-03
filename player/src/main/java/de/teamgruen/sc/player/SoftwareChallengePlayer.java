@@ -9,6 +9,8 @@ import de.teamgruen.sc.sdk.logging.Logger;
 import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
 import jargs.gnu.CmdLineParser;
 
+import java.io.IOException;
+
 public class SoftwareChallengePlayer {
 
     private static final Logger LOGGER = new Logger(System.out);
@@ -54,7 +56,12 @@ public class SoftwareChallengePlayer {
         final int port = (Integer) parser.getOptionValue(portOption, 13050);
         final SoftwareChallengeClient client = new SoftwareChallengeClient(host, port, gameHandler);
 
-        Runtime.getRuntime().addShutdownHook(new Thread(client::stop));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                client.stop();
+            } catch (IOException ignore) {
+            }
+        }));
 
         try {
             client.start();

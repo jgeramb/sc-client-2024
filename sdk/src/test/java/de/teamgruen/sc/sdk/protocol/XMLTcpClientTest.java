@@ -5,195 +5,257 @@ import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
 import de.teamgruen.sc.sdk.protocol.requests.JoinGameRequest;
 import de.teamgruen.sc.sdk.protocol.responses.JoinedRoomResponse;
 import de.teamgruen.sc.sdk.protocol.room.MovePacket;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class XMLTcpClientTest {
 
-    private static final String HOST = "localhost";
+    private XMLTcpClient client;
+
+    @BeforeEach
+    public void setUp() {
+        this.client = new XMLTcpClient("localhost", 13050);
+    }
 
     @Test
-    public void testConnect() {
-        openConnection(
-                20_000,
-                error -> {},
-                Collections.emptyList(),
-                socket -> {},
-                (client, packet) -> {},
-                (socket, xml) -> {}
-        );
+    public void testConnect() throws IOException {
+        this.client.setSocket(new TestSocket(
+                false,
+                false,
+                false,
+                false,
+                new LinkedList<>(),
+                xml -> {}
+        ));
+        this.client.connect(packet -> {}, null);
+        this.client.disconnect();
     }
 
     @Test
     public void testConnect_Closed() {
-        final XMLTcpClient client = new XMLTcpClient(HOST, 20_001);
+        this.client.setSocket(new TestSocket(
+                true,
+                false,
+                false,
+                true,
+                new LinkedList<>(),
+                xml -> {}
+        ));
 
-        assertThrows(TcpConnectException.class, () -> client.connect(packet -> {}, null));
+        assertThrows(TcpConnectException.class, () -> this.client.connect(packet -> {}, null));
     }
 
     @Test
-    public void testReadAndWrite() {
-        final AtomicBoolean packetReceived = new AtomicBoolean(false),
+    public void testDisconnect_Error() throws TcpConnectException {
+        this.client.setSocket(new TestSocket(
+                false,
+                true,
+                false,
+                false,
+                new LinkedList<>(),
+                xml -> {}
+        ));
+        this.client.connect(packet -> {}, null);
+
+        assertThrows(IOException.class, () -> this.client.disconnect());
+    }
+
+    @Test
+    public void testWrite_IOException() throws IOException, InterruptedException {
+        this.client.setSocket(new TestSocket(
+                false,
+                false,
+                true,
+                false,
+                new LinkedList<>(),
+                xml -> {}
+        ));
+
+        assertError("Failed to write to OutputStream: Test exception");
+    }
+
+    @Test
+    public void testWrite_SerializationException() throws IOException, InterruptedException {
+        this.client.setSocket(new TestSocket(
+                false,
+                false,
+                false,
+                false,
+                new LinkedList<>(),
+                xml -> {}
+        ));
+        this.client.send(new MovePacket("test", new Move(null)));
+
+        assertError("Failed to serialize XMLProtocolPacket: com.fasterxml.jackson.databind.JsonMappingException: java.lang.NullPointerException: Cannot invoke \"java.util.List.iterator()\" because the return value of \"de.teamgruen.sc.sdk.protocol.data.Move.actions()\" is null (through reference chain: de.teamgruen.sc.sdk.protocol.room.MovePacket[\"data\"])");
+    }
+
+    @Test
+    public void testWrite() throws IOException, InterruptedException {
+        final Object closeLock = new Object();
+        final AtomicBoolean packetSent = new AtomicBoolean(false),
                 protocolInitiated = new AtomicBoolean(false);
 
-        openConnection(
-                20_002,
-                error -> {},
-                List.of(new JoinGameRequest("test")),
-                socket -> {},
-                (client, packet) -> {
-                    if (packet instanceof JoinedRoomResponse) {
-                        packetReceived.set(true);
+        this.client.setSocket(new TestSocket(
+                false,
+                false,
+                false,
+                false,
+                new LinkedList<>(),
+                xml -> {
+                    if(!protocolInitiated.get()) {
+                        assertEquals("<protocol>", xml);
 
-                        client.disconnect();
-                    }
-                },
-                (socket, xml) -> {
-                    try {
-                        if (xml.equals("<protocol>")) {
-                            protocolInitiated.set(true);
+                        protocolInitiated.set(true);
+                    } else {
+                        assertEquals("<join gameType=\"test\"/>", xml);
 
-                            socket.getOutputStream().write(("<buffer>" + "x".repeat(512) + "</buffer>").getBytes());
-                            socket.getOutputStream().flush();
-                        } else if (protocolInitiated.get() && xml.equals("<join gameType=\"test\"/>")) {
-                            socket.getOutputStream().write("<protocol><joined roomId=\"test\"/>".getBytes());
-                            socket.getOutputStream().flush();
+                        packetSent.set(true);
+
+                        synchronized (closeLock) {
+                            closeLock.notify();
                         }
-                    } catch (IOException ignore) {
                     }
                 }
-        );
+        ));
+        this.client.connect(packet -> {}, null);
+        this.client.send(new JoinGameRequest("test"));
+
+        synchronized (closeLock) {
+            closeLock.wait(250);
+        }
+
+        this.client.disconnect();
+
+        assertTrue(packetSent.get());
+    }
+
+    @Test
+    public void testRead_ProtocolNotInitiated() throws IOException {
+        final Object closeLock = new Object();
+        final AtomicBoolean packetReceived = new AtomicBoolean(false);
+
+        this.client.setSocket(new TestSocket(
+                false,
+                false,
+                false,
+                false,
+                new LinkedList<>(List.of("<joined roomId=\"test\"/>")),
+                xml -> {}
+        ));
+        this.client.connect(packet -> {
+            if (packet instanceof JoinedRoomResponse) {
+                packetReceived.set(true);
+
+                synchronized (closeLock) {
+                    closeLock.notify();
+                }
+            }
+        }, null);
+
+        synchronized (closeLock) {
+            try {
+                closeLock.wait(50);
+            } catch (InterruptedException ignore) {
+            }
+        }
+
+        this.client.disconnect();
+
+        assertFalse(packetReceived.get());
+    }
+
+    @Test
+    public void testRead_Error() throws IOException, InterruptedException {
+        this.client.setSocket(new TestSocket(
+                false,
+                false,
+                false,
+                true,
+                new LinkedList<>(),
+                xml -> {}
+        ));
+
+        assertError("Failed to read from InputStream: Test exception");
+    }
+
+    @Test
+    public void testRead_MultiUseBuffer() throws IOException, InterruptedException {
+        final Object closeLock = new Object();
+        final AtomicBoolean packetReceived = new AtomicBoolean(false);
+
+        this.client.setSocket(new TestSocket(
+                false,
+                false,
+                false,
+                false,
+                new LinkedList<>(List.of("<packet>" + "x".repeat(512) + "</packet>", "<protocol>", "<joined roomId=\"test\"/>")),
+                xml -> {}
+        ));
+        this.client.connect(packet -> {
+            if (packet instanceof JoinedRoomResponse response) {
+                assertEquals("test", response.getRoomId());
+
+                packetReceived.set(true);
+
+                synchronized (closeLock) {
+                    closeLock.notify();
+                }
+            }
+        }, null);
+
+        synchronized (closeLock) {
+            closeLock.wait(500);
+        }
+
+        this.client.disconnect();
 
         assertTrue(packetReceived.get());
     }
 
     @Test
-    public void testWrite_SerializationException() {
-        final AtomicBoolean errorReceived = new AtomicBoolean(false);
+    public void testRead_DeserializationException() throws IOException, InterruptedException {
+        this.client.setSocket(new TestSocket(
+                false,
+                false,
+                false,
+                false,
+                new LinkedList<>(List.of("<protocol>", "<invalid/>")),
+                xml -> {}
+        ));
 
-        openConnection(
-                20_003,
-                error -> errorReceived.set(true),
-                List.of(new MovePacket("test", new Move(null))),
-                socket -> {},
-                (client, packet) -> {},
-                (socket, xml) -> {}
-        );
-
-        assertTrue(errorReceived.get());
+        assertError("Failed to deserialize XML: java.lang.IllegalArgumentException: Unknown packet type: invalid");
     }
 
-    @Test
-    public void testRead_DeserializationException() {
+    private void assertError(String expectedMessage) throws IOException, InterruptedException {
+        final Object closeLock = new Object();
         final AtomicBoolean errorReceived = new AtomicBoolean(false);
 
-        openConnection(
-                20_004,
-                error -> errorReceived.set(true),
-                List.of(new JoinGameRequest(null)),
-                socket -> {
-                    try {
-                        socket.getOutputStream().write("<protocol><invalid/>".getBytes());
-                        socket.getOutputStream().flush();
-                    } catch (IOException ignore) {
-                    }
-                },
-                (client, packet) -> {},
-                (socket, xml) -> {}
-        );
+        this.client.connect(packet -> {}, error -> {
+            assertEquals(expectedMessage, error);
 
-        assertTrue(errorReceived.get());
-    }
+            errorReceived.set(true);
 
-    private static void openConnection(int port,
-                                       Consumer<String> errorHandler,
-                                       List<XMLProtocolPacket> packetsToSend,
-                                       Consumer<Socket> clientConnectHook,
-                                       BiConsumer<XMLTcpClient, XMLProtocolPacket> packetHandler,
-                                       BiConsumer<Socket, String> serverXmlHandler) {
-        final Object readyLock = new Object(), connectLock = new Object(), readLock = new Object();
-
-        new Thread(() -> {
-            try(ServerSocket serverSocket = new ServerSocket(port)) {
-                synchronized (readyLock) {
-                    readyLock.notify();
-                }
-
-                final Socket socket = serverSocket.accept();
-
-                synchronized (connectLock) {
-                    connectLock.wait();
-                }
-
-                clientConnectHook.accept(socket);
-
-                final InputStream inputStream = socket.getInputStream();
-                final byte[] buffer = new byte[512];
-                int nRead;
-
-                while((nRead = inputStream.read(buffer)) > 0) {
-                    StringBuilder builder = new StringBuilder(new String(buffer, 0, nRead, StandardCharsets.UTF_8));
-
-                    if (nRead == buffer.length) {
-                        while (inputStream.available() > 0) {
-                            nRead = inputStream.read(buffer);
-
-                            builder.append(new String(buffer, 0, nRead, StandardCharsets.UTF_8));
-                        }
-                    }
-
-                    serverXmlHandler.accept(socket, builder.toString());
-                }
-
-                synchronized (readLock) {
-                    readLock.notify();
-                }
-            } catch (IOException | InterruptedException ignore) {
+            synchronized (closeLock) {
+                closeLock.notify();
             }
-        }).start();
+        });
 
-        try {
-            synchronized (readyLock) {
-                readyLock.wait();
-            }
-
-            final XMLTcpClient client = new XMLTcpClient(HOST, port);
-            client.connect(packet -> packetHandler.accept(client, packet), (message) -> {
-                if(errorHandler != null)
-                    errorHandler.accept(message);
-
-                client.disconnect();
-            });
-
-            synchronized (connectLock) {
-                connectLock.notify();
-            }
-
-            if(packetsToSend.isEmpty())
-                return;
-
-            client.send(packetsToSend.toArray(new XMLProtocolPacket[0]));
-
-            synchronized (readLock) {
-                readLock.wait();
-            }
-        } catch (TcpConnectException | InterruptedException ignore) {
+        synchronized (closeLock) {
+            closeLock.wait(50);
         }
+
+        this.client.disconnect();
+
+        assertTrue(errorReceived.get());
     }
 
 }

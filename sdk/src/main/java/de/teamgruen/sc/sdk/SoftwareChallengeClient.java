@@ -7,71 +7,53 @@ import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
 import de.teamgruen.sc.sdk.protocol.requests.JoinGameRequest;
 import de.teamgruen.sc.sdk.protocol.requests.JoinPreparedRoomRequest;
 import de.teamgruen.sc.sdk.protocol.requests.JoinRoomRequest;
-import lombok.RequiredArgsConstructor;
+import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.io.IOException;
 
-@RequiredArgsConstructor
 public class SoftwareChallengeClient {
 
-    private final String host;
-    private final int port;
     private final GameHandler gameHandler;
     @Setter
+    @Getter
     private XMLTcpClient client;
 
-    /*
+    public SoftwareChallengeClient(String host, int port, GameHandler gameHandler) {
+        this.gameHandler = gameHandler;
+        this.client = new XMLTcpClient(host, port);
+    }
+
+    /**
      * @throws IllegalStateException if the client is already started
      * @throws IllegalArgumentException if no GameHandler is provided
-     **/
+     */
     public void start() throws TcpConnectException {
-        if(this.client != null)
+        if(this.client.isConnected())
             throw new IllegalStateException("Client already started");
 
         if(this.gameHandler == null)
             throw new IllegalArgumentException("No GameHandler provided");
 
-        final Queue<XMLProtocolPacket> packetQueue = new LinkedBlockingQueue<>();
         final ClientPacketHandler packetHandler = new ClientPacketHandler(this, this.gameHandler);
 
-        this.client = new XMLTcpClient(this.host, this.port);
-        this.client.connect(packetQueue::add, this.gameHandler::onError);
-
-        new Thread(() -> {
-            while(this.client != null) {
-                final XMLProtocolPacket xmlProtocolPacket = packetQueue.poll();
-
-                if (xmlProtocolPacket == null)
-                    continue;
-
-                new Thread(() -> packetHandler.handlePacket(xmlProtocolPacket), "PacketHandler").start();
-            }
-        }).start();
+        this.client.connect(
+                packet -> new Thread(() -> packetHandler.handlePacket(packet), "PacketHandler").start(),
+                this.gameHandler::onError
+        );
     }
 
-    /*
+    /**
      * @throws IllegalStateException if the client is not started
-     **/
-    public void stop() {
-        if(this.client == null)
+     */
+    public void stop() throws IOException {
+        if(!this.client.isConnected())
             throw new IllegalStateException("Client not started");
 
-        try {
-            this.client.disconnect();
-        } finally {
-            this.client = null;
-        }
+        this.client.disconnect();
     }
 
-    /*
-     * @throws IllegalStateException if the client is not started
-     **/
     public void sendPacket(XMLProtocolPacket packet) {
-        if(this.client == null)
-            throw new IllegalStateException("Client not started");
-
         this.client.send(packet);
     }
 

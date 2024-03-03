@@ -6,10 +6,12 @@ import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
 import de.teamgruen.sc.sdk.protocol.serialization.PacketSerializationUtil;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -21,7 +23,8 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class XMLTcpClient {
 
-    private Socket socket;
+    @Setter
+    private Socket socket = new Socket();
     private final Queue<XMLProtocolPacket> requestQueue = new LinkedBlockingQueue<>();
     private final Object requestLock = new Object();
     private Thread readThread, writeThread;
@@ -39,9 +42,9 @@ public class XMLTcpClient {
     public void connect(@NonNull Consumer<XMLProtocolPacket> responseListener,
                         Consumer<String> errorListener) throws TcpConnectException {
         try {
-            this.socket = new Socket(this.host, this.port);
             this.socket.setTcpNoDelay(true);
             this.socket.setKeepAlive(true);
+            this.socket.connect(new InetSocketAddress(this.host, this.port));
         } catch (IOException ex) {
             throw new TcpConnectException(ex);
         }
@@ -57,7 +60,7 @@ public class XMLTcpClient {
                 final byte[] buffer = new byte[512];
                 int nRead;
 
-                while((nRead = in.read(buffer)) > 0) {
+                while((nRead = in.read(buffer)) != -1) {
                     StringBuilder builder = new StringBuilder(new String(buffer, 0, nRead, StandardCharsets.UTF_8));
                     long readStart = System.currentTimeMillis();
 
@@ -73,9 +76,10 @@ public class XMLTcpClient {
                     }
 
                     String xml = builder.toString().strip();
+                    final int protocolIndex = xml.indexOf("<protocol>");
 
-                    if(xml.startsWith("<protocol>")) {
-                        xml = xml.replace("<protocol>", "").stripLeading();
+                    if(protocolIndex != -1 && !protocolInitiated) {
+                        xml = xml.substring(protocolIndex + 10).stripLeading();
                         protocolInitiated = true;
                     }
 
@@ -105,10 +109,9 @@ public class XMLTcpClient {
                 out.flush();
 
                 while(this.isConnected()) {
-                    if(this.requestQueue.isEmpty()) {
-                        synchronized (this.requestLock) {
+                    synchronized (this.requestLock) {
+                        if(this.requestQueue.isEmpty())
                             this.requestLock.wait();
-                        }
                     }
 
                     final XMLProtocolPacket packet = this.requestQueue.poll();
@@ -125,7 +128,7 @@ public class XMLTcpClient {
                         }
                     }
                 }
-            } catch (InterruptedException | IOException ex) {
+            } catch (InterruptedException | IOException | RuntimeException ex) {
                 if(errorListener != null && ex.getMessage() != null && !ex.getMessage().contains("closed") && !ex.getMessage().contains("reset"))
                     errorListener.accept("Failed to write to OutputStream: " + ex.getMessage());
             }
@@ -135,15 +138,12 @@ public class XMLTcpClient {
     /**
      * Disconnects from the server and stops the read and write threads.
      */
-    public void disconnect() {
+    public void disconnect() throws IOException {
         if(!this.isConnected()) return;
 
         try {
             this.socket.close();
-        } catch (IOException ignore) {
         } finally {
-            this.socket = null;
-
             if(this.readThread != null) {
                 this.readThread.interrupt();
                 this.readThread = null;
@@ -157,7 +157,7 @@ public class XMLTcpClient {
     }
 
     public boolean isConnected() {
-        return socket != null && socket.isConnected();
+        return this.socket.isConnected();
     }
 
     public void send(XMLProtocolPacket... packets) {
