@@ -56,7 +56,6 @@ public class MoveUtil {
         final Vector3 position = ship.getPosition();
         final int playerSegmentIndex = gameState.getBoard().getSegmentIndex(position);
         final int enemySegmentIndex = gameState.getBoard().getSegmentIndex(gameState.getEnemyShip().getPosition());
-        final boolean mustFollowEnemy = enemySegmentIndex > playerSegmentIndex + 2;
         final int maxCoal = Math.min(ship.getCoal(), moreCoal ? 2 : 1);
 
         final List<Move> moves = new ArrayList<>(gameState.getMoves(
@@ -65,13 +64,15 @@ public class MoveUtil {
                 ship.getFreeTurns(),
                 1,
                 Math.max(1, ship.getSpeed() - 1 - ship.getCoal()),
-                Math.min(6, ship.getSpeed() + ((mustFollowEnemy && maxCoal > 0) ? 2 : 1)),
+                Math.min(6, ship.getSpeed() + ((enemySegmentIndex > playerSegmentIndex + 2 && maxCoal > 0) ? 2 : 1)),
                 maxCoal
         ));
 
+        // if no moves are possible, try to move with more coal
         if(moves.isEmpty() && !moreCoal && ship.getCoal() > 1)
             return getPossibleMoves(gameState, true);
 
+        // add acceleration to the beginning of the action list if necessary
         moves.forEach(move -> {
             final List<Action> actions = move.getActions();
             final int acceleration = move.getAcceleration(ship);

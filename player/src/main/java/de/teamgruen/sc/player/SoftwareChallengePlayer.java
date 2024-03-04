@@ -27,11 +27,12 @@ public class SoftwareChallengePlayer {
 
         final CmdLineParser.Option testsOption = parser.addIntegerOption('t', "tests");
         final CmdLineParser.Option passwordOption = parser.addStringOption('P', "password");
+
         try {
             parser.parse(args);
         } catch (CmdLineParser.OptionException ex) {
             LOGGER.error(ex.getMessage());
-            System.exit(2);
+            return;
         }
 
         LOGGER.setDebug((Boolean) parser.getOptionValue(debugOption, false));
@@ -86,7 +87,6 @@ public class SoftwareChallengePlayer {
             }
         } catch (TcpConnectException ex) {
             LOGGER.error("Could not connect to server: " + ex.getMessage());
-            System.exit(1);
         }
     }
 
