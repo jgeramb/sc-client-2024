@@ -1,4 +1,4 @@
-name: Release version
+name: Maven
 on:
   workflow_dispatch:
   push:
@@ -13,24 +13,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set version
         id: version
         run: echo "version=$(cat .github/.version)" >> $GITHUB_OUTPUT
-
       - name: Set up JDK 21 (Temurin)
         uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-
       - name: Build with Maven
         run: |
           mvn -B package --file pom.xml
           mkdir artifacts/
           mv */target/*.jar artifacts/
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -46,7 +42,6 @@ jobs:
         with:
           name: jars
           path: artifacts
-
       - name: Create Release
         id: create_release
         uses: "marvinpinto/action-automatic-releases@latest"
@@ -69,7 +64,6 @@ jobs:
           name: jars
           path: artifacts
           pattern: '*-player.jar'
-
       - name: Upload client
         uses: fjogeleit/http-request-action@v1
         with:

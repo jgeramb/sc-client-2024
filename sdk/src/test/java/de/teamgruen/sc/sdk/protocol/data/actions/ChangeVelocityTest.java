@@ -5,11 +5,9 @@ import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ChangeVelocityTest {
 
     private GameState gameState;
