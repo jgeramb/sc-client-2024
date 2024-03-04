@@ -11,6 +11,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MoveTest {
 
     @Test
+    public void testToString() {
+        final Move move = new Move(new Vector3(1, 2, 3), Direction.DOWN_LEFT);
+        move.turn(Direction.UP_RIGHT);
+        move.forward(1, 1);
+        move.segment(1, 2);
+
+        assertEquals("Move(endPosition=Vector3(q=2, r=1, s=3), endDirection=UP_RIGHT, actions=[Turn(direction=UP_RIGHT), Forward(distance=1)], distance=1, totalCost=1, passengers=0, pushes=0, segmentIndex=1, segmentColumn=2, finished=false)", move.toString());
+    }
+
+    @Test
     public void testCopy() {
         final Move move = new Move(new Vector3(1, 2, 3), Direction.DOWN_LEFT);
         move.turn(Direction.UP_RIGHT);

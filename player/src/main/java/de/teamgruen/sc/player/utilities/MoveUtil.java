@@ -36,9 +36,10 @@ public class MoveUtil {
             final int coalCost = move.getCoalCost(playerShip);
             final double score = (move.isFinished() ? Integer.MAX_VALUE : 0)
                     + (canFinish || (isEnemyAhead && deltaSegmentPosition >= 0) ? 50 : 0)
-                    + move.getPassengers() * 20
+                    + move.getPassengers() * 15
                     + move.getPushes() * 3
-                    + Math.max(0, move.getDistance() - coalCost) * deltaSegmentPosition
+                    + move.getDistance() * deltaSegmentPosition
+                    - coalCost
                     - Math.max(0, move.getMinTurns(gameState) - 1) * 3.5;
 
             if(score > highestScore || score == highestScore && coalCost < lowestCoalCost) {
@@ -63,8 +64,8 @@ public class MoveUtil {
                 ship.getDirection(),
                 ship.getFreeTurns(),
                 1,
-                Math.max(1, ship.getSpeed() - 1 - ship.getCoal()),
-                Math.min(6, ship.getSpeed() + ((enemySegmentIndex > playerSegmentIndex + 2 && maxCoal > 0) ? 2 : 1)),
+                Math.max(1, ship.getSpeed() - 1),
+                Math.min(6, ship.getSpeed() + ((enemySegmentIndex > playerSegmentIndex + 1 && maxCoal > 0) ? 2 : 1)),
                 maxCoal
         ));
 

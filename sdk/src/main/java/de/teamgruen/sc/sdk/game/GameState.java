@@ -76,7 +76,7 @@ public class GameState {
      * @param shipDirection The direction of the ship
      * @param freeTurns The amount of free turns
      * @param freeAcceleration The remaining free accelerations
-     * @param minMovementPoints The minimum amount of movement points to use
+     * @param requiredMovementPoints The minimum amount of movement points to use
      * @param maxMovementPoints The maximum amount of movement points to use
      * @param maxCoal The maximum amount of coal to use
      * @return All possible moves for the current ship.
@@ -85,7 +85,7 @@ public class GameState {
                                @NonNull Direction shipDirection,
                                int freeTurns,
                                int freeAcceleration,
-                               int minMovementPoints,
+                               int requiredMovementPoints,
                                int maxMovementPoints,
                                int maxCoal) {
         final List<Move> moves = new ArrayList<>();
@@ -93,6 +93,7 @@ public class GameState {
         this.getDirectionCosts(shipDirection, position, maxCoal + freeTurns).forEach((turnDirection, turnCost) -> {
             final int currentFreeTurns = Math.max(0, freeTurns - turnCost);
             final int availableCoal = Math.max(0, maxCoal - Math.max(0, turnCost - freeTurns));
+            final int minMovementPoints = Math.max(1, requiredMovementPoints - availableCoal);
 
             for (int currentMax = minMovementPoints; currentMax <= maxMovementPoints; currentMax++) {
                 final Move longestMove = new Move(position, turnDirection);
@@ -103,6 +104,7 @@ public class GameState {
                 final AdvanceInfo advanceInfo = this.getAdvanceLimit(
                         position,
                         turnDirection,
+                        longestMove.getTotalCost(),
                         currentMax,
                         freeAcceleration,
                         availableCoal
@@ -137,7 +139,7 @@ public class GameState {
                             turnDirection,
                             currentFreeTurns,
                             Math.max(0, freeAcceleration - extraCost),
-                            minMovementPoints - cost,
+                            requiredMovementPoints - cost,
                             currentMax - cost,
                             availableCoal - Math.max(0, extraCost - freeAcceleration)
                     ).forEach(move -> {
@@ -212,14 +214,16 @@ public class GameState {
      *
      * @param start The start position of the ship
      * @param direction The direction of the ship
-     * @param maxMovementPoints The maximum amount of movement points to use
+     * @param usedMovementPoints The used movement points so far
+     * @param remainingMovementPoints The maximum amount of movement points to use
      * @param freeAcceleration The remaining free accelerations
      * @param coal The maximum amount of coal to use
      * @return The information about the maximum free forward moves
      */
     public AdvanceInfo getAdvanceLimit(@NonNull Vector3 start,
                                        @NonNull Direction direction,
-                                       int maxMovementPoints,
+                                       int usedMovementPoints,
+                                       int remainingMovementPoints,
                                        int freeAcceleration,
                                        int coal) {
         final AdvanceInfo advanceInfo = new AdvanceInfo();
@@ -229,7 +233,7 @@ public class GameState {
 
         boolean onCounterCurrent = false;
 
-        while(advanceInfo.getCost() < maxMovementPoints) {
+        while(advanceInfo.getCost() < remainingMovementPoints) {
             position.add(direction.toVector3());
 
             final Field field = this.board.getFieldAt(position);
@@ -247,7 +251,7 @@ public class GameState {
             final boolean isCounterCurrent = this.board.isCounterCurrent(position);
 
             if(!onCounterCurrent && isCounterCurrent) {
-                if(advanceInfo.getCost() + 2 > maxMovementPoints) {
+                if(advanceInfo.getCost() + 2 > remainingMovementPoints) {
                     advanceInfo.setResult(AdvanceInfo.Result.COUNTER_CURRENT);
                     break;
                 }
@@ -260,8 +264,9 @@ public class GameState {
             advanceInfo.incrementCost();
 
             final boolean isAtMinimumSpeed = playerShip.getSpeed() == 1;
-            final boolean canSlowDown = advanceInfo.getCost() == (isCounterCurrent ? 2 : 1)
-                    && advanceInfo.getCost() >= playerShip.getSpeed() - freeAcceleration - coal;
+            final int totalMovementPoints = usedMovementPoints + advanceInfo.getCost();
+            final boolean canSlowDown = totalMovementPoints == (isCounterCurrent ? 2 : 1)
+                    && totalMovementPoints >= playerShip.getSpeed() - freeAcceleration - coal;
             final boolean canReachMinimumSpeed = isAtMinimumSpeed || canSlowDown;
 
             if(field instanceof Finish && playerShip.hasEnoughPassengers() && canReachMinimumSpeed) {

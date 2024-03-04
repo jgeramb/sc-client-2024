@@ -157,6 +157,7 @@ public class GameStateTest {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
                 new Vector3(2, -1, -1),
                 Direction.RIGHT,
+                0,
                 1,
                 0,
                 0
@@ -171,6 +172,7 @@ public class GameStateTest {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
                 new Vector3(4, -1, -3),
                 Direction.RIGHT,
+                0,
                 1,
                 0,
                 0
@@ -185,6 +187,7 @@ public class GameStateTest {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
                 new Vector3(1, 1, -2),
                 Direction.LEFT,
+                0,
                 1,
                 0,
                 0
@@ -199,6 +202,7 @@ public class GameStateTest {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
                 new Vector3(1, -1, 0),
                 Direction.DOWN_RIGHT,
+                0,
                 1,
                 0,
                 0
@@ -215,6 +219,7 @@ public class GameStateTest {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
                 new Vector3(1, 0, -1),
                 Direction.RIGHT,
+                0,
                 2,
                 0,
                 0
@@ -233,6 +238,7 @@ public class GameStateTest {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
                 new Vector3(-3, 9, -6),
                 Direction.DOWN_LEFT,
+                0,
                 2,
                 1,
                 3
@@ -251,6 +257,7 @@ public class GameStateTest {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
                 new Vector3(-3, 8, -5),
                 Direction.DOWN_LEFT,
+                0,
                 1,
                 1,
                 4
@@ -267,6 +274,7 @@ public class GameStateTest {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
                 new Vector3(4, 1, -5),
                 Direction.DOWN_RIGHT,
+                0,
                 2,
                 1,
                 0
@@ -277,12 +285,30 @@ public class GameStateTest {
     }
 
     @Test
+    public void testGetAdvanceLimit_Passenger_NotReachable() {
+        this.gameState.getPlayerShip().setSpeed(2);
+
+        final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
+                new Vector3(4, 0, -4),
+                Direction.DOWN_RIGHT,
+                1,
+                2,
+                1,
+                0
+        );
+
+        assertEquals(AdvanceInfo.Result.NORMAL, actualAdvanceLimit.getResult());
+        assertEquals(2, actualAdvanceLimit.getDistance());
+    }
+
+    @Test
     public void testGetAdvanceLimit_Normal() {
         this.gameState.getPlayerShip().setSpeed(5);
 
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
                 new Vector3(4, -2, -2),
                 Direction.DOWN_RIGHT,
+                0,
                 6,
                 1,
                 0

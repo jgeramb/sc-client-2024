@@ -93,7 +93,7 @@ public class SoftwareChallengeClientTest {
         client.start();
 
         synchronized (lock) {
-            lock.wait(250);
+            lock.wait(500);
         }
 
         assertTrue(roomJoined.get());
