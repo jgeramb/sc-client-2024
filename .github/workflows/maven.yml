@@ -67,7 +67,7 @@ jobs:
       - name: Upload client
         uses: fjogeleit/http-request-action@v1
         with:
-          url: 'https://sc-upload.justix.dev/api/v1/upload/v${{ needs.build.outputs.version }}?params=--debug'
+          url: 'https://sc-upload.justix.dev/api/v1/upload/v${{ needs.build.outputs.version }}?fileName=teamgruen-player.jar&params=--debug'
           method: 'POST'
           timeout: 15000
           customHeaders: |
