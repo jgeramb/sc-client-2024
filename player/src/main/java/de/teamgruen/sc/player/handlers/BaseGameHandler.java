@@ -1,19 +1,33 @@
+/*
+ * Copyright (c) 2024 Justus Geramb (https://www.justix.dev)
+ * All Rights Reserved.
+ */
+
 package de.teamgruen.sc.player.handlers;
 
 import de.teamgruen.sc.sdk.game.GameResult;
 import de.teamgruen.sc.sdk.game.GameState;
+import de.teamgruen.sc.sdk.game.Move;
+import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.game.handlers.GameHandler;
 import de.teamgruen.sc.sdk.logging.AnsiColor;
 import de.teamgruen.sc.sdk.logging.Logger;
+import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreFragment;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class BaseGameHandler implements GameHandler {
 
     protected final Logger logger;
+    private final Object readyLock = new Object();
+    private final AtomicBoolean ready = new AtomicBoolean(false);
+    protected List<Action> nextActions;
 
     protected BaseGameHandler(Logger logger) {
         this.logger = logger;
@@ -27,6 +41,51 @@ public abstract class BaseGameHandler implements GameHandler {
     @Override
     public void onRoomJoin(String roomId) {
         this.logger.info("Joined room " + AnsiColor.PURPLE + roomId + AnsiColor.RESET);
+    }
+
+    public void setNextMove(GameState gameState, Move move) {
+        if(move == null)
+            this.nextActions = null;
+        else {
+            final Ship playerShip = gameState.getPlayerShip();
+            final List<Action> actions = move.getActions();
+            actions.forEach(action -> action.perform(gameState));
+            playerShip.setCoal(playerShip.getCoal() - move.getCoalCost(playerShip));
+
+            this.nextActions = actions;
+        }
+
+        this.ready.set(true);
+
+        synchronized (this.readyLock) {
+            this.readyLock.notify();
+        }
+    }
+
+    @Override
+    public List<Action> getNextActions(GameState gameState) {
+        final long startTime = System.nanoTime();
+
+        try {
+            if(!this.ready.get()) {
+                synchronized (this.readyLock) {
+                    this.readyLock.wait();
+                }
+            }
+
+            if(this.nextActions == null || this.nextActions.isEmpty()) {
+                this.onError("No actions available");
+                return Collections.emptyList();
+            }
+
+            return this.nextActions;
+        } catch (InterruptedException ignore) {
+        } finally {
+            this.ready.set(false);
+            this.logger.debug("Time: " + String.format("%,d", System.nanoTime() - startTime) + "ns");
+        }
+
+        return Collections.emptyList();
     }
 
     @Override

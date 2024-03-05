@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024 Justus Geramb (https://www.justix.dev)
+ * All Rights Reserved.
+ */
+
 package de.teamgruen.sc.player.handlers;
 
 import de.teamgruen.sc.player.utilities.MoveUtil;
@@ -8,24 +13,14 @@ import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.game.board.Board;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.logging.Logger;
-import de.teamgruen.sc.sdk.protocol.data.Direction;
-import de.teamgruen.sc.sdk.protocol.data.actions.Action;
-import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
-import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
-import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AdvancedGameHandler extends BaseGameHandler {
-
-    private final Object readyLock = new Object();
-    private final AtomicBoolean ready = new AtomicBoolean(false);
-    private List<Vector3> nextPath;
 
     public AdvancedGameHandler(Logger logger) {
         super(logger);
@@ -94,145 +89,18 @@ public class AdvancedGameHandler extends BaseGameHandler {
             executorService.shutdown();
         }
 
-        this.nextPath = paths.stream()
-            .filter(Objects::nonNull)
-            .min(Comparator.comparingInt(List::size))
-            .orElse(null);
-        this.ready.set(true);
+        Optional<Move> nextMove = MoveUtil.moveFromPath(
+                gameState,
+                paths.stream()
+                        .filter(Objects::nonNull)
+                        .min(Comparator.comparingInt(List::size))
+                        .orElse(null)
+        );
 
-        synchronized (this.readyLock) {
-            this.readyLock.notify();
-        }
-    }
+        if(nextMove.isEmpty())
+            nextMove = MoveUtil.getMostEfficientMove(gameState);
 
-    @Override
-    public List<Action> getNextActions(GameState gameState) {
-        final long startTime = System.nanoTime();
-        final Ship ship = gameState.getPlayerShip();
-
-        try {
-            if(!this.ready.get()) {
-                synchronized (this.readyLock) {
-                    this.readyLock.wait();
-                }
-            }
-
-            if(this.nextPath == null || this.nextPath.isEmpty()) {
-                final Optional<Move> optionalMove = MoveUtil.getMostEfficientMove(gameState);
-
-                if(optionalMove.isEmpty()) {
-                    this.onError("No actions available");
-                    return Collections.emptyList();
-                }
-
-                final Move move = optionalMove.get();
-                final List<Action> actions = move.getActions();
-                actions.forEach(action -> action.perform(gameState));
-                ship.setCoal(ship.getCoal() - move.getCoalCost(ship));
-
-                return actions;
-            }
-
-            final Board board = gameState.getBoard();
-            final List<Action> actions = new ArrayList<>();
-
-            // update speed
-            final int freeAccelerations = 1;
-            final Vector3 endPosition = this.nextPath.get(this.nextPath.size() - 1);
-            final Field endField = gameState.getBoard().getFieldAt(endPosition);
-            int coal = ship.getCoal();
-            int deltaSpeed;
-
-            if ((endField instanceof Finish && ship.hasEnoughPassengers()) || endField instanceof Passenger) {
-                final int expectedSpeed = board.isCounterCurrent(endPosition) ? 2 : 1;
-
-                deltaSpeed = expectedSpeed - ship.getSpeed();
-            } else
-                deltaSpeed = this.nextPath.size() - ship.getSpeed();
-
-            deltaSpeed = Math.max(Math.min(deltaSpeed, Math.min(1, coal) + freeAccelerations), -coal - freeAccelerations);
-            deltaSpeed = Math.min(6 - ship.getSpeed(), deltaSpeed);
-
-            if (deltaSpeed != 0) {
-                coal -= Math.abs(deltaSpeed) - freeAccelerations;
-                actions.add(ActionFactory.changeVelocity(deltaSpeed));
-            }
-
-            // move ship
-            boolean isOnCounterCurrent = false;
-            int availableMoves = ship.getSpeed();
-            Direction direction = ship.getDirection();
-            int freeTurns = ship.getFreeTurns();
-            int distance = 0;
-
-            for (int i = 1; i < this.nextPath.size(); i++) {
-                distance++;
-
-                final Vector3 nextPosition = ship.getPosition();
-                final Vector3 delta = this.nextPath.get(i - 1).copy().subtract(nextPosition);
-                final Direction nextDirection = Direction.fromVector3(delta);
-
-                if (direction != nextDirection) {
-                    if (distance > 1)
-                        actions.add(ActionFactory.forward(distance - 1));
-
-                    final int directionDelta = direction.delta(nextDirection);
-                    final int turns = Math.min(freeTurns + coal, Math.abs(directionDelta));
-
-                    freeTurns -= turns;
-
-                    if(freeTurns < 0)
-                        coal += freeTurns;
-
-                    actions.add(ActionFactory.turn(direction.rotate(directionDelta > 0 ? -turns : turns)));
-                    distance = 1;
-                    isOnCounterCurrent = false;
-                }
-
-                final Ship enemyShip = gameState.getEnemyShip();
-
-                if (enemyShip != null && enemyShip.getPosition().equals(nextPosition)) {
-                    final Direction pushDirection = gameState.getBestPushDirection(direction);
-
-                    if (availableMoves < 2 || pushDirection == null) {
-                        distance--;
-                        break;
-                    }
-
-                    actions.add(ActionFactory.push(pushDirection));
-
-                    isOnCounterCurrent = false;
-                }
-
-                final boolean isCounterCurrent = board.isCounterCurrent(nextPosition);
-
-                if (!isOnCounterCurrent && availableMoves < 2) {
-                    distance--;
-                    break;
-                }
-
-                isOnCounterCurrent = isCounterCurrent;
-                availableMoves -= isCounterCurrent ? 2 : 1;
-
-                if (availableMoves == 0)
-                    break;
-            }
-
-            if (availableMoves > 0 && distance > 0)
-                actions.add(ActionFactory.forward(Math.min(distance, availableMoves)));
-
-            // perform moves
-            actions.forEach(action -> action.perform(gameState));
-            ship.setCoal(coal);
-
-            return actions;
-        } catch (InterruptedException ignore) {
-        } finally {
-            this.ready.set(false);
-            this.logger.debug("Time: " + String.format("%,d", System.nanoTime() - startTime) + "ns");
-        }
-
-        return Collections.emptyList();
+        this.setNextMove(gameState, nextMove.orElse(null));
     }
 
 }
