@@ -5,17 +5,23 @@
 
 package de.teamgruen.sc.player.utilities;
 
+import de.teamgruen.sc.sdk.game.AdvanceInfo;
 import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.Move;
 import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.game.board.Ship;
+import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
+import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
+import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.NonNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MoveUtil {
 
@@ -44,7 +50,7 @@ public class MoveUtil {
             final double deltaSegmentPosition = move.getSegmentIndex() - playerSegmentIndex
                     + (deltaSegmentColumn > 2 ? deltaSegmentColumn - 4 : deltaSegmentColumn) / 4d;
             final int coalCost = move.getCoalCost(playerShip);
-            final double score = (move.isFinished() ? Integer.MAX_VALUE : 0)
+            final double score = (move.isFinished() ? 100 : 0)
                     + (canFinish || (isEnemyAhead && deltaSegmentPosition >= 0) ? 50 : 0)
                     + move.getPassengers() * 15
                     + move.getPushes() * 3
@@ -139,17 +145,127 @@ public class MoveUtil {
         final Ship playerShip = gameState.getPlayerShip();
         final Move move = new Move(path.get(0), playerShip.getDirection());
         final int maxMovementPoints = getMaxMovementPoints(gameState, playerShip.getCoal());
-        int movementPoints = getMinMovementPoints(gameState);
-        int freeTurns = playerShip.getFreeTurns();
-        int freeAcceleration = 1;
+        final Vector3 destination = path.get(path.size() - 1);
+        final Field destinationField = gameState.getBoard().getFieldAt(destination);
+        final boolean collectPassenger = Arrays.stream(Direction.values())
+                .map(direction -> destination.copy().add(direction.toVector3()))
+                .anyMatch(position -> gameState.getBoard().getFieldAt(position) instanceof Passenger);
+        final boolean mustSlowDown = destinationField instanceof Finish || collectPassenger;
+        final int destinationSpeed = gameState.getBoard().isCounterCurrent(destination) ? 2 : 1;
 
-        while(movementPoints > 0) {
-            final int availablePoints = maxMovementPoints - movementPoints;
+        int pathIndex = 1 /* skip start position */;
 
-            // TODO: implement move making
+        AtomicInteger coal = new AtomicInteger(Math.min(playerShip.getCoal(), 1));
+        AtomicInteger freeTurns = new AtomicInteger(playerShip.getFreeTurns());
+
+        while(move.getTotalCost() < getMinMovementPoints(gameState)) {
+            final int availablePoints = maxMovementPoints - move.getTotalCost();
+            final Vector3 position = move.getEndPosition();
+            final Direction currentDirection = move.getEndDirection();
+            final Direction direction = Direction.fromVector3(path.get(pathIndex).copy().subtract(position));
+
+            // turn if necessary
+            if(direction != currentDirection) {
+                final Direction nearest = getNearestPossibleDirection(currentDirection, direction, freeTurns, coal);
+
+                move.turn(nearest);
+
+                if(nearest != direction)
+                    break;
+            }
+
+            // move forward
+            boolean wasCounterCurrent = false;
+            Vector3 lastPosition = position;
+            int distance = 0, points = 0;
+
+            while(pathIndex < path.size()) {
+                final Vector3 nextPosition = path.get(pathIndex);
+
+                // stop if the direction changes
+                if(!nextPosition.copy().subtract(lastPosition).equals(direction.toVector3()))
+                    break;
+
+                final boolean isCounterCurrent = gameState.getBoard().isCounterCurrent(nextPosition);
+                final int requiredPoints = isCounterCurrent && !wasCounterCurrent ? 2 : 1;
+
+                if(availablePoints - points < requiredPoints)
+                    break;
+
+                wasCounterCurrent = isCounterCurrent;
+
+                if(mustSlowDown) {
+                    final double deltaSpeed = (playerShip.getSpeed() - destinationSpeed) / (double) (path.size() - (pathIndex + 1));
+                    int maxSpeed = playerShip.getSpeed() - (int) ((deltaSpeed > 0) ? Math.ceil(deltaSpeed) : Math.floor(deltaSpeed));
+
+                    if (move.getTotalCost() + points + requiredPoints > maxSpeed)
+                        break;
+                }
+
+                distance++;
+                points += requiredPoints;
+
+                lastPosition = nextPosition;
+                pathIndex++;
+            }
+
+            if(distance > 0) {
+                final AdvanceInfo advanceInfo = gameState.getAdvanceLimit(
+                        position,
+                        direction,
+                        0,
+                        points,
+                        move.getTotalCost() > playerShip.getSpeed() ? 1 : 0,
+                        coal.get()
+                );
+
+                gameState.appendForwardMove(
+                        advanceInfo.getEndPosition(position, direction),
+                        direction,
+                        move,
+                        advanceInfo,
+                        availablePoints - advanceInfo.getCost()
+                );
+            } else
+                break;
         }
 
+        pathIndex = path.indexOf(move.getEndPosition());
+
+        // turn to reach the next position if there are free turns left
+        if(freeTurns.get() > 0 && pathIndex < path.size() - 1) {
+            final Vector3 position = path.get(pathIndex + 1);
+            final Direction direction = Direction.fromVector3(position.copy().subtract(move.getEndPosition()));
+
+            if(direction != move.getEndDirection())
+                move.turn(getNearestPossibleDirection(move.getEndDirection(), direction, freeTurns, new AtomicInteger(0)));
+        }
+
+        addAcceleration(playerShip, move);
+
         return Optional.of(move);
+    }
+
+    /**
+     * @param from the current direction
+     * @param to the target direction
+     * @param freeTurns the amount of free turns
+     * @param coal the available coal
+     * @return the nearest possible direction to the target direction
+     */
+    private static Direction getNearestPossibleDirection(@NonNull Direction from,
+                                                         @NonNull Direction to,
+                                                         @NonNull AtomicInteger freeTurns,
+                                                         @NonNull AtomicInteger coal) {
+        int rotations = from.delta(to), turnCost = Math.abs(rotations);
+
+        final int rotationsToDrop = Math.max(0, turnCost - freeTurns.get() - coal.get());
+        rotations += rotationsToDrop * ((rotations < 0) ? 1 : -1);
+
+        freeTurns.set(Math.min(0, turnCost - freeTurns.get()));
+        coal.set(Math.min(0, turnCost - freeTurns.get() - coal.get()));
+
+        return from.rotate(rotations);
     }
 
 }
