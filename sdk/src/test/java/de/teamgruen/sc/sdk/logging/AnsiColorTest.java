@@ -5,6 +5,7 @@
 
 package de.teamgruen.sc.sdk.logging;
 
+import de.teamgruen.sc.sdk.SoftwareChallengeClient;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,6 +14,8 @@ public class AnsiColorTest {
 
     @Test
     public void testToString() {
+        SoftwareChallengeClient.setBatchMode(false);
+
         assertEquals("\033[0m", AnsiColor.RESET.toString());
         assertEquals("\033[30m", AnsiColor.BLACK.toString());
         assertEquals("\033[31m", AnsiColor.RED.toString());
