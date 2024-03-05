@@ -25,7 +25,7 @@ public class SoftwareChallengeClient {
 
     @Setter
     @Getter
-    public static boolean batchMode = false;
+    public static boolean batchMode = true;
 
     private final GameHandler gameHandler;
     @Setter

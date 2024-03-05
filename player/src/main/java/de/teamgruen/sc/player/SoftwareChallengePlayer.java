@@ -23,7 +23,7 @@ public class SoftwareChallengePlayer {
     public static void main(String[] args) {
         final CmdLineParser parser = new CmdLineParser();
         final CmdLineParser.Option debugOption = parser.addBooleanOption('d', "debug");
-        final CmdLineParser.Option batchModeOption = parser.addIntegerOption('b', "batch-mode");
+        final CmdLineParser.Option batchModeOption = parser.addBooleanOption('b', "batch-mode");
         final CmdLineParser.Option hostOption = parser.addStringOption('h', "host");
         final CmdLineParser.Option portOption = parser.addIntegerOption('p', "port");
 
