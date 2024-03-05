@@ -9,6 +9,7 @@ import de.teamgruen.sc.player.clients.AdminClient;
 import de.teamgruen.sc.player.clients.PlayerClient;
 import de.teamgruen.sc.player.handlers.AdvancedGameHandler;
 import de.teamgruen.sc.player.handlers.SimpleGameHandler;
+import de.teamgruen.sc.sdk.SoftwareChallengeClient;
 import de.teamgruen.sc.sdk.game.handlers.GameHandler;
 import de.teamgruen.sc.sdk.logging.AnsiColor;
 import de.teamgruen.sc.sdk.logging.Logger;
@@ -22,6 +23,7 @@ public class SoftwareChallengePlayer {
     public static void main(String[] args) {
         final CmdLineParser parser = new CmdLineParser();
         final CmdLineParser.Option debugOption = parser.addBooleanOption('d', "debug");
+        final CmdLineParser.Option batchModeOption = parser.addIntegerOption('b', "batch-mode");
         final CmdLineParser.Option hostOption = parser.addStringOption('h', "host");
         final CmdLineParser.Option portOption = parser.addIntegerOption('p', "port");
 
@@ -40,6 +42,7 @@ public class SoftwareChallengePlayer {
             return;
         }
 
+        SoftwareChallengeClient.setBatchMode((Boolean) parser.getOptionValue(batchModeOption, false));
         LOGGER.setDebug((Boolean) parser.getOptionValue(debugOption, false));
 
         final String host = (String) parser.getOptionValue(hostOption, "localhost");

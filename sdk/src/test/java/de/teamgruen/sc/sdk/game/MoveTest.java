@@ -17,12 +17,12 @@ public class MoveTest {
 
     @Test
     public void testToString() {
-        final Move move = new Move(new Vector3(1, 2, 3), Direction.DOWN_LEFT);
+        final Move move = new Move(new Vector3(0, 0, 0), Direction.DOWN_LEFT);
         move.turn(Direction.UP_RIGHT);
         move.forward(1, 1);
         move.segment(1, 2);
 
-        assertEquals("Move(endPosition=Vector3(q=2, r=1, s=3), endDirection=UP_RIGHT, actions=[Turn(direction=UP_RIGHT), Forward(distance=1)], distance=1, totalCost=1, passengers=0, pushes=0, segmentIndex=1, segmentColumn=2, finished=false)", move.toString());
+        assertEquals("Move(endPosition=Vector3(q=1, r=-1, s=0), endDirection=UP_RIGHT, actions=[Turn(direction=UP_RIGHT), Forward(distance=1)], distance=1, totalCost=1, passengers=0, pushes=0, segmentIndex=1, segmentColumn=2, finished=false)", move.toString());
     }
 
     @Test
@@ -36,37 +36,6 @@ public class MoveTest {
         move.finish();
 
         assertEquals(move, move.copy());
-    }
-
-    @Test
-    public void testAppend() {
-        final Move move = new Move(new Vector3(2, 1, -3), Direction.UP_RIGHT);
-        move.turn(Direction.RIGHT);
-        move.forward(1, 1);
-        move.push(Direction.DOWN_RIGHT);
-        move.passenger();
-        move.segment(1, 4);
-        move.finish();
-
-        final Move childMove = new Move(new Vector3(3, 1, -4), Direction.UP_RIGHT);
-        childMove.turn(Direction.DOWN_RIGHT);
-        childMove.forward(1, 1);
-        childMove.push(Direction.DOWN_LEFT);
-        childMove.passenger();
-        childMove.segment(2, 1);
-        childMove.finish();
-
-        move.append(childMove);
-
-        assertEquals(new Vector3(3, 2, -5), move.getEndPosition());
-        assertEquals(Direction.DOWN_RIGHT, move.getEndDirection());
-        assertEquals(2, move.getDistance());
-        assertEquals(4, move.getTotalCost());
-        assertEquals(2, move.getPushes());
-        assertEquals(2, move.getPassengers());
-        assertEquals(2, move.getSegmentIndex());
-        assertEquals(1, move.getSegmentColumn());
-        assertTrue(move.isFinished());
     }
 
     @Test
@@ -153,23 +122,54 @@ public class MoveTest {
 
     @Test
     public void testGetMinTurns_Zero() {
-        final Move move = new Move(new Vector3(1, -1, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(1, 0, -1), Direction.RIGHT);
 
         assertEquals(0, move.getMinTurns(new ExampleGameState()));
     }
 
     @Test
     public void testGetMinTurns_One() {
-        final Move move = new Move(new Vector3(2, -1, -1), Direction.RIGHT);
+        final Move move = new Move(new Vector3(2, 0, -2), Direction.RIGHT);
 
         assertEquals(1, move.getMinTurns(new ExampleGameState()));
     }
 
     @Test
     public void testGetMinTurns_Two() {
-        final Move move = new Move(new Vector3(-1, 5, -4), Direction.DOWN_RIGHT);
+        final Move move = new Move(new Vector3(2, -2, 0), Direction.UP_RIGHT);
 
         assertEquals(2, move.getMinTurns(new ExampleGameState()));
+    }
+
+    @Test
+    public void testAppend() {
+        final Move move = new Move(new Vector3(0, 0, 0), Direction.UP_RIGHT);
+        move.turn(Direction.RIGHT);
+        move.forward(2, 2);
+        move.push(Direction.DOWN_RIGHT);
+        move.passenger();
+        move.segment(1, 4);
+        move.finish();
+
+        final Move childMove = new Move(new Vector3(2, 0, -2), Direction.RIGHT);
+        childMove.turn(Direction.DOWN_RIGHT);
+        childMove.forward(1, 1);
+        childMove.push(Direction.DOWN_RIGHT);
+        childMove.passenger();
+        childMove.segment(2, 1);
+        childMove.finish();
+
+        move.append(childMove);
+
+        assertEquals(new Vector3(2, 1, -3), move.getEndPosition());
+        assertEquals(Direction.DOWN_RIGHT, move.getEndDirection());
+        assertEquals(3, move.getDistance());
+        assertEquals(5, move.getTotalCost());
+        assertEquals(2, move.getPushes());
+        assertEquals(2, move.getPassengers());
+        assertEquals(2, move.getSegmentIndex());
+        assertEquals(1, move.getSegmentColumn());
+        assertTrue(move.isFinished());
     }
 
     @Test

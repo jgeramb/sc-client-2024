@@ -37,9 +37,9 @@ public class BoardTest {
         final BoardSegment actualSegment = this.board.getSegments().get(1);
 
         final Vector3 actualCenter = actualSegment.center();
-        assertEquals(2, actualCenter.getQ());
+        assertEquals(0, actualCenter.getQ());
         assertEquals(4, actualCenter.getR());
-        assertEquals(-6, actualCenter.getS());
+        assertEquals(-4, actualCenter.getS());
 
         final Direction actualDirection = actualSegment.direction();
         assertEquals(Direction.DOWN_RIGHT, actualDirection);
@@ -47,7 +47,7 @@ public class BoardTest {
         final LinkedHashMap<Vector3, Field> actualFields = actualSegment.fields();
         final Map.Entry<Vector3, Field> actualField = actualFields.entrySet()
                 .stream()
-                .filter(entry -> entry.getKey().equals(new Vector3(3, 2, -5)))
+                .filter(entry -> entry.getKey().equals(new Vector3(1, 2, -3)))
                 .findFirst()
                 .orElse(null);
 
@@ -62,18 +62,18 @@ public class BoardTest {
     @Test
     public void testUpdateCounterCurrent() {
         final List<Vector3> expected = Arrays.asList(
-                new Vector3(1, 0, -1),
-                new Vector3(2, 0, -2),
-                new Vector3(2, 1, -3),
-                new Vector3(2, 2, -4),
-                new Vector3(2, 3, -5),
-                new Vector3(2, 4, -6),
-                new Vector3(1, 5, -6),
-                new Vector3(0, 6, -6),
-                new Vector3(-1, 7, -6),
-                new Vector3(-2, 8, -6),
-                new Vector3(-3, 9, -6),
-                new Vector3(-4, 10, -6)
+                new Vector3(-1, 0, 1),
+                new Vector3(0, 0, 0),
+                new Vector3(0, 1, -1),
+                new Vector3(0, 2, -2),
+                new Vector3(0, 3, -3),
+                new Vector3(0, 4, -4),
+                new Vector3(-1, 5, -4),
+                new Vector3(-2, 6, -4),
+                new Vector3(-3, 7, -4),
+                new Vector3(-4, 8, -4),
+                new Vector3(-5, 9, -4),
+                new Vector3(-6, 10, -4)
         );
 
         assertArrayEquals(vectorsToArray(expected), vectorsToArray(this.board.getCounterCurrent()));
@@ -81,17 +81,17 @@ public class BoardTest {
 
     @Test
     public void testIsCounterCurrent() {
-        assertTrue(this.board.isCounterCurrent(new Vector3(0, 6, -6)));
+        assertTrue(this.board.isCounterCurrent(new Vector3(-2, 6, -4)));
     }
 
     @Test
     public void testGetFinishFields() {
-        assertTrue(this.board.getFinishFields().containsKey(new Vector3(-4, 10, -6)));
+        assertTrue(this.board.getFinishFields().containsKey(new Vector3(-6, 10, -4)));
     }
 
     @Test
     public void testGetPassengerFields() {
-        final Field actualField = this.board.getPassengerFields().get(new Vector3(1, 7, -8));
+        final Field actualField = this.board.getPassengerFields().get(new Vector3(-1, 7, -6));
 
         assertNotNull(actualField);
         assertInstanceOf(Passenger.class, actualField);
@@ -100,7 +100,7 @@ public class BoardTest {
 
     @Test
     public void testGetFieldAt() {
-        final Field actualField = this.board.getFieldAt(new Vector3(-1, 6, -5));
+        final Field actualField = this.board.getFieldAt(new Vector3(-3, 6, -3));
 
         assertNotNull(actualField);
         assertInstanceOf(Island.class, actualField);
@@ -108,47 +108,47 @@ public class BoardTest {
 
     @Test
     public void testIsBlocked_Null() {
-        assertTrue(this.board.isBlocked(new Vector3(0, 0, 0)));
+        assertTrue(this.board.isBlocked(new Vector3(-2, 0, 2)));
     }
 
     @Test
     public void testIsBlocked_Island() {
-        assertTrue(this.board.isBlocked(new Vector3(-2, 6, -4)));
+        assertTrue(this.board.isBlocked(new Vector3(1, -1, 0)));
     }
 
     @Test
     public void testIsBlocked_Passenger() {
-        assertTrue(this.board.isBlocked(new Vector3(1, 7, -8)));
+        assertTrue(this.board.isBlocked(new Vector3(1, 2, -3)));
     }
 
     @Test
     public void testIsBlocked_Water() {
-        assertFalse(this.board.isBlocked(new Vector3(2, 0, -2)));
+        assertFalse(this.board.isBlocked(new Vector3(1, 0, -1)));
     }
 
     @Test
     public void testIsBlocked_Finish() {
-        assertFalse(this.board.isBlocked(new Vector3(0, 6, -6)));
+        assertFalse(this.board.isBlocked(new Vector3(-4, 10, -6)));
     }
 
     @Test
     public void testGetSegmentColumn() {
-        assertEquals(1, this.board.getSegmentColumn(new Vector3(2, 4, -6)));
+        assertEquals(1, this.board.getSegmentColumn(new Vector3(0, 4, -4)));
     }
 
     @Test
     public void testGetSegmentColumn_InvalidPosition() {
-        assertThrows(IllegalArgumentException.class, () -> this.board.getSegmentColumn(new Vector3(0, 0, 0)));
+        assertThrows(IllegalArgumentException.class, () -> this.board.getSegmentColumn(new Vector3(-2, 0, 2)));
     }
 
     @Test
     public void testGetSegmentIndex() {
-        assertEquals(1, this.board.getSegmentIndex(new Vector3(2, 4, -6)));
+        assertEquals(1, this.board.getSegmentIndex(new Vector3(0, 4, -4)));
     }
 
     @Test
     public void testGetSegmentIndex_InvalidPosition() {
-        assertThrows(IllegalArgumentException.class, () -> this.board.getSegmentIndex(new Vector3(0, 0, 0)));
+        assertThrows(IllegalArgumentException.class, () -> this.board.getSegmentIndex(new Vector3(-2, 0, 2)));
     }
 
     @Test

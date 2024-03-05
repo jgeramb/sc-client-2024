@@ -5,6 +5,8 @@
 
 package de.teamgruen.sc.sdk.logging;
 
+import de.teamgruen.sc.sdk.SoftwareChallengeClient;
+
 public enum AnsiColor {
 
     RESET,
@@ -26,7 +28,7 @@ public enum AnsiColor {
 
     @Override
     public String toString() {
-        return this.code;
+        return SoftwareChallengeClient.isBatchMode() ? "" : this.code;
     }
 
 }

@@ -68,8 +68,8 @@ public class GameStateTest {
     @Test
     public void testGetDirectionCosts_NoAvailableTurns() {
         final Map<Direction, Integer> actualDirectionCosts = this.gameState.getDirectionCosts(
-                Direction.DOWN_RIGHT,
-                new Vector3(-1, 5, -4),
+                Direction.DOWN_LEFT,
+                new Vector3(-3, 5, -2),
                 1
         );
 
@@ -80,7 +80,7 @@ public class GameStateTest {
     public void testGetDirectionCosts() {
         final Map<Direction, Integer> actualDirectionCosts = this.gameState.getDirectionCosts(
                 Direction.RIGHT,
-                new Vector3(1, 1, -2),
+                new Vector3(0, 1, -1),
                 3
         );
 
@@ -94,36 +94,41 @@ public class GameStateTest {
 
     @Test
     public void testGetMinTurns_Zero() {
-        assertEquals(0, this.gameState.getMinTurns(Direction.RIGHT, new Vector3(1, -1, 0)));
+        assertEquals(0, this.gameState.getMinTurns(Direction.RIGHT, new Vector3(1, 0, -1)));
     }
 
     @Test
     public void testGetMinTurns_One() {
-        assertEquals(1, this.gameState.getMinTurns(Direction.RIGHT, new Vector3(2, -1, -1)));
+        assertEquals(1, this.gameState.getMinTurns(Direction.RIGHT, new Vector3(2, 0, -2)));
     }
 
     @Test
     public void testGetMinTurns_Two() {
-        assertEquals(2, this.gameState.getMinTurns(Direction.DOWN_RIGHT, new Vector3(-1, 5, -4)));
+        assertEquals(2, this.gameState.getMinTurns(Direction.DOWN_RIGHT, new Vector3(-3, 5, -2)));
+    }
+
+    @Test
+    public void testGetMinTurns_Three() {
+        assertEquals(3, this.gameState.getMinTurns(Direction.DOWN_LEFT, new Vector3(-3, 5, -2)));
     }
 
     @Test
     public void testGetBestPushDirection_None() {
-        this.gameState.getEnemyShip().setPosition(new Vector3(-1, 5, -4));
+        this.gameState.getEnemyShip().setPosition(new Vector3(-3, 5, -2));
 
         assertNull(this.gameState.getBestPushDirection(Direction.DOWN_LEFT));
     }
 
     @Test
     public void testGetBestPushDirection_CounterCurrent() {
-        this.gameState.getEnemyShip().setPosition(new Vector3(2, 4, -6));
+        this.gameState.getEnemyShip().setPosition(new Vector3(0, 4, -4));
 
         assertEquals(Direction.DOWN_LEFT, this.gameState.getBestPushDirection(Direction.DOWN_RIGHT));
     }
 
     @Test
     public void testGetBestPushDirection_Obstacles() {
-        this.gameState.getEnemyShip().setPosition(new Vector3(3, 4, -7));
+        this.gameState.getEnemyShip().setPosition(new Vector3(1, 4, -5));
 
         assertEquals(Direction.RIGHT, this.gameState.getBestPushDirection(Direction.DOWN_RIGHT));
     }
@@ -131,16 +136,16 @@ public class GameStateTest {
     @Test
     public void testGetBestPushDirection_MinTurns() {
         final Ship enemyShip = this.gameState.getEnemyShip();
-        enemyShip.setPosition(new Vector3(4, 3, -7));
-        enemyShip.setDirection(Direction.DOWN_RIGHT);
+        enemyShip.setPosition(new Vector3(1, 5, -6));
+        enemyShip.setDirection(Direction.DOWN_LEFT);
 
-        assertEquals(Direction.DOWN_RIGHT, this.gameState.getBestPushDirection(Direction.RIGHT));
+        assertEquals(Direction.DOWN_LEFT, this.gameState.getBestPushDirection(Direction.RIGHT));
     }
 
     @Test
     public void testGetBestPushDirection_SegmentDistance() {
         final Ship enemyShip = this.gameState.getEnemyShip();
-        enemyShip.setPosition(new Vector3(4, 4, -8));
+        enemyShip.setPosition(new Vector3(2, 4, -6));
         enemyShip.setDirection(Direction.DOWN_LEFT);
 
         assertEquals(Direction.UP_LEFT, this.gameState.getBestPushDirection(Direction.RIGHT));
@@ -149,7 +154,7 @@ public class GameStateTest {
     @Test
     public void testGetBestPushDirection_NoFinish() {
         final Ship enemyShip = this.gameState.getEnemyShip();
-        enemyShip.setPosition(new Vector3(-3, 9, -6));
+        enemyShip.setPosition(new Vector3(-5, 9, -4));
         enemyShip.setPassengers(2);
         enemyShip.setSpeed(3);
         enemyShip.setCoal(1);
@@ -160,8 +165,8 @@ public class GameStateTest {
     @Test
     public void testGetAdvanceLimit_OutOfMap() {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
-                new Vector3(2, -1, -1),
-                Direction.RIGHT,
+                new Vector3(-1, 0, 1),
+                Direction.LEFT,
                 0,
                 1,
                 0,
@@ -175,7 +180,7 @@ public class GameStateTest {
     @Test
     public void testGetAdvanceLimit_Blocked() {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
-                new Vector3(4, -1, -3),
+                new Vector3(0, -1, 1),
                 Direction.RIGHT,
                 0,
                 1,
@@ -190,7 +195,7 @@ public class GameStateTest {
     @Test
     public void testGetAdvanceLimit_Ship() {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
-                new Vector3(1, 1, -2),
+                new Vector3(-1, 1, 0),
                 Direction.LEFT,
                 0,
                 1,
@@ -205,8 +210,8 @@ public class GameStateTest {
     @Test
     public void testGetAdvanceLimit_CounterCurrent_Enter() {
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
-                new Vector3(1, -1, 0),
-                Direction.DOWN_RIGHT,
+                new Vector3(-1, 1, 0),
+                Direction.RIGHT,
                 0,
                 1,
                 0,
@@ -222,7 +227,7 @@ public class GameStateTest {
         this.gameState.getPlayerShip().setSpeed(2);
 
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
-                new Vector3(1, 0, -1),
+                new Vector3(-1, 0, 1),
                 Direction.RIGHT,
                 0,
                 2,
@@ -241,12 +246,12 @@ public class GameStateTest {
         playerShip.setPassengers(2);
 
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
-                new Vector3(-3, 9, -6),
+                new Vector3(-5, 8, -3),
                 Direction.DOWN_LEFT,
                 0,
-                2,
                 1,
-                3
+                1,
+                4
         );
 
         assertEquals(AdvanceInfo.Result.FINISH, actualAdvanceLimit.getResult());
@@ -260,12 +265,12 @@ public class GameStateTest {
         playerShip.setPassengers(2);
 
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
-                new Vector3(-3, 8, -5),
+                new Vector3(-5, 9, -4),
                 Direction.DOWN_LEFT,
                 0,
+                2,
                 1,
-                1,
-                4
+                3
         );
 
         assertEquals(AdvanceInfo.Result.FINISH, actualAdvanceLimit.getResult());
@@ -277,7 +282,7 @@ public class GameStateTest {
         this.gameState.getPlayerShip().setSpeed(2);
 
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
-                new Vector3(4, 1, -5),
+                new Vector3(2, 1, -3),
                 Direction.DOWN_RIGHT,
                 0,
                 2,
@@ -294,7 +299,7 @@ public class GameStateTest {
         this.gameState.getPlayerShip().setSpeed(2);
 
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
-                new Vector3(4, 0, -4),
+                new Vector3(2, 1, -3),
                 Direction.DOWN_RIGHT,
                 1,
                 2,
@@ -311,7 +316,7 @@ public class GameStateTest {
         this.gameState.getPlayerShip().setSpeed(5);
 
         final AdvanceInfo actualAdvanceLimit = this.gameState.getAdvanceLimit(
-                new Vector3(4, -2, -2),
+                new Vector3(2, -2, 0),
                 Direction.DOWN_RIGHT,
                 0,
                 6,
@@ -326,7 +331,7 @@ public class GameStateTest {
     @Test
     public void testAppendForwardMove_Ship() {
         final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(1, 1, -2));
+        playerShip.setPosition(new Vector3(-1, 1, 0));
         playerShip.setDirection(Direction.LEFT);
 
         final Vector3 position = playerShip.getPosition();
@@ -350,7 +355,7 @@ public class GameStateTest {
     @Test
     public void testAppendForwardMove_Passenger() {
         final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(4, 1, -5));
+        playerShip.setPosition(new Vector3(2, 1, -3));
         playerShip.setDirection(Direction.DOWN_RIGHT);
 
         final Vector3 position = playerShip.getPosition();
@@ -377,7 +382,7 @@ public class GameStateTest {
     @Test
     public void testAppendForwardMove_Finish() {
         final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(-3, 8, -5));
+        playerShip.setPosition(new Vector3(-5, 8, -3));
         playerShip.setDirection(Direction.DOWN_LEFT);
 
         final Vector3 position = playerShip.getPosition();
@@ -404,7 +409,7 @@ public class GameStateTest {
     @Test
     public void testAppendForwardMove_Normal() {
         final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(4, -2, -2));
+        playerShip.setPosition(new Vector3(2, -2, 0));
         playerShip.setDirection(Direction.DOWN_RIGHT);
 
         final Vector3 position = playerShip.getPosition();
@@ -430,7 +435,7 @@ public class GameStateTest {
     @Test
     public void testGetMoves() {
         final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(1, -1, 0));
+        playerShip.setPosition(new Vector3(-1, -1, 2));
 
         final List<List<Action>> actualMoves = this.gameState.getMoves(
                 playerShip.getPosition(),

@@ -8,6 +8,7 @@ package de.teamgruen.sc.player.utilities.paths;
 import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
@@ -22,8 +23,10 @@ public class PathFinder {
 
     /**
      * Find the shortest path from start to end using the A* algorithm.
+     * @param start the start position
+     * @param end the end position
      */
-    public static List<Vector3> findPath(Vector3 start, Vector3 end) {
+    public static List<Vector3> findPath(@NonNull Vector3 start, @NonNull Vector3 end) {
         final List<PathNode> openNodes = new ArrayList<>();
         final List<PathNode> closedNodes = new ArrayList<>();
 
@@ -35,17 +38,17 @@ public class PathFinder {
         openNodes.add(currentNode);
 
         while(!openNodes.isEmpty()) {
-            // Sort open nodes by fCost (ascending)
-            openNodes.sort(Comparator.comparingInt(PathNode::getTotalCost));
-            openNodes.sort(Comparator.comparingInt(PathNode::getGraphCost).reversed());
-            currentNode = openNodes.get(0);
+            // get the node with the lowest fCost
+            currentNode = openNodes.stream()
+                    .min(Comparator.comparingInt(PathNode::getTotalCost))
+                    .orElse(null);
 
             openNodes.remove(currentNode);
             closedNodes.add(currentNode);
 
             int g = currentNode.getGraphCost() + 1;
 
-            // Check if end is reached
+            // check if end is reached
             if(closedNodes.contains(endNode))
                 break;
 
@@ -66,6 +69,7 @@ public class PathFinder {
             }
         }
 
+        // backtrace the path
         final List<Vector3> finalPath = new ArrayList<>();
 
         if(closedNodes.contains(endNode)) {
@@ -96,25 +100,26 @@ public class PathFinder {
         return finalPath;
     }
 
+    /**
+     * Returns the estimated path cost from start to end.
+     * @param start the start position
+     * @param end the end position
+     * @return the estimated path cost
+     */
     private static int getEstimatedPathCost(Vector3 start, Vector3 end) {
-        final int manhattenDistance = Math.max(
+        return Math.max(
                 Math.abs(start.getQ() - end.getQ()),
                 Math.max(
                         Math.abs(start.getS() - end.getS()),
                         Math.abs(start.getR() - end.getR())
                 )
         );
-        int requiredTurns;
-
-        try {
-            requiredTurns = Direction.fromVector3(start).costTo(Direction.fromVector3(end));
-        } catch (IllegalArgumentException ignore) {
-            requiredTurns = 0;
-        }
-
-        return manhattenDistance + requiredTurns;
     }
 
+    /**
+     * @param node the node to get the neighbours for
+     * @return the neighbours of the given node
+     */
     private static List<PathNode> getNeighbours(PathNode node) {
         final List<PathNode> neighbours = new ArrayList<>();
 
@@ -128,14 +133,26 @@ public class PathFinder {
         return neighbours;
     }
 
+    /**
+     * @param position the position to check
+     * @return whether the given position is a field on the board
+     */
     private static boolean isInBounds(Vector3 position) {
         return gameState.getBoard().getFieldAt(position) != null;
     }
 
+    /**
+     * @param position the position to get or create a node for
+     * @return the node for the given position
+     */
     private static PathNode getOrCreateNode(Vector3 position) {
         return CACHE.computeIfAbsent(position, PathFinder::createPathNode);
     }
 
+    /**
+     * @param position the position to create a node for
+     * @return the new node
+     */
     private static PathNode createPathNode(Vector3 position) {
         return new PathNode(position, gameState.getBoard().isBlocked(position));
     }

@@ -23,6 +23,10 @@ import java.util.List;
 
 public class SoftwareChallengeClient {
 
+    @Setter
+    @Getter
+    public static boolean batchMode = false;
+
     private final GameHandler gameHandler;
     @Setter
     @Getter

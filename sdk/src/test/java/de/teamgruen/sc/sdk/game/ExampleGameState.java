@@ -24,8 +24,8 @@ public class ExampleGameState extends GameState {
 
         this.board.setNextSegmentDirection(Direction.DOWN_LEFT);
         this.board.updateSegments(getSampleSegments());
-        this.getPlayerShip().setPosition(new Vector3(1, -1, 0));
-        this.getEnemyShip().setPosition(new Vector3(0, 1, -1));
+        this.getPlayerShip().setPosition(new Vector3(-1, -1, 2));
+        this.getEnemyShip().setPosition(new Vector3(-2, 1, 1));
         this.gamePhase = GamePhase.RUNNING;
         this.currentTeam = Team.ONE;
         this.turn = 0;
@@ -37,19 +37,19 @@ public class ExampleGameState extends GameState {
                 finish = FieldFactory.finish();
 
         return List.of(
-                getSegmentData(2, 0, -2, Direction.RIGHT,
+                getSegmentData(0, 0, 0, Direction.RIGHT,
                         water, water, water, water, water,
                         water, water, water, water, water,
                         water, island, water, water, water,
                         water, water, water, water, water
                 ),
-                getSegmentData(2, 4, -6, Direction.DOWN_RIGHT,
+                getSegmentData(0, 4, -4, Direction.DOWN_RIGHT,
                         water, FieldFactory.passenger(Direction.RIGHT, 1), water, water, water,
                         water, water, water, water, water,
                         water, water, water, water, island,
                         water, water, water, water, water
                 ),
-                getSegmentData(-2, 8, -6, Direction.DOWN_LEFT,
+                getSegmentData(-4, 8, -4, Direction.DOWN_LEFT,
                         FieldFactory.passenger(Direction.UP_LEFT, 1), water, water, island, water,
                         water, water, water, water, island,
                         water, water, water, water, water,
@@ -76,8 +76,8 @@ public class ExampleGameState extends GameState {
 
     public static List<ShipData> getSampleShips() {
         return List.of(
-                getShip(Team.ONE, new Vector3(5, 0, -5), Direction.LEFT, 1, 5, 2, 2, 16),
-                getShip(Team.TWO, new Vector3(4, 0, -4), Direction.RIGHT, 2, 6, 1, 1, 10)
+                getShip(Team.ONE, new Vector3(2, 0, -2), Direction.LEFT, 1, 5, 2, 2, 16),
+                getShip(Team.TWO, new Vector3(1, 0, -1), Direction.RIGHT, 2, 6, 1, 1, 10)
         );
     }
 

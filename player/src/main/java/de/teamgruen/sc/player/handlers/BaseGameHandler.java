@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -82,7 +83,9 @@ public abstract class BaseGameHandler implements GameHandler {
         } catch (InterruptedException ignore) {
         } finally {
             this.ready.set(false);
-            this.logger.debug("Time: " + String.format("%,d", System.nanoTime() - startTime) + "ns");
+
+            final double numerator = TimeUnit.NANOSECONDS.convert(1, TimeUnit.MILLISECONDS);
+            this.logger.debug("Time: " + String.format("%.3f", (System.nanoTime() - startTime) / numerator) + "ms");
         }
 
         return Collections.emptyList();
