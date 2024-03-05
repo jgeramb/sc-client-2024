@@ -131,9 +131,10 @@ public class MoveUtilTest {
                 new Vector3(2, 3, -5)
         ));
         final List<Action> expectedActions = List.of(
-                ActionFactory.changeVelocity(-1),
+                ActionFactory.changeVelocity(1),
                 ActionFactory.forward(3),
-                ActionFactory.turn(Direction.RIGHT)
+                ActionFactory.turn(Direction.RIGHT),
+                ActionFactory.forward(2)
         );
 
         assertTrue(actualMove.isPresent());

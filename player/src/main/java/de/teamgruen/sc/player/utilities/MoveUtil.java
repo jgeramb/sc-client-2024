@@ -158,7 +158,7 @@ public class MoveUtil {
         AtomicInteger coal = new AtomicInteger(Math.min(playerShip.getCoal(), 1));
         AtomicInteger freeTurns = new AtomicInteger(playerShip.getFreeTurns());
 
-        while(move.getTotalCost() < getMinMovementPoints(gameState)) {
+        while(move.getTotalCost() < maxMovementPoints) {
             final int availablePoints = maxMovementPoints - move.getTotalCost();
             final Vector3 position = move.getEndPosition();
             final Direction currentDirection = move.getEndDirection();
@@ -229,6 +229,9 @@ public class MoveUtil {
             } else
                 break;
         }
+
+        if(move.getTotalCost() < getMinMovementPoints(gameState))
+            return Optional.empty();
 
         pathIndex = path.indexOf(move.getEndPosition());
 
