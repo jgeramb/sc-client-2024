@@ -35,6 +35,7 @@ import de.teamgruen.sc.sdk.protocol.room.messages.MementoMessage;
 import de.teamgruen.sc.sdk.protocol.room.messages.MoveRequestMessage;
 import de.teamgruen.sc.sdk.protocol.room.messages.ResultMessage;
 import de.teamgruen.sc.sdk.protocol.room.messages.WelcomeMessage;
+import lombok.NonNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -141,12 +142,12 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
                 called.set(true);
             }
 
             @Override
-            public List<Action> getNextActions(GameState gameState) {
+            public List<Action> getNextActions(@NonNull GameState gameState) {
                 return Collections.emptyList();
             }
         });
@@ -166,7 +167,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
                 assertEquals(Team.ONE, gameState.getPlayerTeam());
 
                 called.set(true);
@@ -219,11 +220,11 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
             }
 
             @Override
-            public void onBoardUpdate(GameState gameState) {
+            public void onBoardUpdate(@NonNull GameState gameState) {
                 final Collection<Field> expectedFieldList = sampleSegments
                         .stream()
                         .map(boardSegment -> boardSegment.getColumns().stream().map(FieldArray::getFields).reduce(new ArrayList<>(), (result, current) -> {
@@ -287,9 +288,9 @@ public class ClientPacketHandlerTest {
         final AtomicBoolean requestedAction = new AtomicBoolean(false),
                 sentPacket = new AtomicBoolean(false);
 
-        final ClientPacketHandler handler = new ClientPacketHandler(new SoftwareChallengeClient(null, 0, null) {
+        final ClientPacketHandler handler = new ClientPacketHandler(new SoftwareChallengeClient("", 0, null) {
             @Override
-            public void sendPacket(XMLProtocolPacket packet) {
+            public void sendPacket(@NonNull XMLProtocolPacket packet) {
                 assertInstanceOf(MovePacket.class, packet);
 
                 sentPacket.set(true);
@@ -300,11 +301,11 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
             }
 
             @Override
-            public List<Action> getNextActions(GameState gameState) {
+            public List<Action> getNextActions(@NonNull GameState gameState) {
                 return requestedAction.getAndSet(true) ? List.of(ActionFactory.forward(1)) : Collections.emptyList();
             }
         });
@@ -327,7 +328,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
             }
 
             @Override
@@ -362,7 +363,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
             }
 
             @Override
@@ -387,7 +388,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
             }
 
             @Override
@@ -412,7 +413,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
             }
 
             @Override
@@ -437,7 +438,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
             }
 
             @Override
@@ -462,7 +463,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
             }
 
             @Override
@@ -487,7 +488,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
             }
 
             @Override
@@ -514,7 +515,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onGameStart(GameState gameState) {
+            public void onGameStart(@NonNull GameState gameState) {
             }
 
             @Override

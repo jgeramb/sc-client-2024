@@ -30,8 +30,11 @@ public class PathFinder {
         final List<PathNode> openNodes = new ArrayList<>();
         final List<PathNode> closedNodes = new ArrayList<>();
 
+        PathNode lastNode = getOrCreateNode(start);
+        Direction lastDirection = gameState.getPlayerShip().getDirection();
+
         final PathNode endNode = getOrCreateNode(end);
-        PathNode currentNode = getOrCreateNode(start);
+        PathNode currentNode = lastNode;
         currentNode.setGraphCost(0);
         currentNode.setHeuristicCost(getEstimatedPathCost(start, end));
 
@@ -46,27 +49,29 @@ public class PathFinder {
             openNodes.remove(currentNode);
             closedNodes.add(currentNode);
 
-            int g = currentNode.getGraphCost() + 1;
+            final Vector3 deltaPosition = currentNode.getPosition().copy().subtract(lastNode.getPosition());
+            final int gCost = currentNode.getGraphCost()
+                    + lastDirection.costTo(Direction.fromVector3(deltaPosition))
+                    + 1;
 
             // check if end is reached
             if(closedNodes.contains(endNode))
                 break;
 
             for(PathNode neighbour : getNeighbours(currentNode)) {
-                if (neighbour.isObstacle())
-                    continue;
-
-                if (closedNodes.contains(neighbour))
+                if (neighbour.isObstacle() || closedNodes.contains(neighbour))
                     continue;
 
                 if (!openNodes.contains(neighbour)) {
-                    neighbour.setGraphCost(g);
+                    neighbour.setGraphCost(gCost);
                     neighbour.setHeuristicCost(getEstimatedPathCost(neighbour.getPosition(), end));
 
                     openNodes.add(neighbour);
-                } else if (neighbour.getTotalCost() > g + neighbour.getHeuristicCost())
-                    neighbour.setGraphCost(g);
+                } else if (neighbour.getTotalCost() > gCost + neighbour.getHeuristicCost())
+                    neighbour.setGraphCost(gCost);
             }
+
+            lastNode = currentNode;
         }
 
         // backtrace the path

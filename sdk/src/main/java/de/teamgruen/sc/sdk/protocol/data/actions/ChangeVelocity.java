@@ -9,6 +9,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import lombok.Data;
+import lombok.NonNull;
 
 @Data
 public class ChangeVelocity implements Action {
@@ -17,7 +18,7 @@ public class ChangeVelocity implements Action {
     private int deltaVelocity;
 
     @Override
-    public void perform(GameState gameState) {
+    public void perform(@NonNull GameState gameState) {
         final Ship ship = gameState.getPlayerShip();
         ship.setSpeed(ship.getSpeed() + this.deltaVelocity);
     }

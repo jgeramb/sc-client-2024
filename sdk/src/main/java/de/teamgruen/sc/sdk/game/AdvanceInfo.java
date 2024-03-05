@@ -7,6 +7,7 @@ package de.teamgruen.sc.sdk.game;
 
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import lombok.Data;
+import lombok.NonNull;
 
 @Data
 public class AdvanceInfo {
@@ -29,7 +30,7 @@ public class AdvanceInfo {
      * @param direction the direction of the advance
      * @return the end position
      */
-    public Vector3 getEndPosition(Vector3 position, Direction direction) {
+    public Vector3 getEndPosition(@NonNull Vector3 position, @NonNull Direction direction) {
         return position.copy().add(direction.toVector3().multiply(this.distance));
     }
 

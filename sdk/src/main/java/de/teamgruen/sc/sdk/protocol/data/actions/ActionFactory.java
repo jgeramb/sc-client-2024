@@ -6,6 +6,7 @@
 package de.teamgruen.sc.sdk.protocol.data.actions;
 
 import de.teamgruen.sc.sdk.protocol.data.Direction;
+import lombok.NonNull;
 
 public class ActionFactory {
 
@@ -23,14 +24,14 @@ public class ActionFactory {
         return move;
     }
 
-    public static Push push(Direction direction) {
+    public static Push push(@NonNull Direction direction) {
         Push move = new Push();
         move.setDirection(direction);
 
         return move;
     }
 
-    public static Turn turn(Direction direction) {
+    public static Turn turn(@NonNull Direction direction) {
         Turn move = new Turn();
         move.setDirection(direction);
 

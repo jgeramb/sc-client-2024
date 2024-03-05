@@ -12,6 +12,7 @@ import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.actions.Turn;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.ToString;
 
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public class Move {
         return move;
     }
 
-    public void append(Move move) {
+    public void append(@NonNull Move move) {
         this.endPosition = move.endPosition;
         this.endDirection = move.endDirection;
         this.actions.addAll(move.actions);
@@ -56,12 +57,12 @@ public class Move {
         this.finished = move.finished;
     }
 
-    public void turn(Direction direction) {
+    public void turn(@NonNull Direction direction) {
         this.endDirection = direction;
         this.actions.add(ActionFactory.turn(direction));
     }
 
-    public void push(Direction direction) {
+    public void push(@NonNull Direction direction) {
         this.actions.add(ActionFactory.push(direction));
         this.totalCost++;
         this.pushes++;
@@ -87,15 +88,15 @@ public class Move {
         this.finished = true;
     }
 
-    public int getAcceleration(Ship ship) {
+    public int getAcceleration(@NonNull Ship ship) {
         return this.totalCost - ship.getSpeed();
     }
 
-    public int getMinTurns(GameState gameState) {
+    public int getMinTurns(@NonNull GameState gameState) {
         return gameState.getMinTurns(this.endDirection, this.endPosition);
     }
 
-    public int getCoalCost(Ship ship) {
+    public int getCoalCost(@NonNull Ship ship) {
         Direction direction = ship.getDirection();
         int turnCosts = -ship.getFreeTurns();
 

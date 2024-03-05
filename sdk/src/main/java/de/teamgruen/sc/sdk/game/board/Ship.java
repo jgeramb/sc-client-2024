@@ -20,6 +20,9 @@ public class Ship {
     private Direction direction = Direction.RIGHT;
     private Vector3 position = null;
 
+    /**
+     * @return whether the ship has enough passengers to finish the game
+     */
     public boolean hasEnoughPassengers() {
         return this.passengers >= 2;
     }

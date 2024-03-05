@@ -5,10 +5,7 @@
 
 package de.teamgruen.sc.sdk.game;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 
 @Getter
 @ToString
@@ -18,7 +15,7 @@ public class Vector3 {
 
     private int q, r, s;
 
-    public Vector3 add(Vector3 delta) {
+    public Vector3 add(@NonNull Vector3 delta) {
         this.q += delta.q;
         this.r += delta.r;
         this.s += delta.s;
@@ -26,7 +23,7 @@ public class Vector3 {
         return this;
     }
 
-    public Vector3 subtract(Vector3 delta) {
+    public Vector3 subtract(@NonNull Vector3 delta) {
         final Vector3 vector = this.copy();
         vector.q -= delta.q;
         vector.r -= delta.r;

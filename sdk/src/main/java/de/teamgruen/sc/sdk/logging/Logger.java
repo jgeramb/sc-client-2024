@@ -5,6 +5,7 @@
 
 package de.teamgruen.sc.sdk.logging;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
@@ -43,7 +44,7 @@ public class Logger {
             this.log(Level.DEBUG, message);
     }
 
-    public void log(Level logLevel, String message) {
+    public void log(@NonNull Level logLevel, String message) {
         final String time = DATE_FORMAT.format(new Date());
         final String level = logLevel.getColor() + logLevel.name() + AnsiColor.RESET;
         final String threadName = AnsiColor.CYAN + Thread.currentThread().getName() + AnsiColor.RESET;

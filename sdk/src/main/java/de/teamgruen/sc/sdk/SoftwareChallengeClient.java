@@ -16,6 +16,7 @@ import de.teamgruen.sc.sdk.protocol.requests.JoinGameRequest;
 import de.teamgruen.sc.sdk.protocol.requests.JoinPreparedRoomRequest;
 import de.teamgruen.sc.sdk.protocol.requests.JoinRoomRequest;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ public class SoftwareChallengeClient {
     @Getter
     private XMLTcpClient client;
 
-    public SoftwareChallengeClient(String host, int port, GameHandler gameHandler) {
+    public SoftwareChallengeClient(@NonNull String host, int port, GameHandler gameHandler) {
         this.gameHandler = gameHandler;
         this.client = new XMLTcpClient(host, port);
     }
@@ -57,6 +58,7 @@ public class SoftwareChallengeClient {
     }
 
     /**
+     * Disconnects the client from the server.
      * @throws IllegalStateException if the client is not started
      */
     public void stop() throws IOException {
@@ -66,6 +68,10 @@ public class SoftwareChallengeClient {
         this.client.disconnect();
     }
 
+    /**
+     * Authenticates the client with the given password and prepares a room.
+     * @param password the password to authenticate with
+     */
     public void prepareRoom(String password) {
         this.client.send(new AuthenticationRequest(password));
         this.client.send(new PrepareRoomRequest("swc_2024_mississippi_queen", false, List.of(
@@ -74,7 +80,7 @@ public class SoftwareChallengeClient {
         )));
     }
 
-    public void sendPacket(XMLProtocolPacket packet) {
+    public void sendPacket(@NonNull XMLProtocolPacket packet) {
         this.client.send(packet);
     }
 
@@ -86,11 +92,11 @@ public class SoftwareChallengeClient {
         this.client.send(new JoinGameRequest(gameType));
     }
 
-    public void joinRoom(String roomId) {
+    public void joinRoom(@NonNull String roomId) {
         this.client.send(new JoinRoomRequest(roomId));
     }
 
-    public void joinPreparedRoom(String reservationCode) {
+    public void joinPreparedRoom(@NonNull String reservationCode) {
         this.client.send(new JoinPreparedRoomRequest(reservationCode));
     }
 

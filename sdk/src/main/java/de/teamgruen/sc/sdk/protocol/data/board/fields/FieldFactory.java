@@ -6,6 +6,7 @@
 package de.teamgruen.sc.sdk.protocol.data.board.fields;
 
 import de.teamgruen.sc.sdk.protocol.data.Direction;
+import lombok.NonNull;
 
 public class FieldFactory {
 
@@ -17,7 +18,7 @@ public class FieldFactory {
         return new Island();
     }
 
-    public static Passenger passenger(Direction direction, int passengers) {
+    public static Passenger passenger(@NonNull Direction direction, int passengers) {
         return new Passenger(direction, passengers);
     }
 

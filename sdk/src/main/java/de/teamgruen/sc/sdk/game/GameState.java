@@ -77,14 +77,14 @@ public class GameState {
     /**
      * Get all possible moves for the current ship.
      *
-     * @param position The start position of the ship
-     * @param shipDirection The direction of the ship
-     * @param freeTurns The amount of free turns
-     * @param freeAcceleration The remaining free accelerations
-     * @param requiredMovementPoints The minimum amount of movement points to use
-     * @param maxMovementPoints The maximum amount of movement points to use
-     * @param maxCoal The maximum amount of coal to use
-     * @return All possible moves for the current ship.
+     * @param position the start position of the ship
+     * @param shipDirection the direction of the ship
+     * @param freeTurns the amount of free turns
+     * @param freeAcceleration the remaining free accelerations
+     * @param requiredMovementPoints the minimum amount of movement points to use
+     * @param maxMovementPoints the maximum amount of movement points to use
+     * @param maxCoal the maximum amount of coal to use
+     * @return all possible moves for the current ship.
      */
     public List<Move> getMoves(@NonNull Vector3 position,
                                @NonNull Direction shipDirection,
@@ -166,12 +166,12 @@ public class GameState {
     /**
      * Appends all actions for the advance to the given move.
      *
-     * @param endPosition The end position of the advance
-     * @param direction The direction of the advance
-     * @param move The move to append the actions to
-     * @param advanceInfo The information about the advance
-     * @param remainingMovementPoints The remaining movement points after the advance
-     * @return The total cost of the move
+     * @param endPosition the end position of the advance
+     * @param direction the direction of the advance
+     * @param move the move to append the actions to
+     * @param advanceInfo the information about the advance
+     * @param remainingMovementPoints the remaining movement points after the advance
+     * @return the total cost of the move
      */
     public int appendForwardMove(@NonNull Vector3 endPosition,
                                  @NonNull Direction direction,
@@ -217,13 +217,13 @@ public class GameState {
     /**
      * Get the maximum free forward moves.
      *
-     * @param start The start position of the ship
-     * @param direction The direction of the ship
-     * @param usedMovementPoints The used movement points so far
-     * @param remainingMovementPoints The maximum amount of movement points to use
-     * @param freeAcceleration The remaining free accelerations
-     * @param coal The maximum amount of coal to use
-     * @return The information about the maximum free forward moves
+     * @param start the start position of the ship
+     * @param direction the direction of the ship
+     * @param usedMovementPoints the used movement points so far
+     * @param remainingMovementPoints the maximum amount of movement points to use
+     * @param freeAcceleration the remaining free accelerations
+     * @param coal the maximum amount of coal to use
+     * @return the information about the maximum free forward moves
      */
     public AdvanceInfo getAdvanceLimit(@NonNull Vector3 start,
                                        @NonNull Direction direction,
@@ -306,10 +306,10 @@ public class GameState {
     /**
      * Returns the cost for all possible directions.
      *
-     * @param direction The current direction of the ship
-     * @param position The current position of the ship
-     * @param maxTurns The maximum amount of turns to consider
-     * @return The required turn count for all possible directions
+     * @param direction the current direction of the ship
+     * @param position the current position of the ship
+     * @param maxTurns the maximum amount of turns to consider
+     * @return the required turn count for all possible directions
      */
     public Map<Direction, Integer> getDirectionCosts(@NonNull Direction direction, @NonNull Vector3 position, int maxTurns) {
         final Map<Direction, Integer> costs = new HashMap<>();
@@ -336,9 +336,9 @@ public class GameState {
     /**
      * Get the minimum required turn count for a direction.
      *
-     * @param direction The target direction
-     * @param position The current position of the ship
-     * @return The minimum required turn count for the given direction
+     * @param direction the target direction
+     * @param position the current position of the ship
+     * @return the minimum required turn count for the given direction
      */
     public int getMinTurns(@NonNull Direction direction, @NonNull Vector3 position) {
         return this.getDirectionCosts(direction, position, Direction.values().length)
@@ -351,8 +351,8 @@ public class GameState {
     /**
      * Get the best push direction for the enemy ship.
      *
-     * @param from The direction the player ship is coming from
-     * @return The direction with the highest score
+     * @param from the direction the player ship is coming from
+     * @return the direction with the highest score
      */
     public Direction getBestPushDirection(@NonNull Direction from) {
         final Ship enemyShip = this.getEnemyShip();

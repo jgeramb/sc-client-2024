@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import de.teamgruen.sc.sdk.protocol.exceptions.DeserializationException;
+import lombok.NonNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -21,7 +22,9 @@ public abstract class SubTypeListDeserializer<R, S> extends StdDeserializer<R> {
     private final String listFieldName;
     private final Map<String, Class<? extends S>> subTypes;
 
-    protected SubTypeListDeserializer(Class<R> result, String listFieldName, Map<String, Class<? extends S>> subTypes) {
+    protected SubTypeListDeserializer(@NonNull Class<R> result,
+                                      @NonNull String listFieldName,
+                                      @NonNull Map<String, Class<? extends S>> subTypes) {
         super(result);
 
         this.listFieldName = listFieldName;

@@ -8,6 +8,7 @@ package de.teamgruen.sc.player.handlers;
 import de.teamgruen.sc.player.utilities.MoveUtil;
 import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.logging.Logger;
+import lombok.NonNull;
 
 public class SimpleGameHandler extends BaseGameHandler {
 
@@ -16,7 +17,7 @@ public class SimpleGameHandler extends BaseGameHandler {
     }
 
     @Override
-    public void onBoardUpdate(GameState gameState) {
+    public void onBoardUpdate(@NonNull GameState gameState) {
         if(!gameState.getPlayerTeam().equals(gameState.getCurrentTeam()))
             return;
 

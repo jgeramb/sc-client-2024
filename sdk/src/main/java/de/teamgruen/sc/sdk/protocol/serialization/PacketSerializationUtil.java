@@ -18,6 +18,7 @@ import de.teamgruen.sc.sdk.protocol.responses.ErrorPacket;
 import de.teamgruen.sc.sdk.protocol.responses.JoinedRoomResponse;
 import de.teamgruen.sc.sdk.protocol.room.LeftPacket;
 import de.teamgruen.sc.sdk.protocol.room.RoomPacket;
+import lombok.NonNull;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -51,7 +52,7 @@ public class PacketSerializationUtil {
      * @return The XML representation of the packet
      * @throws SerializationException if the packet could not be serialized
      */
-    public static String serialize(Object packet) throws SerializationException {
+    public static String serialize(@NonNull Object packet) throws SerializationException {
         try {
             return XML_MAPPER.writeValueAsString(packet).strip();
         } catch (JsonProcessingException ex) {
@@ -97,7 +98,7 @@ public class PacketSerializationUtil {
      * @return The deserialized packet
      * @throws DeserializationException if the XML could not be deserialized
      */
-    private static XMLProtocolPacket deserializeXML(String rootTag, String xml) throws DeserializationException {
+    private static XMLProtocolPacket deserializeXML(@NonNull String rootTag, @NonNull String xml) throws DeserializationException {
         try {
             final Class<? extends XMLProtocolPacket> packetType = INCOMING_PACKET_TYPES.stream()
                     .filter(type -> rootTag.equals(getRootTag(type)))
@@ -117,7 +118,7 @@ public class PacketSerializationUtil {
      * @throws NullPointerException if the class does not provide a root tag annotation
      * @return The root tag of the packet class
      */
-    private static String getRootTag(Class<? extends XMLProtocolPacket> clazz) throws NullPointerException {
+    private static String getRootTag(@NonNull Class<? extends XMLProtocolPacket> clazz) throws NullPointerException {
         return Objects.requireNonNull(clazz.getAnnotation(JacksonXmlRootElement.class)).localName();
     }
 
@@ -127,7 +128,7 @@ public class PacketSerializationUtil {
      * @param xml the XML to parse
      * @return The tag name of the XML object
      */
-    public static String parseXMLTagName(String xml) {
+    public static String parseXMLTagName(@NonNull String xml) {
         final Matcher matcher = XML_TAG_PATTERN.matcher(xml);
 
         if (matcher.find())

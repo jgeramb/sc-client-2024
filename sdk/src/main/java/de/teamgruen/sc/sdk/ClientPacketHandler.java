@@ -28,6 +28,7 @@ import de.teamgruen.sc.sdk.protocol.room.LeftPacket;
 import de.teamgruen.sc.sdk.protocol.room.MovePacket;
 import de.teamgruen.sc.sdk.protocol.room.RoomPacket;
 import de.teamgruen.sc.sdk.protocol.room.messages.*;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class ClientPacketHandler {
     private String roomId;
     private GameState gameState;
 
-    public void handlePacket(XMLProtocolPacket xmlProtocolPacket) {
+    public void handlePacket(@NonNull XMLProtocolPacket xmlProtocolPacket) {
         if(xmlProtocolPacket instanceof ErrorPacket packet)
             this.gameHandler.onError(packet.getMessage());
         else if(xmlProtocolPacket instanceof AdminXMLProtocolPacket) {

@@ -7,6 +7,7 @@ package de.teamgruen.sc.sdk.protocol.data;
 
 import de.teamgruen.sc.sdk.game.Vector3;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 
 @AllArgsConstructor
 public enum Direction {
@@ -28,17 +29,17 @@ public enum Direction {
         return values()[Math.floorMod(this.ordinal() + delta, values().length)];
     }
 
-    public int delta(Direction direction) {
+    public int delta(@NonNull Direction direction) {
         final int delta = Math.floorMod(direction.ordinal() - this.ordinal(), values().length);
 
         return (delta > values().length / 2) ? delta - values().length : delta;
     }
 
-    public int costTo(Direction direction) {
+    public int costTo(@NonNull Direction direction) {
         return Math.abs(this.delta(direction));
     }
 
-    public static Direction fromVector3(Vector3 vector) {
+    public static Direction fromVector3(@NonNull Vector3 vector) {
         for (Direction direction : values()) {
             if (direction.toVector3().equals(vector))
                 return direction;

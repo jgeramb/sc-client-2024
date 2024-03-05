@@ -13,6 +13,7 @@ import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.Data;
+import lombok.NonNull;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -26,7 +27,12 @@ public class Board {
     private List<BoardSegment> segments = new ArrayList<>();
     private Direction nextSegmentDirection;
 
-    public int getSegmentIndex(Vector3 fieldPosition) {
+    /**
+     * @param fieldPosition the position to check
+     * @return the index of the segment the field is part of
+     * @throws IllegalArgumentException if the field is not part of any segment
+     */
+    public int getSegmentIndex(@NonNull Vector3 fieldPosition) {
         for (int i = 0; i < this.segments.size(); i++) {
             if(this.segments.get(i).fields().containsKey(fieldPosition))
                 return i;
@@ -35,7 +41,12 @@ public class Board {
         throw new IllegalArgumentException("Field is not part of any segment");
     }
 
-    public int getSegmentColumn(Vector3 fieldPosition) {
+    /**
+     * @param fieldPosition the position to check
+     * @return the column of the segment the field is part of
+     * @throws IllegalArgumentException if the field is not part of any segment
+     */
+    public int getSegmentColumn(@NonNull Vector3 fieldPosition) {
         for (BoardSegment segment : this.segments) {
             final int index = List.copyOf(segment.fields().keySet()).indexOf(fieldPosition);
 
@@ -46,17 +57,26 @@ public class Board {
         throw new IllegalArgumentException("Field is not part of any segment");
     }
 
-    public boolean isBlocked(Vector3 position) {
+    /**
+     * @param position the position to check
+     * @return whether the position is not passable
+     */
+    public boolean isBlocked(@NonNull Vector3 position) {
         final Field field = this.getFieldAt(position);
 
         return field == null || field.isObstacle();
     }
 
-    public Field getFieldAt(Vector3 position) {
+    public Field getFieldAt(@NonNull Vector3 position) {
         return this.fields.get(position);
     }
 
-    public Map<Vector3, Field> getAllFields(Predicate<Map.Entry<Vector3, Field>> predicate) {
+    /**
+     * Returns all fields that match the given predicate
+     * @param predicate the predicate to match
+     * @return the matching fields
+     */
+    public Map<Vector3, Field> getAllFields(@NonNull Predicate<Map.Entry<Vector3, Field>> predicate) {
         return this.fields
                 .entrySet()
                 .stream()
@@ -75,7 +95,7 @@ public class Board {
         return this.getAllFields(entry -> entry.getValue() instanceof Finish);
     }
 
-    public boolean isCounterCurrent(Vector3 position) {
+    public boolean isCounterCurrent(@NonNull Vector3 position) {
         return this.counterCurrent.contains(position);
     }
 

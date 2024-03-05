@@ -8,6 +8,7 @@ package de.teamgruen.sc.player.clients;
 import de.teamgruen.sc.sdk.SoftwareChallengeClient;
 import de.teamgruen.sc.sdk.game.handlers.GameHandler;
 import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
@@ -19,7 +20,7 @@ public class Client {
     protected final int port;
     protected SoftwareChallengeClient client;
 
-    protected void connect(GameHandler gameHandler) throws TcpConnectException {
+    protected void connect(@NonNull GameHandler gameHandler) throws TcpConnectException {
         this.client = new SoftwareChallengeClient(host, port, gameHandler);
         this.client.start();
 

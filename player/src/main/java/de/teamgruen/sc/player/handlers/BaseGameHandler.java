@@ -14,6 +14,7 @@ import de.teamgruen.sc.sdk.logging.AnsiColor;
 import de.teamgruen.sc.sdk.logging.Logger;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreFragment;
+import lombok.NonNull;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -35,7 +36,7 @@ public abstract class BaseGameHandler implements GameHandler {
     }
 
     @Override
-    public void onGameStart(GameState gameState) {
+    public void onGameStart(@NonNull GameState gameState) {
         this.logger.info("Game started");
     }
 
@@ -64,7 +65,7 @@ public abstract class BaseGameHandler implements GameHandler {
     }
 
     @Override
-    public List<Action> getNextActions(GameState gameState) {
+    public List<Action> getNextActions(@NonNull GameState gameState) {
         final long startTime = System.nanoTime();
 
         try {

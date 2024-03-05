@@ -16,6 +16,7 @@ import de.teamgruen.sc.sdk.logging.Logger;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreFragment;
 import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
+import lombok.NonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class AdminClient extends Client {
     private final Logger logger;
     private final Map<String, int[]> playStyleStats = new LinkedHashMap<>();
 
-    public AdminClient(Logger logger, String host, int port) {
+    public AdminClient(@NonNull Logger logger, @NonNull String host, int port) {
         super(host, port);
 
         this.logger = logger;
@@ -57,17 +58,17 @@ public class AdminClient extends Client {
                                     }
 
                                     @Override
-                                    public void onGameStart(GameState gameState) {
+                                    public void onGameStart(@NonNull GameState gameState) {
                                         gameHandler.onGameStart(gameState);
                                     }
 
                                     @Override
-                                    public void onBoardUpdate(GameState gameState) {
+                                    public void onBoardUpdate(@NonNull GameState gameState) {
                                         gameHandler.onBoardUpdate(gameState);
                                     }
 
                                     @Override
-                                    public List<Action> getNextActions(GameState gameState) {
+                                    public List<Action> getNextActions(@NonNull GameState gameState) {
                                         return gameHandler.getNextActions(gameState);
                                     }
 
@@ -125,7 +126,7 @@ public class AdminClient extends Client {
         });
     }
 
-    public void runTests(String password, int count) {
+    public void runTests(@NonNull String password, int count) {
         this.playStyleStats.put("Simple", new int[4]);
         this.playStyleStats.put("Advanced", new int[4]);
 

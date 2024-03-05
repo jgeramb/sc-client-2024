@@ -11,6 +11,7 @@ import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
+import lombok.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +24,7 @@ public class MoveUtil {
      * @param gameState the current game state
      * @return the most efficient move
      */
-    public static Optional<Move> getMostEfficientMove(GameState gameState) {
+    public static Optional<Move> getMostEfficientMove(@NonNull GameState gameState) {
         final List<Move> moves = getPossibleMoves(gameState, false);
         final Ship playerShip = gameState.getPlayerShip();
         final Vector3 position = playerShip.getPosition();
@@ -67,7 +68,7 @@ public class MoveUtil {
      * @param moreCoal whether to consider moves with more coal
      * @return a list of all possible moves
      */
-    public static List<Move> getPossibleMoves(GameState gameState, boolean moreCoal) {
+    public static List<Move> getPossibleMoves(@NonNull GameState gameState, boolean moreCoal) {
         final Ship ship = gameState.getPlayerShip();
         final int maxCoal = Math.min(ship.getCoal(), moreCoal ? 2 : 1);
 
@@ -95,7 +96,7 @@ public class MoveUtil {
      * @param ship the player's ship
      * @param move the move to add the acceleration action to
      */
-    private static void addAcceleration(Ship ship, Move move) {
+    private static void addAcceleration(@NonNull Ship ship, @NonNull Move move) {
         final int acceleration = move.getAcceleration(ship);
 
         if(acceleration != 0)
@@ -107,7 +108,7 @@ public class MoveUtil {
      * @param gameState the current game state
      * @return the minimum movement points
      */
-    private static int getMinMovementPoints(GameState gameState) {
+    private static int getMinMovementPoints(@NonNull GameState gameState) {
         return Math.max(1, gameState.getPlayerShip().getSpeed() - 1);
     }
 
@@ -117,7 +118,7 @@ public class MoveUtil {
      * @param maxCoal the maximum amount of coal to use
      * @return the maximum movement points
      */
-    private static int getMaxMovementPoints(GameState gameState, int maxCoal) {
+    private static int getMaxMovementPoints(@NonNull GameState gameState, int maxCoal) {
         final Ship ship = gameState.getPlayerShip();
         final int playerSegmentIndex = gameState.getBoard().getSegmentIndex(ship.getPosition());
         final int enemySegmentIndex = gameState.getBoard().getSegmentIndex(gameState.getEnemyShip().getPosition());
@@ -131,14 +132,22 @@ public class MoveUtil {
      * @param path the path to reach
      * @return the next move to reach the given path
      */
-    public static Optional<Move> moveFromPath(GameState gameState, List<Vector3> path) {
+    public static Optional<Move> moveFromPath(@NonNull GameState gameState, List<Vector3> path) {
         if(path == null || path.isEmpty())
             return Optional.empty();
 
         final Ship playerShip = gameState.getPlayerShip();
         final Move move = new Move(path.get(0), playerShip.getDirection());
+        final int maxMovementPoints = getMaxMovementPoints(gameState, playerShip.getCoal());
+        int movementPoints = getMinMovementPoints(gameState);
+        int freeTurns = playerShip.getFreeTurns();
+        int freeAcceleration = 1;
 
-        // TODO: implement moveFromPath
+        while(movementPoints > 0) {
+            final int availablePoints = maxMovementPoints - movementPoints;
+
+            // TODO: implement move making
+        }
 
         return Optional.of(move);
     }
