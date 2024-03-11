@@ -76,7 +76,7 @@ public class MoveUtil {
      */
     public static List<Move> getPossibleMoves(@NonNull GameState gameState, boolean moreCoal) {
         final Ship ship = gameState.getPlayerShip();
-        final int maxCoal = Math.min(ship.getCoal(), moreCoal ? 2 : 1);
+        final int maxCoal = Math.min(ship.getCoal(), moreCoal || gameState.getTurn() < 2 ? 2 : 1);
 
         final List<Move> moves = new ArrayList<>(gameState.getMoves(
                 ship.getPosition(),
@@ -128,8 +128,9 @@ public class MoveUtil {
         final Ship ship = gameState.getPlayerShip();
         final int playerSegmentIndex = gameState.getBoard().getSegmentIndex(ship.getPosition());
         final int enemySegmentIndex = gameState.getBoard().getSegmentIndex(gameState.getEnemyShip().getPosition());
+        final boolean useMoreCoal = enemySegmentIndex > playerSegmentIndex + 1 || gameState.getTurn() < 2;
 
-        return Math.min(6, ship.getSpeed() + ((enemySegmentIndex > playerSegmentIndex + 1 && maxCoal > 0) ? 2 : 1));
+        return Math.min(6, ship.getSpeed() + ((useMoreCoal && maxCoal > 0) ? 2 : 1));
     }
 
     /**
@@ -150,7 +151,7 @@ public class MoveUtil {
         final boolean collectPassenger = Arrays.stream(Direction.values())
                 .map(direction -> destination.copy().add(direction.toVector3()))
                 .anyMatch(position -> gameState.getBoard().getFieldAt(position) instanceof Passenger);
-        final boolean mustSlowDown = destinationField instanceof Finish || collectPassenger;
+        final boolean mustReachSpeed = destinationField instanceof Finish || collectPassenger;
         final int destinationSpeed = gameState.getBoard().isCounterCurrent(destination) ? 2 : 1;
 
         int pathIndex = 1 /* skip start position */;
@@ -194,9 +195,15 @@ public class MoveUtil {
 
                 wasCounterCurrent = isCounterCurrent;
 
-                if(mustSlowDown) {
-                    final double deltaSpeed = (playerShip.getSpeed() - destinationSpeed) / (double) (path.size() - (pathIndex + 1));
-                    int maxSpeed = playerShip.getSpeed() - (int) ((deltaSpeed > 0) ? Math.ceil(deltaSpeed) : Math.floor(deltaSpeed));
+                if(mustReachSpeed) {
+                    final boolean accelerate = destinationSpeed > playerShip.getSpeed();
+                    final int fieldsToDestination = path.size() - pathIndex;
+                    final int maxSpeed;
+
+                    if(accelerate)
+                        maxSpeed = Math.max(destinationSpeed - (fieldsToDestination - 1), playerShip.getSpeed());
+                    else
+                        maxSpeed = Math.min(fieldsToDestination - (destinationSpeed - 1), playerShip.getSpeed());
 
                     if (move.getTotalCost() + points + requiredPoints > maxSpeed)
                         break;

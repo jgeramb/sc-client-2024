@@ -49,10 +49,7 @@ public class PathFinder {
             openNodes.remove(currentNode);
             closedNodes.add(currentNode);
 
-            final Vector3 deltaPosition = currentNode.getPosition().copy().subtract(lastNode.getPosition());
-            final int gCost = currentNode.getGraphCost()
-                    + lastDirection.costTo(Direction.fromVector3(deltaPosition))
-                    + 1;
+            final int gCost = currentNode.getGraphCost() + 1;
 
             // check if end is reached
             if(closedNodes.contains(endNode))
@@ -63,15 +60,21 @@ public class PathFinder {
                     continue;
 
                 if (!openNodes.contains(neighbour)) {
+                    final Vector3 deltaPosition = neighbour.getPosition().copy().subtract(currentNode.getPosition());
+
                     neighbour.setGraphCost(gCost);
-                    neighbour.setHeuristicCost(getEstimatedPathCost(neighbour.getPosition(), end));
+                    neighbour.setHeuristicCost(
+                            Direction.fromVector3(deltaPosition).costTo(lastDirection)
+                                    + getEstimatedPathCost(neighbour.getPosition(), end)
+                                    + (gameState.getBoard().isCounterCurrent(neighbour.getPosition()) ? 1 : 0)
+                    );
 
                     openNodes.add(neighbour);
                 } else if (neighbour.getTotalCost() > gCost + neighbour.getHeuristicCost())
                     neighbour.setGraphCost(gCost);
             }
 
-            lastNode = currentNode;
+            lastDirection = Direction.fromVector3(currentNode.getPosition().copy().subtract(closedNodes.get(closedNodes.size() - 2).getPosition()));
         }
 
         // backtrace the path

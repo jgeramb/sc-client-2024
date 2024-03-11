@@ -50,12 +50,13 @@ public class AdvancedGameHandler extends BaseGameHandler {
         final List<Runnable> tasks = new ArrayList<>();
 
         final Vector3 enemyShipPosition = gameState.getEnemyShip().getPosition();
-        final int enemyShipVisitedSegmentsCount = board.getSegmentIndex(enemyShipPosition);
+        final int playerShipSegmentIndex = board.getSegmentIndex(playerShip.getPosition());
 
         // check if enemy ship is more than 2 segments ahead
-        if(enemyShipVisitedSegmentsCount - board.getSegmentIndex(playerShip.getPosition()) > 2)
+        if(board.getSegmentIndex(enemyShipPosition) - playerShipSegmentIndex > 2)
             tasks.add(() -> paths.add(PathFinder.findPath(shipPosition, enemyShipPosition)));
-        else {
+        // collect passengers and finish after reaching the 6th segment
+        else if(playerShipSegmentIndex >= 5) {
             // passengers
             board.getPassengerFields().forEach((position, field) -> {
                 final Passenger passenger = (Passenger) field;
@@ -76,39 +77,41 @@ public class AdvancedGameHandler extends BaseGameHandler {
             }
         }
 
-        final ExecutorService executorService = Executors.newFixedThreadPool(4);
-        final CountDownLatch countDownLatch = new CountDownLatch(tasks.size());
+        if(!tasks.isEmpty()) {
+            final ExecutorService executorService = Executors.newFixedThreadPool(4);
+            final CountDownLatch countDownLatch = new CountDownLatch(tasks.size());
 
-        tasks.forEach(task -> executorService.submit(() -> {
+            tasks.forEach(task -> executorService.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    countDownLatch.countDown();
+                }
+            }));
+
             try {
-                task.run();
+                countDownLatch.await();
+            } catch (InterruptedException ignore) {
             } finally {
-                countDownLatch.countDown();
+                executorService.shutdown();
             }
-        }));
 
-        try {
-            countDownLatch.await();
-        } catch (InterruptedException ignore) {
-        } finally {
-            executorService.shutdown();
+            paths.removeIf(path -> {
+                if (Objects.isNull(path) || path.size() < 2)
+                    return true;
+
+                final Vector3 endPosition = path.get(path.size() - 1);
+
+                if (gameState.getBoard().getFieldAt(endPosition) instanceof Finish)
+                    return false;
+
+                // remove path if it's not possible to go further after reaching the end position
+                final Vector3 beforeLastPosition = path.get(path.size() - 2);
+                final Direction direction = Direction.fromVector3(endPosition.copy().subtract(beforeLastPosition));
+
+                return gameState.getMinTurns(direction, endPosition) > Math.min(2, playerShip.getCoal() + 1);
+            });
         }
-
-        paths.removeIf(path -> {
-            if(Objects.isNull(path) || path.size() < 2)
-                return true;
-
-            final Vector3 endPosition = path.get(path.size() - 1);
-
-            if(gameState.getBoard().getFieldAt(endPosition) instanceof Finish)
-                return false;
-
-            // remove path if it's not possible to go further after reaching the end position
-            final Vector3 beforeLastPosition = path.get(path.size() - 2);
-            final Direction direction = Direction.fromVector3(endPosition.copy().subtract(beforeLastPosition));
-
-            return gameState.getMinTurns(direction, endPosition) > Math.min(2, playerShip.getCoal() + 1);
-        });
 
         this.setNextMove(
                 gameState,
