@@ -16,10 +16,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ScoreData {
 
-    @JacksonXmlProperty(isAttribute = true)
-    private ScoreCause cause;
-    @JacksonXmlProperty(isAttribute = true)
-    private String reason;
     @JacksonXmlProperty(localName = "part")
     @JacksonXmlElementWrapper(useWrapping = false)
     private int[] parts;

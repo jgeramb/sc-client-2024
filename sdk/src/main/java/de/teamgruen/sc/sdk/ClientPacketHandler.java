@@ -19,9 +19,8 @@ import de.teamgruen.sc.sdk.protocol.data.Move;
 import de.teamgruen.sc.sdk.protocol.data.State;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.board.BoardData;
-import de.teamgruen.sc.sdk.protocol.data.scores.ScoreCause;
-import de.teamgruen.sc.sdk.protocol.data.scores.ScoreData;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreFragment;
+import de.teamgruen.sc.sdk.protocol.data.scores.Winner;
 import de.teamgruen.sc.sdk.protocol.responses.ErrorPacket;
 import de.teamgruen.sc.sdk.protocol.responses.JoinedRoomResponse;
 import de.teamgruen.sc.sdk.protocol.room.LeftPacket;
@@ -111,49 +110,36 @@ public class ClientPacketHandler {
                 this.client.sendPacket(new MovePacket(this.roomId, new Move(actions)));
             } else if (data instanceof ResultMessage message) {
                 final List<ScoreFragment> fragments = message.getDefinition().getFragments();
+                final Winner winner = message.getWinner();
 
-                message.getScores().getScores().forEach(entry -> {
-                    if (entry.getPlayer().getTeam() != this.gameState.getPlayerTeam())
-                        return;
+                this.gameState.setGamePhase((winner != null && !winner.isRegular()) ? GamePhase.ABORTED : GamePhase.FINISHED);
 
-                    final ScoreData score = entry.getScore();
-                    final GamePhase gamePhase = score.getCause().equals(ScoreCause.REGULAR)
-                            ? GamePhase.FINISHED
-                            : GamePhase.ABORTED;
-                    this.gameState.setGamePhase(gamePhase);
+                if(this.gameState.getGamePhase() == GamePhase.ABORTED
+                        && winner != null
+                        && winner.getTeam() != this.gameState.getPlayerTeam()) {
+                    this.gameHandler.onError(winner.getReason());
+                    return;
+                }
 
-                    switch (score.getCause()) {
-                        case LEFT:
-                            this.gameHandler.onError("Player left the game");
-                            return;
-                        case SOFT_TIMEOUT:
-                            this.gameHandler.onError("Response to move request took too long");
-                            return;
-                        case HARD_TIMEOUT:
-                            this.gameHandler.onError("No response to move request");
-                            return;
-                        case RULE_VIOLATION:
-                            this.gameHandler.onError("Rule violation: " + score.getReason());
-                            return;
-                        case UNKNOWN:
-                            this.gameHandler.onError("Unknown Error");
-                            return;
-                    }
+                message.getScores()
+                        .getScores()
+                        .stream()
+                        .filter(entry -> entry.getPlayer().getTeam() == this.gameState.getPlayerTeam())
+                        .forEach(entry -> {
+                            final LinkedHashMap<ScoreFragment, Integer> scores = new LinkedHashMap<>();
+                            final int[] parts = entry.getScore().getParts();
 
-                    final LinkedHashMap<ScoreFragment, Integer> scores = new LinkedHashMap<>();
-                    final int[] parts = score.getParts();
+                            for (int i = 0; i < fragments.size(); i++)
+                                scores.put(fragments.get(i), parts[i]);
 
-                    for (int i = 0; i < fragments.size(); i++)
-                        scores.put(fragments.get(i), parts[i]);
+                            final GameResult result = winner == null || winner.getTeam() == null
+                                    ? GameResult.DRAW
+                                    : winner.getTeam() == this.gameState.getPlayerTeam()
+                                        ? GameResult.WIN
+                                        : GameResult.LOOSE;
 
-                    final GameResult result = message.getWinner() == null
-                            ? GameResult.DRAW
-                            : this.gameState.getPlayerTeam() == message.getWinner().getTeam()
-                                ? GameResult.WIN
-                                : GameResult.LOOSE;
-
-                    this.gameHandler.onResults(scores, result);
-                });
+                            this.gameHandler.onResults(scores, result);
+                        });
             }
         } else if(xmlProtocolPacket instanceof LeftPacket) {
             try {

@@ -147,7 +147,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public List<Action> getNextActions(@NonNull GameState gameState) {
+            public List<Action> getNextActions(GameState gameState) {
                 return Collections.emptyList();
             }
         });
@@ -348,7 +348,7 @@ public class ClientPacketHandlerTest {
         });
         handler.handlePacket(new JoinedRoomResponse("test"));
         handler.handlePacket(new RoomPacket("test", new WelcomeMessage(Team.ONE)));
-        handler.handlePacket(getResultPacket(ScoreCause.REGULAR, Team.ONE));
+        handler.handlePacket(getResultPacket(Team.ONE, true, ""));
 
         assertTrue(called.get());
     }
@@ -373,7 +373,7 @@ public class ClientPacketHandlerTest {
         });
         handler.handlePacket(new JoinedRoomResponse("test"));
         handler.handlePacket(new RoomPacket("test", new WelcomeMessage(Team.ONE)));
-        handler.handlePacket(getResultPacket(ScoreCause.LEFT, Team.ONE));
+        handler.handlePacket(getResultPacket(Team.TWO, false, "Spieler 1 hat das Spiel verlassen: LOST_CONNECTION"));
 
         assertTrue(called.get());
     }
@@ -398,7 +398,7 @@ public class ClientPacketHandlerTest {
         });
         handler.handlePacket(new JoinedRoomResponse("test"));
         handler.handlePacket(new RoomPacket("test", new WelcomeMessage(Team.ONE)));
-        handler.handlePacket(getResultPacket(ScoreCause.SOFT_TIMEOUT, Team.ONE));
+        handler.handlePacket(getResultPacket(Team.TWO, false, "Spieler 1 hat fuer die Antwort auf die Zugaufforderung laenger als 5 Sekunden gebraucht."));
 
         assertTrue(called.get());
     }
@@ -423,7 +423,7 @@ public class ClientPacketHandlerTest {
         });
         handler.handlePacket(new JoinedRoomResponse("test"));
         handler.handlePacket(new RoomPacket("test", new WelcomeMessage(Team.ONE)));
-        handler.handlePacket(getResultPacket(ScoreCause.HARD_TIMEOUT, Team.ONE));
+        handler.handlePacket(getResultPacket(Team.TWO, false, "Spieler 1 hat innerhalb von 10 Sekunden nach Aufforderung keinen Zug gesendet."));
 
         assertTrue(called.get());
     }
@@ -448,7 +448,7 @@ public class ClientPacketHandlerTest {
         });
         handler.handlePacket(new JoinedRoomResponse("test"));
         handler.handlePacket(new RoomPacket("test", new WelcomeMessage(Team.ONE)));
-        handler.handlePacket(getResultPacket(ScoreCause.RULE_VIOLATION, Team.ONE));
+        handler.handlePacket(getResultPacket(Team.TWO, false, "Regelverletzung von Spieler 1: Nicht genug Kohle für Drehung."));
 
         assertTrue(called.get());
     }
@@ -473,7 +473,7 @@ public class ClientPacketHandlerTest {
         });
         handler.handlePacket(new JoinedRoomResponse("test"));
         handler.handlePacket(new RoomPacket("test", new WelcomeMessage(Team.ONE)));
-        handler.handlePacket(getResultPacket(ScoreCause.UNKNOWN, Team.ONE));
+        handler.handlePacket(getResultPacket(Team.TWO, false, ""));
 
         assertTrue(called.get());
     }
@@ -500,7 +500,7 @@ public class ClientPacketHandlerTest {
         });
         handler.handlePacket(new JoinedRoomResponse("test"));
         handler.handlePacket(new RoomPacket("test", new WelcomeMessage(Team.ONE)));
-        handler.handlePacket(getResultPacket(ScoreCause.REGULAR, Team.TWO));
+        handler.handlePacket(getResultPacket(Team.TWO, true, null));
 
         assertTrue(called.get());
     }
@@ -527,7 +527,7 @@ public class ClientPacketHandlerTest {
         });
         handler.handlePacket(new JoinedRoomResponse("test"));
         handler.handlePacket(new RoomPacket("test", new WelcomeMessage(Team.ONE)));
-        handler.handlePacket(getResultPacket(ScoreCause.REGULAR, null));
+        handler.handlePacket(getResultPacket(null, true, null));
 
         assertTrue(called.get());
     }
@@ -579,17 +579,17 @@ public class ClientPacketHandlerTest {
         assertTrue(called.get());
     }
 
-    private static RoomPacket getResultPacket(ScoreCause cause, Team winner) {
+    private static RoomPacket getResultPacket(Team winner, boolean regular, String reason) {
         final List<ScoreFragment> expectedFragments = getSampleFragments();
         final List<ScoreEntry> expectedScoreEntries = List.of(new ScoreEntry(
                 new ScorePlayer("Spieler 1", Team.ONE),
-                new ScoreData(cause, "test", new int[] { 1, 2, 3, 4 })
+                new ScoreData(new int[] { 1, 2, 3, 4 })
         ));
 
         return new RoomPacket("test", new ResultMessage(
                 new Definition(expectedFragments),
                 new Scores(expectedScoreEntries),
-                winner == null ? null : new Winner(winner)
+                winner == null ? null : new Winner(winner, regular, reason)
         ));
     }
 

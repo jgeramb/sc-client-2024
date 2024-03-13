@@ -18,5 +18,9 @@ public class Winner {
 
     @JacksonXmlProperty(isAttribute = true)
     private Team team;
+    @JacksonXmlProperty(isAttribute = true)
+    private boolean regular;
+    @JacksonXmlProperty(isAttribute = true)
+    private String reason;
 
 }

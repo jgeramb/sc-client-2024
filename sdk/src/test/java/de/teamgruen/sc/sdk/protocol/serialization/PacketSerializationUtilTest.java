@@ -233,7 +233,7 @@ public class PacketSerializationUtilTest {
 
     @Test
     public void testDeserialize_Room_Result() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<room roomId=\"test\"><data class=\"result\"><winner team=\"ONE\"/><definition><fragment name=\"Siegpunkte\"><aggregation>SUM</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Punkte\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Kohle\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Gewonnen\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment></definition><scores><entry><player name=\"Spieler 1\" team=\"ONE\"/><score cause=\"REGULAR\" reason=\"test\"><part>1</part><part>2</part><part>3</part><part>4</part></score></entry><entry><player name=\"Spieler 2\" team=\"TWO\"/><score cause=\"REGULAR\" reason=\"test2\"><part>5</part><part>6</part><part>7</part><part>8</part></score></entry></scores></data></room>");
+        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<room roomId=\"test\"><data class=\"result\"><winner team=\"ONE\" regular=\"true\" reason=\"test\"/><definition><fragment name=\"Siegpunkte\"><aggregation>SUM</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Punkte\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Kohle\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Gewonnen\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment></definition><scores><entry><player name=\"Spieler 1\" team=\"ONE\"/><score><part>1</part><part>2</part><part>3</part><part>4</part></score></entry><entry><player name=\"Spieler 2\" team=\"TWO\"/><score><part>5</part><part>6</part><part>7</part><part>8</part></score></entry></scores></data></room>");
 
         assertEquals(1, packets.size());
         assertInstanceOf(RoomPacket.class, packets.get(0));
@@ -245,8 +245,11 @@ public class PacketSerializationUtilTest {
 
         final ResultMessage message = (ResultMessage) packet.getData();
 
-        assertNotNull(message.getWinner());
-        assertEquals(Team.ONE, message.getWinner().getTeam());
+        final Winner winner = message.getWinner();
+        assertNotNull(winner);
+        assertEquals(Team.ONE, winner.getTeam());
+        assertTrue(winner.isRegular());
+        assertEquals("test", winner.getReason());
 
         final Definition expectedDefinition = new Definition();
         expectedDefinition.setFragments(Arrays.asList(
@@ -260,8 +263,8 @@ public class PacketSerializationUtilTest {
 
         final Scores expectedScores = new Scores();
         expectedScores.setScores(Arrays.asList(
-                getScoreEntry("Spieler 1", Team.ONE, "test", new int[] { 1, 2, 3, 4 }),
-                getScoreEntry("Spieler 2", Team.TWO, "test2", new int[] { 5, 6, 7, 8 })
+                getScoreEntry("Spieler 1", Team.ONE, new int[] { 1, 2, 3, 4 }),
+                getScoreEntry("Spieler 2", Team.TWO, new int[] { 5, 6, 7, 8 })
         ));
 
         assertEquals(expectedScores, message.getScores());
@@ -330,10 +333,10 @@ public class PacketSerializationUtilTest {
         assertEquals("<prepare gameType=\"test\" pause=\"true\"><slot displayName=\"test2\" canTimeout=\"true\" reserved=\"true\"/><slot displayName=\"test3\" canTimeout=\"false\" reserved=\"false\"/></prepare>", PacketSerializationUtil.serialize(packet));
     }
 
-    private static ScoreEntry getScoreEntry(String playerName, Team team, String reason, int[] parts) {
+    private static ScoreEntry getScoreEntry(String playerName, Team team, int[] parts) {
         return new ScoreEntry(
                 new ScorePlayer(playerName, team),
-                new ScoreData(ScoreCause.REGULAR, reason, parts)
+                new ScoreData(parts)
         );
     }
 
