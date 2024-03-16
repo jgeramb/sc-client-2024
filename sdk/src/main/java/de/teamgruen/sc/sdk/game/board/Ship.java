@@ -21,7 +21,7 @@ public class Ship {
     private Vector3 position = null;
 
     /**
-     * @return whether the ship has enough passengers to finish the game
+     * @return whether the ship has enough passengers to end the game
      */
     public boolean hasEnoughPassengers() {
         return this.passengers >= 2;

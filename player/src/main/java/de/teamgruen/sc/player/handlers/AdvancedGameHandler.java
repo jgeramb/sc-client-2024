@@ -13,14 +13,13 @@ import de.teamgruen.sc.sdk.game.board.Board;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.logging.Logger;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
-import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
+import de.teamgruen.sc.sdk.protocol.data.board.fields.Goal;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.NonNull;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,8 +54,8 @@ public class AdvancedGameHandler extends BaseGameHandler {
         // check if enemy ship is more than 2 segments ahead
         if(board.getSegmentIndex(enemyShipPosition) - playerShipSegmentIndex > 2)
             tasks.add(() -> paths.add(PathFinder.findPath(shipPosition, enemyShipPosition)));
-        // collect passengers and finish after reaching the 6th segment
-        else if(playerShipSegmentIndex >= 5) {
+        // collect passengers and move towards goal after reaching the 5th segment
+        else if(playerShipSegmentIndex >= 4) {
             // passengers
             board.getPassengerFields().forEach((position, field) -> {
                 final Passenger passenger = (Passenger) field;
@@ -70,8 +69,8 @@ public class AdvancedGameHandler extends BaseGameHandler {
             });
 
             if (playerShip.hasEnoughPassengers()) {
-                // finish
-                board.getFinishFields().forEach((position, field) -> tasks.add(() ->
+                // goals
+                board.getGoalFields().forEach((position, field) -> tasks.add(() ->
                         paths.add(PathFinder.findPath(shipPosition, position))
                 ));
             }
@@ -84,6 +83,8 @@ public class AdvancedGameHandler extends BaseGameHandler {
             tasks.forEach(task -> executorService.submit(() -> {
                 try {
                     task.run();
+                } catch (Throwable throwable) {
+                    this.onError(throwable.getMessage());
                 } finally {
                     countDownLatch.countDown();
                 }
@@ -97,12 +98,12 @@ public class AdvancedGameHandler extends BaseGameHandler {
             }
 
             paths.removeIf(path -> {
-                if (Objects.isNull(path) || path.size() < 2)
+                if (path == null)
                     return true;
 
                 final Vector3 endPosition = path.get(path.size() - 1);
 
-                if (gameState.getBoard().getFieldAt(endPosition) instanceof Finish)
+                if (gameState.getBoard().getFieldAt(endPosition) instanceof Goal)
                     return false;
 
                 // remove path if it's not possible to go further after reaching the end position

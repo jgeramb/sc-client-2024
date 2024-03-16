@@ -11,7 +11,7 @@ import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.ShipData;
 import de.teamgruen.sc.sdk.protocol.data.Team;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
-import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
+import de.teamgruen.sc.sdk.protocol.data.board.fields.Goal;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.Getter;
 import lombok.NonNull;
@@ -134,7 +134,7 @@ public class GameState {
 
                 final int extraCost = cost - longestMove.getDistance();
                 final boolean lookForMoves = switch (result) {
-                    case COUNTER_CURRENT, BLOCKED, PASSENGER, FINISH -> cost < currentMax;
+                    case COUNTER_CURRENT, BLOCKED, PASSENGER, GOAL -> cost < currentMax;
                     default -> false;
                 };
 
@@ -203,8 +203,8 @@ public class GameState {
 
         if (result == AdvanceInfo.Result.PASSENGER) {
             move.passenger();
-        } else if (result == AdvanceInfo.Result.FINISH)
-            move.finish();
+        } else if (result == AdvanceInfo.Result.GOAL)
+            move.goal();
 
         if (advanceInfo.getDistance() == 0)
             return -1;
@@ -274,8 +274,8 @@ public class GameState {
                     && totalMovementPoints >= playerShip.getSpeed() - freeAcceleration - coal;
             final boolean canReachMinimumSpeed = isAtMinimumSpeed || canSlowDown;
 
-            if(field instanceof Finish && playerShip.hasEnoughPassengers() && canReachMinimumSpeed) {
-                advanceInfo.setResult(AdvanceInfo.Result.FINISH);
+            if(field instanceof Goal && playerShip.hasEnoughPassengers() && canReachMinimumSpeed) {
+                advanceInfo.setResult(AdvanceInfo.Result.GOAL);
                 break;
             }
 
@@ -375,7 +375,7 @@ public class GameState {
 
             final int counterCurrentBonus = this.board.isCounterCurrent(pushPosition) ? 1 : 0;
 
-            if(pushField instanceof Finish
+            if(pushField instanceof Goal
                     && enemyShip.hasEnoughPassengers()
                     && (enemyShip.getSpeed() - enemyShip.getCoal() - 1) <= (1 + counterCurrentBonus))
                 continue;

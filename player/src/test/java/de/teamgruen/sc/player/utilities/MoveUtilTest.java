@@ -46,7 +46,7 @@ public class MoveUtilTest {
     }
 
     @Test
-    public void testGetMostEfficientMove_Finish() {
+    public void testGetMostEfficientMove_Goal() {
         final Ship playerShip = this.gameState.getPlayerShip();
         playerShip.setPosition(new Vector3(-5, 9, -4));
         playerShip.setDirection(Direction.DOWN_RIGHT);
@@ -65,7 +65,7 @@ public class MoveUtilTest {
 
         final Move move = actualMove.get();
 
-        assertTrue(move.isFinished());
+        assertTrue(move.isGoal());
         assertEquals(expectedActions, move.getActions());
     }
 

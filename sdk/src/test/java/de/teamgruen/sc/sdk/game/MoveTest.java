@@ -22,7 +22,7 @@ public class MoveTest {
         move.forward(1, 1);
         move.segment(1, 2);
 
-        assertEquals("Move(endPosition=Vector3(q=1, r=-1, s=0), endDirection=UP_RIGHT, actions=[Turn(direction=UP_RIGHT), Forward(distance=1)], distance=1, totalCost=1, passengers=0, pushes=0, segmentIndex=1, segmentColumn=2, finished=false)", move.toString());
+        assertEquals("Move(endPosition=Vector3(q=1, r=-1, s=0), endDirection=UP_RIGHT, actions=[Turn(direction=UP_RIGHT), Forward(distance=1)], distance=1, totalCost=1, passengers=0, pushes=0, segmentIndex=1, segmentColumn=2, goal=false)", move.toString());
     }
 
     @Test
@@ -33,7 +33,7 @@ public class MoveTest {
         move.push(Direction.DOWN_RIGHT);
         move.passenger();
         move.segment(1, 2);
-        move.finish();
+        move.goal();
 
         assertEquals(move, move.copy());
     }
@@ -80,11 +80,11 @@ public class MoveTest {
     }
 
     @Test
-    public void testFinish() {
+    public void testGoal() {
         final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
-        move.finish();
+        move.goal();
 
-        assertTrue(move.isFinished());
+        assertTrue(move.isGoal());
     }
 
     @Test
@@ -149,7 +149,7 @@ public class MoveTest {
         move.push(Direction.DOWN_RIGHT);
         move.passenger();
         move.segment(1, 4);
-        move.finish();
+        move.goal();
 
         final Move childMove = new Move(new Vector3(2, 0, -2), Direction.RIGHT);
         childMove.turn(Direction.DOWN_RIGHT);
@@ -157,7 +157,7 @@ public class MoveTest {
         childMove.push(Direction.DOWN_RIGHT);
         childMove.passenger();
         childMove.segment(2, 1);
-        childMove.finish();
+        childMove.goal();
 
         move.append(childMove);
 
@@ -169,7 +169,7 @@ public class MoveTest {
         assertEquals(2, move.getPassengers());
         assertEquals(2, move.getSegmentIndex());
         assertEquals(1, move.getSegmentColumn());
-        assertTrue(move.isFinished());
+        assertTrue(move.isGoal());
     }
 
     @Test

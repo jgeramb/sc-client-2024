@@ -85,8 +85,8 @@ public class BoardTest {
     }
 
     @Test
-    public void testGetFinishFields() {
-        assertTrue(this.board.getFinishFields().containsKey(new Vector3(-6, 10, -4)));
+    public void testGetGoalFields() {
+        assertTrue(this.board.getGoalFields().containsKey(new Vector3(-6, 10, -4)));
     }
 
     @Test
@@ -127,7 +127,7 @@ public class BoardTest {
     }
 
     @Test
-    public void testIsBlocked_Finish() {
+    public void testIsBlocked_Goal() {
         assertFalse(this.board.isBlocked(new Vector3(-4, 10, -6)));
     }
 

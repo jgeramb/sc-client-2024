@@ -19,7 +19,6 @@ import lombok.NonNull;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -101,45 +100,35 @@ public abstract class BaseGameHandler implements GameHandler {
                 .orElse(0);
 
         final AtomicInteger maxValueLength = new AtomicInteger(0);
-        final Map<String, String> scoreValues = new LinkedHashMap<>();
+
         scores.forEach((scoreFragment, score) -> {
-            if(scoreFragment.isRelevantForRanking()) {
-                final String scoreValue;
-                final int scoreLength;
-
-                if(scoreFragment.getName().equals("Gewonnen")) {
-                    scoreValue = result.equals(GameResult.WIN)
-                            ? AnsiColor.GREEN + "✓"
-                            : result.equals(GameResult.LOOSE)
-                            ? AnsiColor.RED + "✕"
-                            : AnsiColor.WHITE + "/";
-                    scoreLength = 1;
-                } else {
-                    scoreValue = AnsiColor.PURPLE.toString() + score;
-                    scoreLength = String.valueOf(score).length();
-                }
-
-                maxValueLength.set(Math.max(maxValueLength.get(), scoreLength));
-                scoreValues.put(scoreFragment.getName(), scoreValue);
-            }
+            if(scoreFragment.isRelevantForRanking())
+                maxValueLength.set(Math.max(maxValueLength.get(), String.valueOf(score).length()));
         });
 
         final String horizontalLine = AnsiColor.BLACK + "―".repeat(12 + maxValueLength.get()) + AnsiColor.RESET;
 
         this.logger.info(horizontalLine);
-        scores.forEach((scoreFragment, score) -> {
-            final String name = scoreFragment.getName();
 
-            if(!scoreValues.containsKey(name))
+        final String resultSymbol = result.equals(GameResult.WIN)
+                ? AnsiColor.GREEN + "✓"
+                : result.equals(GameResult.LOOSE)
+                        ? AnsiColor.RED + "✕"
+                        : AnsiColor.WHITE + "/";
+        final String resultSpacer = " ".repeat(maxNameLength - 8) + " ".repeat(maxValueLength.get() - 1);
+        this.logger.info("Gewonnen: " + resultSpacer + resultSymbol + AnsiColor.RESET);
+
+        scores.forEach((scoreFragment, score) -> {
+            if(!scoreFragment.isRelevantForRanking())
                 return;
 
-            final int valueLength = name.equals("Gewonnen") ? 1 : String.valueOf(score).length();
-            final String value = scoreValues.get(name);
-            final String spacer = " ".repeat(maxNameLength - scoreFragment.getName().length())
-                    + " ".repeat(maxValueLength.get() - valueLength);
+            final String name = scoreFragment.getName();
+            final String spacer = " ".repeat(maxNameLength - name.length())
+                    + " ".repeat(maxValueLength.get() - String.valueOf(score).length());
 
-            this.logger.info(scoreFragment.getName() + ": " + spacer + value + AnsiColor.RESET);
+            this.logger.info(name + ": " + spacer + AnsiColor.PURPLE + score + AnsiColor.RESET);
         });
+
         this.logger.info(horizontalLine);
     }
 

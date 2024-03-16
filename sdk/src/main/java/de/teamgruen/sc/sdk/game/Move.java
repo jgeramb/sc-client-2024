@@ -28,7 +28,7 @@ public class Move {
     private final List<Action> actions = new ArrayList<>();
     private int distance = 0, totalCost = 0;
     private int passengers = 0, pushes = 0, segmentIndex = 0, segmentColumn = 0;
-    private boolean finished = false;
+    private boolean goal = false;
 
     private Move() {}
 
@@ -54,7 +54,7 @@ public class Move {
         this.pushes += move.pushes;
         this.segmentIndex = move.segmentIndex;
         this.segmentColumn = move.segmentColumn;
-        this.finished = move.finished;
+        this.goal = move.goal;
     }
 
     public void turn(@NonNull Direction direction) {
@@ -84,8 +84,8 @@ public class Move {
         this.segmentColumn = column;
     }
 
-    public void finish() {
-        this.finished = true;
+    public void goal() {
+        this.goal = true;
     }
 
     public int getAcceleration(@NonNull Ship ship) {

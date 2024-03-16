@@ -14,8 +14,7 @@ import lombok.RequiredArgsConstructor;
 public class PathNode {
 
     private final Vector3 position;
-    private final boolean isObstacle;
-    private int graphCost, heuristicCost;
+    private int graphCost = 0, heuristicCost = 0;
 
     public int getTotalCost() {
         return this.graphCost + this.heuristicCost;

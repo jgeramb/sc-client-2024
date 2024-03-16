@@ -22,8 +22,8 @@ public class FieldFactory {
         return new Passenger(direction, passengers);
     }
 
-    public static Finish finish() {
-        return new Finish();
+    public static Goal goal() {
+        return new Goal();
     }
 
 }

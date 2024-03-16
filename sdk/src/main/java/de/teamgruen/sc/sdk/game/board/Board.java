@@ -10,7 +10,7 @@ import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.board.FieldArray;
 import de.teamgruen.sc.sdk.protocol.data.board.SegmentData;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
-import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
+import de.teamgruen.sc.sdk.protocol.data.board.fields.Goal;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.Data;
 import lombok.NonNull;
@@ -91,8 +91,8 @@ public class Board {
         );
     }
 
-    public Map<Vector3, Field> getFinishFields() {
-        return this.getAllFields(entry -> entry.getValue() instanceof Finish);
+    public Map<Vector3, Field> getGoalFields() {
+        return this.getAllFields(entry -> entry.getValue() instanceof Goal);
     }
 
     public boolean isCounterCurrent(@NonNull Vector3 position) {

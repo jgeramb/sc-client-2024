@@ -41,7 +41,7 @@ public class AdvanceInfo {
         BLOCKED,
         SHIP,
         PASSENGER,
-        FINISH
+        GOAL
 
     }
 

@@ -112,7 +112,7 @@ public class ClientPacketHandler {
                 final List<ScoreFragment> fragments = message.getDefinition().getFragments();
                 final Winner winner = message.getWinner();
 
-                this.gameState.setGamePhase((winner != null && !winner.isRegular()) ? GamePhase.ABORTED : GamePhase.FINISHED);
+                this.gameState.setGamePhase((winner != null && !winner.isRegular()) ? GamePhase.ABORTED : GamePhase.COMPLETED);
 
                 if(this.gameState.getGamePhase() == GamePhase.ABORTED
                         && winner != null

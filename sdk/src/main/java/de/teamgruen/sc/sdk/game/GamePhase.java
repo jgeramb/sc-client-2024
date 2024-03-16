@@ -9,7 +9,7 @@ public enum GamePhase {
 
     LOBBY,
     RUNNING,
-    FINISHED,
+    COMPLETED,
     ABORTED
 
 }

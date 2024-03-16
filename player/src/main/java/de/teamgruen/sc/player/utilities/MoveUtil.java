@@ -13,7 +13,7 @@ import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
-import de.teamgruen.sc.sdk.protocol.data.board.fields.Finish;
+import de.teamgruen.sc.sdk.protocol.data.board.fields.Goal;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.NonNull;
 
@@ -44,14 +44,14 @@ public class MoveUtil {
         int lowestCoalCost = 0;
 
         for(Move move : moves) {
-            final boolean canFinish = gameState.getBoard().getFieldAt(move.getEndPosition()) instanceof Finish
+            final boolean canEnd = gameState.getBoard().getFieldAt(move.getEndPosition()) instanceof Goal
                     && playerShip.hasEnoughPassengers();
             final double deltaSegmentColumn = Math.floorMod(move.getSegmentColumn() - playerSegmentColumn, 4);
             final double deltaSegmentPosition = move.getSegmentIndex() - playerSegmentIndex
                     + (deltaSegmentColumn > 2 ? deltaSegmentColumn - 4 : deltaSegmentColumn) / 4d;
             final int coalCost = move.getCoalCost(playerShip);
-            final double score = (move.isFinished() ? 100 : 0)
-                    + (canFinish || (isEnemyAhead && deltaSegmentPosition >= 0) ? 50 : 0)
+            final double score = (move.isGoal() ? 100 : 0)
+                    + (canEnd || (isEnemyAhead && deltaSegmentPosition >= 0) ? 50 : 0)
                     + move.getPassengers() * 15
                     + move.getPushes() * 3
                     + move.getDistance() * deltaSegmentPosition
@@ -128,9 +128,9 @@ public class MoveUtil {
         final Ship ship = gameState.getPlayerShip();
         final int playerSegmentIndex = gameState.getBoard().getSegmentIndex(ship.getPosition());
         final int enemySegmentIndex = gameState.getBoard().getSegmentIndex(gameState.getEnemyShip().getPosition());
-        final boolean useMoreCoal = enemySegmentIndex > playerSegmentIndex + 1 || gameState.getTurn() < 2;
+        final boolean useCoal = enemySegmentIndex > playerSegmentIndex + 1 || gameState.getTurn() < 2;
 
-        return Math.min(6, ship.getSpeed() + ((useMoreCoal && maxCoal > 0) ? 2 : 1));
+        return Math.min(6, ship.getSpeed() + ((useCoal && maxCoal > 0) ? 2 : 1));
     }
 
     /**
@@ -151,7 +151,7 @@ public class MoveUtil {
         final boolean collectPassenger = Arrays.stream(Direction.values())
                 .map(direction -> destination.copy().add(direction.toVector3()))
                 .anyMatch(position -> gameState.getBoard().getFieldAt(position) instanceof Passenger);
-        final boolean mustReachSpeed = destinationField instanceof Finish || collectPassenger;
+        final boolean mustReachSpeed = destinationField instanceof Goal || collectPassenger;
         final int destinationSpeed = gameState.getBoard().isCounterCurrent(destination) ? 2 : 1;
 
         int pathIndex = 1 /* skip start position */;
@@ -159,7 +159,7 @@ public class MoveUtil {
         AtomicInteger coal = new AtomicInteger(Math.min(playerShip.getCoal(), 1));
         AtomicInteger freeTurns = new AtomicInteger(playerShip.getFreeTurns());
 
-        while(move.getTotalCost() < maxMovementPoints) {
+        while(move.getTotalCost() < maxMovementPoints && pathIndex < path.size()) {
             final int availablePoints = maxMovementPoints - move.getTotalCost();
             final Vector3 position = move.getEndPosition();
             final Direction currentDirection = move.getEndDirection();

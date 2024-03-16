@@ -34,7 +34,7 @@ public class ExampleGameState extends GameState {
     public static List<SegmentData> getSampleSegments() {
         final Field water = FieldFactory.water(),
                 island = FieldFactory.island(),
-                finish = FieldFactory.finish();
+                goal = FieldFactory.goal();
 
         return List.of(
                 getSegmentData(0, 0, 0, Direction.RIGHT,
@@ -53,7 +53,7 @@ public class ExampleGameState extends GameState {
                         FieldFactory.passenger(Direction.UP_LEFT, 1), water, water, island, water,
                         water, water, water, water, island,
                         water, water, water, water, water,
-                        water, finish, finish, finish, water
+                        water, goal, goal, goal, water
                 )
         );
     }

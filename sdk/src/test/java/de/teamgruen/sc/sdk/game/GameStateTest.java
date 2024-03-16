@@ -152,7 +152,7 @@ public class GameStateTest {
     }
 
     @Test
-    public void testGetBestPushDirection_NoFinish() {
+    public void testGetBestPushDirection_NoGoal() {
         final Ship enemyShip = this.gameState.getEnemyShip();
         enemyShip.setPosition(new Vector3(-5, 9, -4));
         enemyShip.setPassengers(2);
@@ -240,7 +240,7 @@ public class GameStateTest {
     }
 
     @Test
-    public void testGetAdvanceLimit_Finish_Water() {
+    public void testGetAdvanceLimit_Goal_Water() {
         final Ship playerShip = this.gameState.getPlayerShip();
         playerShip.setSpeed(6);
         playerShip.setPassengers(2);
@@ -254,12 +254,12 @@ public class GameStateTest {
                 4
         );
 
-        assertEquals(AdvanceInfo.Result.FINISH, actualAdvanceLimit.getResult());
+        assertEquals(AdvanceInfo.Result.GOAL, actualAdvanceLimit.getResult());
         assertEquals(1, actualAdvanceLimit.getDistance());
     }
 
     @Test
-    public void testGetAdvanceLimit_Finish_CounterCurrent() {
+    public void testGetAdvanceLimit_Goal_CounterCurrent() {
         final Ship playerShip = this.gameState.getPlayerShip();
         playerShip.setSpeed(6);
         playerShip.setPassengers(2);
@@ -273,7 +273,7 @@ public class GameStateTest {
                 3
         );
 
-        assertEquals(AdvanceInfo.Result.FINISH, actualAdvanceLimit.getResult());
+        assertEquals(AdvanceInfo.Result.GOAL, actualAdvanceLimit.getResult());
         assertEquals(1, actualAdvanceLimit.getDistance());
     }
 
@@ -380,7 +380,7 @@ public class GameStateTest {
     }
 
     @Test
-    public void testAppendForwardMove_Finish() {
+    public void testAppendForwardMove_Goal() {
         final Ship playerShip = this.gameState.getPlayerShip();
         playerShip.setPosition(new Vector3(-5, 8, -3));
         playerShip.setDirection(Direction.DOWN_LEFT);
@@ -391,7 +391,7 @@ public class GameStateTest {
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setDistance(1);
         advanceInfo.setCost(2);
-        advanceInfo.setResult(AdvanceInfo.Result.FINISH);
+        advanceInfo.setResult(AdvanceInfo.Result.GOAL);
 
         final int cost = this.gameState.appendForwardMove(
                 advanceInfo.getEndPosition(position, direction),
@@ -403,7 +403,7 @@ public class GameStateTest {
 
         assertEquals(2, cost);
         assertEquals(List.of(ActionFactory.forward(1)), move.getActions());
-        assertTrue(move.isFinished());
+        assertTrue(move.isGoal());
     }
 
     @Test

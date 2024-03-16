@@ -32,7 +32,7 @@ public class FieldArray {
                 "water", Water.class,
                 "island", Island.class,
                 "passenger", Passenger.class,
-                "goal", Finish.class
+                "goal", Goal.class
         );
 
         public Deserializer() {

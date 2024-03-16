@@ -25,91 +25,79 @@ public class PathFinder {
      * Find the shortest path from start to end using the A* algorithm.
      * @param start the start position
      * @param end the end position
+     * @return the shortest path from start to end (start and end included)
+     *         or null if no path was found
      */
     public static List<Vector3> findPath(@NonNull Vector3 start, @NonNull Vector3 end) {
-        final List<PathNode> openNodes = new ArrayList<>();
-        final List<PathNode> closedNodes = new ArrayList<>();
+        PathNode currentNode = getOrCreateNode(start);
+        Direction currentDirection = gameState.getPlayerShip().getDirection();
 
-        PathNode lastNode = getOrCreateNode(start);
-        Direction lastDirection = gameState.getPlayerShip().getDirection();
+        final PriorityQueue<PathNode> frontier = new PriorityQueue<>(Comparator.comparingInt(PathNode::getTotalCost));
+        frontier.add(currentNode);
 
-        final PathNode endNode = getOrCreateNode(end);
-        PathNode currentNode = lastNode;
-        currentNode.setGraphCost(0);
-        currentNode.setHeuristicCost(getEstimatedPathCost(start, end));
+        final Map<Vector3, Vector3> cameFrom = new HashMap<>();
+        cameFrom.put(start, null);
 
-        openNodes.add(currentNode);
+        final Map<Vector3, Integer> costSoFar = new HashMap<>();
+        costSoFar.put(start, 0);
 
-        while(!openNodes.isEmpty()) {
-            // get the node with the lowest fCost
-            currentNode = openNodes.stream()
-                    .min(Comparator.comparingInt(PathNode::getTotalCost))
-                    .orElse(null);
+        while(!frontier.isEmpty()) {
+            currentNode = frontier.poll();
 
-            openNodes.remove(currentNode);
-            closedNodes.add(currentNode);
+            final Vector3 currentPosition = currentNode.getPosition();
 
-            final int gCost = currentNode.getGraphCost() + 1;
+            if (currentPosition.equals(end))
+                return reconstructPath(cameFrom, currentNode);
 
-            // check if end is reached
-            if(closedNodes.contains(endNode))
-                break;
+            final int currentCost = costSoFar.get(currentPosition);
 
-            for(PathNode neighbour : getNeighbours(currentNode)) {
-                if (neighbour.isObstacle() || closedNodes.contains(neighbour))
-                    continue;
+            for (PathNode neighbour : getNeighbours(currentNode)) {
+                final Vector3 neighbourPosition = neighbour.getPosition();
+                final Vector3 deltaPosition = neighbourPosition.copy().subtract(currentPosition);
+                final Direction neighbourDirection = Direction.fromVector3(deltaPosition);
+                final int gCost = currentCost
+                        + currentDirection.costTo(neighbourDirection)
+                        + (gameState.getBoard().isCounterCurrent(neighbourPosition) ? 1 : 0)
+                        + 1 ;
 
-                if (!openNodes.contains(neighbour)) {
-                    final Vector3 deltaPosition = neighbour.getPosition().copy().subtract(currentNode.getPosition());
-
+                if(!costSoFar.containsKey(neighbourPosition) || gCost < costSoFar.get(neighbourPosition)) {
                     neighbour.setGraphCost(gCost);
-                    neighbour.setHeuristicCost(
-                            Direction.fromVector3(deltaPosition).costTo(lastDirection)
-                                    + getEstimatedPathCost(neighbour.getPosition(), end)
-                                    + (gameState.getBoard().isCounterCurrent(neighbour.getPosition()) ? 1 : 0)
-                    );
+                    neighbour.setHeuristicCost(getEstimatedPathCost(neighbourPosition, end));
 
-                    openNodes.add(neighbour);
-                } else if (neighbour.getTotalCost() > gCost + neighbour.getHeuristicCost())
-                    neighbour.setGraphCost(gCost);
+                    frontier.add(neighbour);
+                    costSoFar.put(neighbourPosition, gCost);
+                    cameFrom.put(neighbourPosition, currentPosition);
+
+                    currentDirection = neighbourDirection;
+                }
             }
-
-            lastDirection = Direction.fromVector3(currentNode.getPosition().copy().subtract(closedNodes.get(closedNodes.size() - 2).getPosition()));
         }
 
-        // backtrace the path
-        final List<Vector3> finalPath = new ArrayList<>();
-
-        if(closedNodes.contains(endNode)) {
-            currentNode = endNode;
-
-            finalPath.add(end);
-
-            for (int i = endNode.getGraphCost() - 1; i >= 0; i--) {
-                final int currentG = i;
-                final List<PathNode> currentNeighbours = getNeighbours(currentNode);
-
-                currentNode = closedNodes
-                        .stream()
-                        .filter(currentNeighbours::contains)
-                        .filter(node -> node.getGraphCost() == currentG)
-                        .findFirst()
-                        .orElse(null);
-
-                if (currentNode == null)
-                    break;
-
-                finalPath.add(currentNode.getPosition());
-            }
-
-            Collections.reverse(finalPath);
-        }
-
-        return finalPath;
+        return null;
     }
 
     /**
-     * Returns the estimated path cost from start to end.
+     * Reconstructs the path from the destination to the start node.
+     * @param cameFrom the map of nodes to their previous node
+     * @param destination the destination node
+     * @return the reconstructed path
+     */
+    private static List<Vector3> reconstructPath(Map<Vector3, Vector3> cameFrom, PathNode destination) {
+        final List<Vector3> path = new ArrayList<>();
+        Vector3 current = destination.getPosition();
+
+        path.add(current);
+
+        while ((current = cameFrom.get(current)) != null)
+            path.add(current);
+
+        Collections.reverse(path);
+
+        return path;
+    }
+
+    /**
+     * Returns the Manhattan distance between the start and end position.
      * @param start the start position
      * @param end the end position
      * @return the estimated path cost
@@ -134,7 +122,7 @@ public class PathFinder {
         for (Direction direction : Direction.values()) {
             final Vector3 neighbourPosition = node.getPosition().copy().add(direction.toVector3());
 
-            if (isInBounds(neighbourPosition))
+            if (!gameState.getBoard().isBlocked(neighbourPosition))
                 neighbours.add(getOrCreateNode(neighbourPosition));
         }
 
@@ -142,27 +130,13 @@ public class PathFinder {
     }
 
     /**
-     * @param position the position to check
-     * @return whether the given position is a field on the board
-     */
-    private static boolean isInBounds(Vector3 position) {
-        return gameState.getBoard().getFieldAt(position) != null;
-    }
-
-    /**
      * @param position the position to get or create a node for
      * @return the node for the given position
      */
     private static PathNode getOrCreateNode(Vector3 position) {
-        return CACHE.computeIfAbsent(position, PathFinder::createPathNode);
-    }
-
-    /**
-     * @param position the position to create a node for
-     * @return the new node
-     */
-    private static PathNode createPathNode(Vector3 position) {
-        return new PathNode(position, gameState.getBoard().isBlocked(position));
+        synchronized (CACHE) {
+            return CACHE.computeIfAbsent(position, PathNode::new);
+        }
     }
 
 }
