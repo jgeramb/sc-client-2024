@@ -10,6 +10,7 @@ import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.Move;
 import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.game.board.Ship;
+import de.teamgruen.sc.sdk.logging.AnsiColor;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
@@ -29,13 +30,16 @@ public class MoveUtil {
      */
     public static Optional<Move> getMostEfficientMove(@NonNull GameState gameState) {
         final int turn = gameState.getTurn();
-        final List<Move> moves = getPossibleMoves(gameState, false);
         final Ship playerShip = gameState.getPlayerShip();
         final Vector3 position = playerShip.getPosition();
         final int playerSegmentIndex = gameState.getBoard().getSegmentIndex(position);
         final int playerSegmentColumn = gameState.getBoard().getSegmentColumn(position);
         final boolean isEnemyAhead = isEnemyAhead(gameState);
         final int coal = playerShip.getCoal();
+
+        System.out.println("speed: " + playerShip.getSpeed() + ", ahead: " + isEnemyAhead + ", coal: " + coal + ", turn: " + turn + ", segment: " + playerSegmentIndex + ", column: " + playerSegmentColumn);
+
+        final List<Move> moves = getPossibleMoves(gameState, isEnemyAhead);
 
         Move bestMove = null;
         double highestScore = Integer.MIN_VALUE;
@@ -48,8 +52,11 @@ public class MoveUtil {
             final boolean isGoalSegment = move.getSegmentIndex() < 7;
             int minTurns = move.getMinTurns(gameState);
 
-            if(isLastColumn && isLastSegment && !isGoalSegment)
+            if(isLastColumn && isLastSegment && !isGoalSegment) {
                 minTurns--;
+
+                System.out.println("last column reached, min turns: " + minTurns);
+            }
 
             // skip moves that lead to a dead end
             if(minTurns > coal + 1)
@@ -70,6 +77,8 @@ public class MoveUtil {
 
             if(score < highestScore)
                 continue;
+
+            System.out.println(AnsiColor.GREEN.toString() + score + AnsiColor.RESET + ": " + move.getActions());
 
             // prevent moves that lead to a dead end
             if(minTurns > 0) {
@@ -161,7 +170,7 @@ public class MoveUtil {
                 ship.getFreeTurns(),
                 1,
                 getMinMovementPoints(gameState),
-                getMaxMovementPoints(gameState, maxCoal),
+                getMaxMovementPoints(gameState, maxCoal > 0),
                 maxCoal
         ));
 
@@ -198,13 +207,13 @@ public class MoveUtil {
     /**
      * Returns the maximum movement points for the current game state.
      * @param gameState the current game state
-     * @param maxCoal the maximum amount of coal to use
+     * @param hasCoal whether the player has coal left
      * @return the maximum movement points
      */
-    private static int getMaxMovementPoints(@NonNull GameState gameState, int maxCoal) {
-        final boolean useCoal = (isEnemyAhead(gameState) || gameState.getTurn() < 2) && maxCoal > 0;
+    private static int getMaxMovementPoints(@NonNull GameState gameState, boolean hasCoal) {
+        final boolean useCoal = (isEnemyAhead(gameState) || gameState.getTurn() < 2);
 
-        return Math.min(6, gameState.getPlayerShip().getSpeed() + (useCoal ? 2 : 1));
+        return Math.min(6, gameState.getPlayerShip().getSpeed() + (useCoal && hasCoal ? 2 : 1));
     }
 
     /**
@@ -219,7 +228,7 @@ public class MoveUtil {
 
         final Ship playerShip = gameState.getPlayerShip();
         final Move move = new Move(path.get(0), gameState.getEnemyShip().getPosition(), playerShip.getDirection());
-        final int maxMovementPoints = getMaxMovementPoints(gameState, playerShip.getCoal());
+        final int maxMovementPoints = getMaxMovementPoints(gameState, playerShip.getCoal() > 0);
         final Vector3 destination = path.get(path.size() - 1);
         final Field destinationField = gameState.getBoard().getFieldAt(destination);
         final boolean collectPassenger = Arrays.stream(Direction.values())
@@ -354,13 +363,13 @@ public class MoveUtil {
 
     /**
      * @param gameState the current game state
-     * @return whether the enemy is at least 2 segments ahead of the player
+     * @return whether the enemy is at least 3 segments ahead of the player
      */
     public static boolean isEnemyAhead(GameState gameState) {
         final int playerSegmentIndex = gameState.getBoard().getSegmentIndex(gameState.getPlayerShip().getPosition());
         final int enemySegmentIndex = gameState.getBoard().getSegmentIndex(gameState.getEnemyShip().getPosition());
 
-        return enemySegmentIndex > playerSegmentIndex + 1;
+        return enemySegmentIndex > playerSegmentIndex + 2;
     }
 
 }
