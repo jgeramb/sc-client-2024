@@ -102,6 +102,16 @@ public class ClientPacketHandler {
 
                 this.gameHandler.onBoardUpdate(this.gameState);
             } else if (data instanceof MoveRequestMessage) {
+                synchronized (this.roomUpdateLock) {
+                    if(this.gameState == null) {
+                        try {
+                            this.roomUpdateLock.wait();
+                        } catch (InterruptedException ignore) {
+                            return;
+                        }
+                    }
+                }
+
                 final List<Action> actions = this.gameHandler.getNextActions(this.gameState);
 
                 if (actions.isEmpty())

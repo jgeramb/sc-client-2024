@@ -17,10 +17,7 @@ import de.teamgruen.sc.sdk.protocol.data.board.fields.Goal;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.NonNull;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MoveUtil {
@@ -31,41 +28,120 @@ public class MoveUtil {
      * @return the most efficient move
      */
     public static Optional<Move> getMostEfficientMove(@NonNull GameState gameState) {
+        final int turn = gameState.getTurn();
         final List<Move> moves = getPossibleMoves(gameState, false);
         final Ship playerShip = gameState.getPlayerShip();
         final Vector3 position = playerShip.getPosition();
         final int playerSegmentIndex = gameState.getBoard().getSegmentIndex(position);
         final int playerSegmentColumn = gameState.getBoard().getSegmentColumn(position);
-        final int enemySegmentIndex = gameState.getBoard().getSegmentIndex(gameState.getEnemyShip().getPosition());
-        final boolean isEnemyAhead = enemySegmentIndex > playerSegmentIndex + 2;
+        final boolean isEnemyAhead = isEnemyAhead(gameState);
+        final int coal = playerShip.getCoal();
 
         Move bestMove = null;
         double highestScore = Integer.MIN_VALUE;
         int lowestCoalCost = 0;
+        int lowestMinTurns = 0;
 
         for(Move move : moves) {
+            final boolean isLastColumn = move.getSegmentColumn() == 3;
+            final boolean isLastSegment = move.getSegmentIndex() == gameState.getBoard().getSegments().size() - 1;
+            final boolean isGoalSegment = move.getSegmentIndex() < 7;
+            int minTurns = move.getMinTurns(gameState);
+
+            if(isLastColumn && isLastSegment && !isGoalSegment)
+                minTurns--;
+
+            // skip moves that lead to a dead end
+            if(minTurns > coal + 1)
+                continue;
+
+            final int enemyMinTurns = gameState.getMinTurns(gameState.getEnemyShip().getDirection(), move.getEnemyEndPosition());
             final boolean canEnd = gameState.getBoard().getFieldAt(move.getEndPosition()) instanceof Goal
                     && playerShip.hasEnoughPassengers();
             final double deltaSegmentColumn = Math.floorMod(move.getSegmentColumn() - playerSegmentColumn, 4);
-            final double deltaSegmentPosition = move.getSegmentIndex() - playerSegmentIndex
-                    + (deltaSegmentColumn > 2 ? deltaSegmentColumn - 4 : deltaSegmentColumn) / 4d;
+            final double deltaSegmentPosition = move.getSegmentIndex() - playerSegmentIndex + deltaSegmentColumn / 4d;
             final int coalCost = move.getCoalCost(playerShip);
             final double score = (move.isGoal() ? 100 : 0)
                     + (canEnd || (isEnemyAhead && deltaSegmentPosition >= 0) ? 50 : 0)
-                    + move.getPassengers() * 15
-                    + move.getPushes() * 3
+                    + move.getPassengers() * 5
+                    + move.getPushes() * Math.max(0, enemyMinTurns - 2) * 5
                     + move.getDistance() * deltaSegmentPosition
-                    - coalCost
-                    - Math.max(0, move.getMinTurns(gameState) - 1) * 3.5;
+                    - Math.max(0, coalCost - (isEnemyAhead || turn < 2 ? 1 : 0)) * 2;
 
-            if(score > highestScore || score == highestScore && coalCost < lowestCoalCost) {
+            if(score < highestScore)
+                continue;
+
+            // prevent moves that lead to a dead end
+            if(minTurns > 0) {
+                final OptionalInt nextMinTurns = getMinTurns(
+                        gameState,
+                        position,
+                        move.getEndDirection(),
+                        1,
+                        move.getTotalCost(),
+                        coal - coalCost
+                );
+
+                if(nextMinTurns.isEmpty())
+                    continue;
+
+                minTurns += nextMinTurns.getAsInt();
+            }
+
+            if(score > highestScore || coalCost < lowestCoalCost || minTurns < lowestMinTurns) {
                 highestScore = score;
                 bestMove = move;
                 lowestCoalCost = coalCost;
+                lowestMinTurns = minTurns;
             }
         }
 
         return Optional.ofNullable(bestMove);
+    }
+
+    /**
+     * @param gameState the current game state
+     * @param position the current position
+     * @param direction the current direction
+     * @param freeTurns the amount of free turns
+     * @param speed the current speed
+     * @param coal the available coal
+     * @return the minimum amount of turns the ship needs to use all movement points
+     */
+    private static OptionalInt getMinTurns(@NonNull GameState gameState,
+                                           @NonNull Vector3 position,
+                                           @NonNull Direction direction,
+                                           int freeTurns,
+                                           int speed,
+                                           int coal) {
+        return Arrays.stream(Direction.values())
+                .mapToInt(nextDirection -> {
+                    final int cost = direction.costTo(nextDirection);
+                    final int coalLeft = coal - Math.max(0, cost - freeTurns);
+
+                    if(coalLeft < 0)
+                        return -1;
+
+                    final Vector3 nextPosition = position.copy().add(nextDirection.toVector3());
+                    final int minTurns = gameState.getMinTurns(nextDirection, nextPosition);
+
+                    if(speed > 1) {
+                        final OptionalInt nextMinTurns = getMinTurns(gameState,
+                                nextPosition,
+                                nextDirection,
+                                Math.max(0, freeTurns - (cost > 0 ? 1 : 0)),
+                                speed - 1,
+                                coalLeft
+                        );
+
+                        if(nextMinTurns.isEmpty())
+                            return -1;
+                    }
+
+                    return minTurns;
+                })
+                .filter(minTurns -> minTurns != -1)
+                .min();
     }
 
     /**
@@ -80,6 +156,7 @@ public class MoveUtil {
 
         final List<Move> moves = new ArrayList<>(gameState.getMoves(
                 ship.getPosition(),
+                gameState.getEnemyShip().getPosition(),
                 ship.getDirection(),
                 ship.getFreeTurns(),
                 1,
@@ -125,12 +202,9 @@ public class MoveUtil {
      * @return the maximum movement points
      */
     private static int getMaxMovementPoints(@NonNull GameState gameState, int maxCoal) {
-        final Ship ship = gameState.getPlayerShip();
-        final int playerSegmentIndex = gameState.getBoard().getSegmentIndex(ship.getPosition());
-        final int enemySegmentIndex = gameState.getBoard().getSegmentIndex(gameState.getEnemyShip().getPosition());
-        final boolean useCoal = enemySegmentIndex > playerSegmentIndex + 1 || gameState.getTurn() < 2;
+        final boolean useCoal = (isEnemyAhead(gameState) || gameState.getTurn() < 2) && maxCoal > 0;
 
-        return Math.min(6, ship.getSpeed() + ((useCoal && maxCoal > 0) ? 2 : 1));
+        return Math.min(6, gameState.getPlayerShip().getSpeed() + (useCoal ? 2 : 1));
     }
 
     /**
@@ -144,7 +218,7 @@ public class MoveUtil {
             return Optional.empty();
 
         final Ship playerShip = gameState.getPlayerShip();
-        final Move move = new Move(path.get(0), playerShip.getDirection());
+        final Move move = new Move(path.get(0), gameState.getEnemyShip().getPosition(), playerShip.getDirection());
         final int maxMovementPoints = getMaxMovementPoints(gameState, playerShip.getCoal());
         final Vector3 destination = path.get(path.size() - 1);
         final Field destinationField = gameState.getBoard().getFieldAt(destination);
@@ -159,7 +233,7 @@ public class MoveUtil {
         AtomicInteger coal = new AtomicInteger(Math.min(playerShip.getCoal(), 1));
         AtomicInteger freeTurns = new AtomicInteger(playerShip.getFreeTurns());
 
-        while(move.getTotalCost() < maxMovementPoints && pathIndex < path.size()) {
+        while(move.getTotalCost() < maxMovementPoints && pathIndex < path.size() - 1) {
             final int availablePoints = maxMovementPoints - move.getTotalCost();
             final Vector3 position = move.getEndPosition();
             final Direction currentDirection = move.getEndDirection();
@@ -180,7 +254,7 @@ public class MoveUtil {
             Vector3 lastPosition = position;
             int distance = 0, points = 0;
 
-            while(pathIndex < path.size()) {
+            while(pathIndex < path.size() - 1) {
                 final Vector3 nextPosition = path.get(pathIndex);
 
                 // stop if the direction changes
@@ -276,6 +350,17 @@ public class MoveUtil {
         coal.set(Math.min(0, turnCost - freeTurns.get() - coal.get()));
 
         return from.rotate(rotations);
+    }
+
+    /**
+     * @param gameState the current game state
+     * @return whether the enemy is at least 2 segments ahead of the player
+     */
+    public static boolean isEnemyAhead(GameState gameState) {
+        final int playerSegmentIndex = gameState.getBoard().getSegmentIndex(gameState.getPlayerShip().getPosition());
+        final int enemySegmentIndex = gameState.getBoard().getSegmentIndex(gameState.getEnemyShip().getPosition());
+
+        return enemySegmentIndex > playerSegmentIndex + 1;
     }
 
 }

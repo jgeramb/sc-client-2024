@@ -87,6 +87,7 @@ public class GameState {
      * @return all possible moves for the current ship.
      */
     public List<Move> getMoves(@NonNull Vector3 position,
+                               @NonNull Vector3 enemyPosition,
                                @NonNull Direction shipDirection,
                                int freeTurns,
                                int freeAcceleration,
@@ -101,7 +102,7 @@ public class GameState {
             final int minMovementPoints = Math.max(1, requiredMovementPoints - availableCoal);
 
             for (int currentMax = minMovementPoints; currentMax <= maxMovementPoints; currentMax++) {
-                final Move longestMove = new Move(position, turnDirection);
+                final Move longestMove = new Move(position, enemyPosition, turnDirection);
 
                 if (shipDirection != turnDirection)
                     longestMove.turn(turnDirection);
@@ -141,6 +142,7 @@ public class GameState {
                 if (lookForMoves && (cost <= minMovementPoints || extraCost < freeAcceleration)) {
                     getMoves(
                             endPosition,
+                            longestMove.getEnemyEndPosition(),
                             turnDirection,
                             currentFreeTurns,
                             Math.max(0, freeAcceleration - extraCost),

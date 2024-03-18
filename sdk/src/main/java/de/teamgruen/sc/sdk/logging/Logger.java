@@ -14,14 +14,16 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static de.teamgruen.sc.sdk.logging.AnsiColor.*;
+
 @RequiredArgsConstructor
 public class Logger {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("HH:mm:ss");
     private static final String
-            OPEN_BRACKET = AnsiColor.BLACK + "[" + AnsiColor.RESET,
-            CLOSE_BRACKET = AnsiColor.BLACK + "]" + AnsiColor.RESET,
-            COLON = AnsiColor.BLACK + ":" + AnsiColor.RESET;
+            OPEN_BRACKET = BLACK + "[" + RESET,
+            CLOSE_BRACKET = BLACK + "]" + RESET,
+            COLON = BLACK + ":" + RESET;
     
     private final OutputStream out;
     @Setter
@@ -46,8 +48,9 @@ public class Logger {
 
     public void log(@NonNull Level logLevel, String message) {
         final String time = DATE_FORMAT.format(new Date());
-        final String level = logLevel.getColor() + logLevel.name() + AnsiColor.RESET;
-        final String threadName = AnsiColor.CYAN + Thread.currentThread().getName() + AnsiColor.RESET;
+        final String levelName = logLevel.name();
+        final String level = logLevel.getColor() + levelName + RESET + " ".repeat(5 - levelName.length());
+        final String threadName = CYAN + Thread.currentThread().getName() + RESET;
 
         this.print(OPEN_BRACKET + time + " " + level + CLOSE_BRACKET + " " + threadName + COLON + " " + message);
     }

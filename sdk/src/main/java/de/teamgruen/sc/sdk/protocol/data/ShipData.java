@@ -23,6 +23,8 @@ public class ShipData {
     private Direction direction;
     @JacksonXmlProperty(isAttribute = true)
     private int speed, coal, passengers, freeTurns, points;
+    @JacksonXmlProperty(isAttribute = true)
+    private boolean stuck;
     private Position position;
 
 }

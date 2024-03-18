@@ -23,7 +23,7 @@ import java.util.List;
 @EqualsAndHashCode
 public class Move {
 
-    private Vector3 endPosition;
+    private Vector3 endPosition, enemyEndPosition;
     private Direction endDirection;
     private final List<Action> actions = new ArrayList<>();
     private int distance = 0, totalCost = 0;
@@ -32,8 +32,9 @@ public class Move {
 
     private Move() {}
 
-    public Move(Vector3 endPosition, Direction endDirection) {
+    public Move(Vector3 endPosition, Vector3 enemyEndPosition, Direction endDirection) {
         this.endPosition = endPosition.copy();
+        this.enemyEndPosition = enemyEndPosition.copy();
         this.endDirection = endDirection;
     }
 
@@ -46,6 +47,7 @@ public class Move {
 
     public void append(@NonNull Move move) {
         this.endPosition = move.endPosition;
+        this.enemyEndPosition = move.enemyEndPosition;
         this.endDirection = move.endDirection;
         this.actions.addAll(move.actions);
         this.distance += move.distance;
@@ -63,6 +65,7 @@ public class Move {
     }
 
     public void push(@NonNull Direction direction) {
+        this.enemyEndPosition.add(direction.toVector3());
         this.actions.add(ActionFactory.push(direction));
         this.totalCost++;
         this.pushes++;

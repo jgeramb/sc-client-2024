@@ -48,14 +48,11 @@ public class AdvancedGameHandler extends BaseGameHandler {
         final List<List<Vector3>> paths = new ArrayList<>();
         final List<Runnable> tasks = new ArrayList<>();
 
-        final Vector3 enemyShipPosition = gameState.getEnemyShip().getPosition();
-        final int playerShipSegmentIndex = board.getSegmentIndex(playerShip.getPosition());
-
         // check if enemy ship is more than 2 segments ahead
-        if(board.getSegmentIndex(enemyShipPosition) - playerShipSegmentIndex > 2)
-            tasks.add(() -> paths.add(PathFinder.findPath(shipPosition, enemyShipPosition)));
+        if(MoveUtil.isEnemyAhead(gameState))
+            tasks.add(() -> paths.add(PathFinder.findPath(shipPosition, gameState.getEnemyShip().getPosition())));
         // collect passengers and move towards goal after reaching the 5th segment
-        else if(playerShipSegmentIndex >= 4) {
+        else if(board.getSegmentIndex(playerShip.getPosition()) >= 4) {
             // passengers
             board.getPassengerFields().forEach((position, field) -> {
                 final Passenger passenger = (Passenger) field;
@@ -98,7 +95,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
             }
 
             paths.removeIf(path -> {
-                if (path == null)
+                if (path == null || path.size() < 2)
                     return true;
 
                 final Vector3 endPosition = path.get(path.size() - 1);

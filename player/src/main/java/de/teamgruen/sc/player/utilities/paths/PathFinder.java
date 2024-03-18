@@ -46,8 +46,9 @@ public class PathFinder {
 
             final Vector3 currentPosition = currentNode.getPosition();
 
+            // early exit if the end position was reached
             if (currentPosition.equals(end))
-                return reconstructPath(cameFrom, currentNode);
+                return reconstructPath(cameFrom, currentPosition);
 
             final int currentCost = costSoFar.get(currentPosition);
 
@@ -77,19 +78,18 @@ public class PathFinder {
     }
 
     /**
-     * Reconstructs the path from the destination to the start node.
+     * Reconstructs the path from the destination to the start.
      * @param cameFrom the map of nodes to their previous node
-     * @param destination the destination node
+     * @param destination the destination
      * @return the reconstructed path
      */
-    private static List<Vector3> reconstructPath(Map<Vector3, Vector3> cameFrom, PathNode destination) {
+    private static List<Vector3> reconstructPath(Map<Vector3, Vector3> cameFrom, Vector3 destination) {
         final List<Vector3> path = new ArrayList<>();
-        Vector3 current = destination.getPosition();
+        Vector3 current = destination;
 
-        path.add(current);
-
-        while ((current = cameFrom.get(current)) != null)
+        do {
             path.add(current);
+        } while((current = cameFrom.get(current)) != null);
 
         Collections.reverse(path);
 

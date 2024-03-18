@@ -17,17 +17,17 @@ public class MoveTest {
 
     @Test
     public void testToString() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.DOWN_LEFT);
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.DOWN_LEFT);
         move.turn(Direction.UP_RIGHT);
         move.forward(1, 1);
         move.segment(1, 2);
 
-        assertEquals("Move(endPosition=Vector3(q=1, r=-1, s=0), endDirection=UP_RIGHT, actions=[Turn(direction=UP_RIGHT), Forward(distance=1)], distance=1, totalCost=1, passengers=0, pushes=0, segmentIndex=1, segmentColumn=2, goal=false)", move.toString());
+        assertEquals("Move(endPosition=Vector3(q=1, r=-1, s=0), enemyEndPosition=Vector3(q=1, r=1, s=1), endDirection=UP_RIGHT, actions=[Turn(direction=UP_RIGHT), Forward(distance=1)], distance=1, totalCost=1, passengers=0, pushes=0, segmentIndex=1, segmentColumn=2, goal=false)", move.toString());
     }
 
     @Test
     public void testCopy() {
-        final Move move = new Move(new Vector3(1, 2, 3), Direction.DOWN_LEFT);
+        final Move move = new Move(new Vector3(1, 2, 3), new Vector3(3, 2, 1), Direction.DOWN_LEFT);
         move.turn(Direction.UP_RIGHT);
         move.forward(1, 1);
         move.push(Direction.DOWN_RIGHT);
@@ -40,7 +40,7 @@ public class MoveTest {
 
     @Test
     public void testTurn() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.turn(Direction.LEFT);
 
         assertEquals(Direction.LEFT, move.getEndDirection());
@@ -48,7 +48,7 @@ public class MoveTest {
 
     @Test
     public void testPush() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.push(Direction.LEFT);
 
         assertEquals(1, move.getPushes());
@@ -56,7 +56,7 @@ public class MoveTest {
 
     @Test
     public void testForward() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.forward(2, 2);
 
         assertEquals(new Vector3(2, 0, -2), move.getEndPosition());
@@ -64,7 +64,7 @@ public class MoveTest {
 
     @Test
     public void testPassenger() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.passenger();
 
         assertEquals(1, move.getPassengers());
@@ -72,7 +72,7 @@ public class MoveTest {
 
     @Test
     public void testSegment() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.segment(1, 2);
 
         assertEquals(1, move.getSegmentIndex());
@@ -81,7 +81,7 @@ public class MoveTest {
 
     @Test
     public void testGoal() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.goal();
 
         assertTrue(move.isGoal());
@@ -89,7 +89,7 @@ public class MoveTest {
 
     @Test
     public void testGetAcceleration_Decelerate() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.forward(2, 2);
 
         final Ship ship = new Ship(Team.ONE);
@@ -100,7 +100,7 @@ public class MoveTest {
 
     @Test
     public void testGetAcceleration_Accelerate() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.forward(2, 2);
 
         final Ship ship = new Ship(Team.ONE);
@@ -111,7 +111,7 @@ public class MoveTest {
 
     @Test
     public void testGetAcceleration_NoChange() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.forward(2, 2);
 
         final Ship ship = new Ship(Team.ONE);
@@ -122,46 +122,47 @@ public class MoveTest {
 
     @Test
     public void testGetMinTurns_Zero() {
-        final Move move = new Move(new Vector3(1, 0, -1), Direction.RIGHT);
+        final Move move = new Move(new Vector3(1, 0, -1), new Vector3(1, 1, 1), Direction.RIGHT);
 
         assertEquals(0, move.getMinTurns(new ExampleGameState()));
     }
 
     @Test
     public void testGetMinTurns_One() {
-        final Move move = new Move(new Vector3(2, 0, -2), Direction.RIGHT);
+        final Move move = new Move(new Vector3(2, 0, -2), new Vector3(1, 1, 1), Direction.RIGHT);
 
         assertEquals(1, move.getMinTurns(new ExampleGameState()));
     }
 
     @Test
     public void testGetMinTurns_Two() {
-        final Move move = new Move(new Vector3(2, -2, 0), Direction.UP_RIGHT);
+        final Move move = new Move(new Vector3(2, -2, 0), new Vector3(1, 1, 1), Direction.UP_RIGHT);
 
         assertEquals(2, move.getMinTurns(new ExampleGameState()));
     }
 
     @Test
     public void testAppend() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.UP_RIGHT);
+        final Move move = new Move(new Vector3(-1, 0, 1), new Vector3(1, 0, -1), Direction.UP_RIGHT);
         move.turn(Direction.RIGHT);
         move.forward(2, 2);
         move.push(Direction.DOWN_RIGHT);
         move.passenger();
-        move.segment(1, 4);
+        move.segment(0, 2);
         move.goal();
 
-        final Move childMove = new Move(new Vector3(2, 0, -2), Direction.RIGHT);
+        final Move childMove = new Move(new Vector3(1, 0, -1), new Vector3(1, 1, -2), Direction.RIGHT);
         childMove.turn(Direction.DOWN_RIGHT);
         childMove.forward(1, 1);
-        childMove.push(Direction.DOWN_RIGHT);
+        childMove.push(Direction.RIGHT);
         childMove.passenger();
         childMove.segment(2, 1);
         childMove.goal();
 
         move.append(childMove);
 
-        assertEquals(new Vector3(2, 1, -3), move.getEndPosition());
+        assertEquals(new Vector3(1, 1, -2), move.getEndPosition());
+        assertEquals(new Vector3(2, 1, -3), move.getEnemyEndPosition());
         assertEquals(Direction.DOWN_RIGHT, move.getEndDirection());
         assertEquals(3, move.getDistance());
         assertEquals(5, move.getTotalCost());
@@ -174,7 +175,7 @@ public class MoveTest {
 
     @Test
     public void testGetCoalCost() {
-        final Move move = new Move(new Vector3(0, 0, 0), Direction.RIGHT);
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.forward(2, 2);
         move.push(Direction.DOWN_RIGHT);
         move.turn(Direction.DOWN_LEFT);

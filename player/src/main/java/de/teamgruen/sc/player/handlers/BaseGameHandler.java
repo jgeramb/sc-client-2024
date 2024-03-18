@@ -10,7 +10,6 @@ import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.Move;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.game.handlers.GameHandler;
-import de.teamgruen.sc.sdk.logging.AnsiColor;
 import de.teamgruen.sc.sdk.logging.Logger;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreFragment;
@@ -22,6 +21,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static de.teamgruen.sc.sdk.logging.AnsiColor.*;
 
 public abstract class BaseGameHandler implements GameHandler {
 
@@ -41,7 +42,7 @@ public abstract class BaseGameHandler implements GameHandler {
 
     @Override
     public void onRoomJoin(String roomId) {
-        this.logger.info("Joined room " + AnsiColor.PURPLE + roomId + AnsiColor.RESET);
+        this.logger.info("Joined room " + PURPLE + roomId + RESET);
     }
 
     public void setNextMove(GameState gameState, Move move) {
@@ -85,7 +86,13 @@ public abstract class BaseGameHandler implements GameHandler {
             this.ready.set(false);
 
             final double numerator = TimeUnit.NANOSECONDS.convert(1, TimeUnit.MILLISECONDS);
-            this.logger.debug("Time: " + String.format("%.3f", (System.nanoTime() - startTime) / numerator) + "ms");
+            final int turn = gameState.getTurn();
+
+            this.logger.debug(
+                    "Turn " + WHITE + "#" + GREEN + " ".repeat(turn < 10 ? 1 : 0) + turn + RESET + " took " +
+                    PURPLE + String.format("%.3f", (System.nanoTime() - startTime) / numerator) + WHITE + "ms" +
+                    RESET
+            );
         }
 
         return Collections.emptyList();
@@ -106,17 +113,17 @@ public abstract class BaseGameHandler implements GameHandler {
                 maxValueLength.set(Math.max(maxValueLength.get(), String.valueOf(score).length()));
         });
 
-        final String horizontalLine = AnsiColor.BLACK + "―".repeat(12 + maxValueLength.get()) + AnsiColor.RESET;
+        final String horizontalLine = BLACK + "―".repeat(12 + maxValueLength.get()) + RESET;
 
         this.logger.info(horizontalLine);
 
         final String resultSymbol = result.equals(GameResult.WIN)
-                ? AnsiColor.GREEN + "✓"
+                ? GREEN + "✓"
                 : result.equals(GameResult.LOOSE)
-                        ? AnsiColor.RED + "✕"
-                        : AnsiColor.WHITE + "/";
+                        ? RED + "✕"
+                        : WHITE + "/";
         final String resultSpacer = " ".repeat(maxNameLength - 8) + " ".repeat(maxValueLength.get() - 1);
-        this.logger.info("Gewonnen: " + resultSpacer + resultSymbol + AnsiColor.RESET);
+        this.logger.info("Gewonnen: " + resultSpacer + resultSymbol + RESET);
 
         scores.forEach((scoreFragment, score) -> {
             if(!scoreFragment.isRelevantForRanking())
@@ -126,7 +133,7 @@ public abstract class BaseGameHandler implements GameHandler {
             final String spacer = " ".repeat(maxNameLength - name.length())
                     + " ".repeat(maxValueLength.get() - String.valueOf(score).length());
 
-            this.logger.info(name + ": " + spacer + AnsiColor.PURPLE + score + AnsiColor.RESET);
+            this.logger.info(name + ": " + spacer + PURPLE + score + RESET);
         });
 
         this.logger.info(horizontalLine);

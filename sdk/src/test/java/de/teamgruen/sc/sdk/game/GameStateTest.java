@@ -32,7 +32,7 @@ public class GameStateTest {
 
     @Test
     public void testUpdateShips() {
-        this.gameState.updateShips(List.of(new ShipData(Team.TWO, Direction.LEFT, 4, 3, 2, 1, 0, new Position(1, 2, 3))));
+        this.gameState.updateShips(List.of(new ShipData(Team.TWO, Direction.LEFT, 4, 3, 2, 1, 0, false, new Position(1, 2, 3))));
 
         final Ship stateShip = this.gameState.getEnemyShip();
 
@@ -50,7 +50,7 @@ public class GameStateTest {
     public void testUpdateShips_NoShipForTeam() {
         this.gameState.getShips().remove(this.gameState.getEnemyShip());
 
-        assertThrows(NoSuchElementException.class, () -> this.gameState.updateShips(List.of(new ShipData(Team.TWO, Direction.LEFT, 4, 3, 2, 1, 0, new Position(1, 2, 3)))));
+        assertThrows(NoSuchElementException.class, () -> this.gameState.updateShips(List.of(new ShipData(Team.TWO, Direction.LEFT, 4, 3, 2, 1, 0, false, new Position(1, 2, 3)))));
     }
 
     @Test
@@ -336,7 +336,7 @@ public class GameStateTest {
 
         final Vector3 position = playerShip.getPosition();
         final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, direction);
+        final Move move = new Move(position, new Vector3(0, -1, 1), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setResult(AdvanceInfo.Result.SHIP);
 
@@ -360,7 +360,7 @@ public class GameStateTest {
 
         final Vector3 position = playerShip.getPosition();
         final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, direction);
+        final Move move = new Move(position, new Vector3(0, -1, 1), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setDistance(1);
         advanceInfo.setCost(1);
@@ -387,7 +387,7 @@ public class GameStateTest {
 
         final Vector3 position = playerShip.getPosition();
         final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, direction);
+        final Move move = new Move(position, new Vector3(0, -1, 1), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setDistance(1);
         advanceInfo.setCost(2);
@@ -414,7 +414,7 @@ public class GameStateTest {
 
         final Vector3 position = playerShip.getPosition();
         final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, direction);
+        final Move move = new Move(position, new Vector3(0, -1, 1), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setDistance(6);
         advanceInfo.setCost(6);
@@ -439,6 +439,7 @@ public class GameStateTest {
 
         final List<List<Action>> actualMoves = this.gameState.getMoves(
                 playerShip.getPosition(),
+                new Vector3(0, -1, 1),
                 playerShip.getDirection(),
                 playerShip.getFreeTurns(),
                 1,
