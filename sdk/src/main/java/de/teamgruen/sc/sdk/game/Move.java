@@ -9,6 +9,7 @@ import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
+import de.teamgruen.sc.sdk.protocol.data.actions.Forward;
 import de.teamgruen.sc.sdk.protocol.data.actions.Turn;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -71,10 +72,16 @@ public class Move {
         this.pushes++;
     }
 
-    public void forward(int total, int cost) {
-        this.endPosition.add(this.endDirection.toVector3().multiply(total));
-        this.actions.add(ActionFactory.forward(total));
-        this.distance += total;
+    public void forward(int distance, int cost) {
+        this.endPosition.add(this.endDirection.toVector3().multiply(distance));
+
+        // merge with last forward action if possible
+        if(!this.actions.isEmpty() && this.actions.get(this.actions.size() - 1) instanceof Forward forward)
+            forward.setDistance(forward.getDistance() + distance);
+        else
+            this.actions.add(ActionFactory.forward(distance));
+
+        this.distance += distance;
         this.totalCost += cost;
     }
 
@@ -93,10 +100,6 @@ public class Move {
 
     public int getAcceleration(@NonNull Ship ship) {
         return this.totalCost - ship.getSpeed();
-    }
-
-    public int getMinTurns(@NonNull GameState gameState) {
-        return gameState.getMinTurns(this.endDirection, this.endPosition);
     }
 
     public int getCoalCost(@NonNull Ship ship) {

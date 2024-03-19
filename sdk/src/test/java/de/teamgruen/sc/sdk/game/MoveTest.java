@@ -52,6 +52,18 @@ public class MoveTest {
         move.push(Direction.LEFT);
 
         assertEquals(1, move.getPushes());
+        assertEquals(1, move.getTotalCost());
+    }
+
+    @Test
+    public void testForward_Merge() {
+        final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
+        move.forward(2, 2);
+        move.forward(1, 1);
+
+        assertEquals(new Vector3(3, 0, -3), move.getEndPosition());
+        assertEquals(3, move.getDistance());
+        assertEquals(3, move.getTotalCost());
     }
 
     @Test
@@ -60,6 +72,8 @@ public class MoveTest {
         move.forward(2, 2);
 
         assertEquals(new Vector3(2, 0, -2), move.getEndPosition());
+        assertEquals(2, move.getDistance());
+        assertEquals(2, move.getTotalCost());
     }
 
     @Test
@@ -118,27 +132,6 @@ public class MoveTest {
         ship.setSpeed(2);
 
         assertEquals(0, move.getAcceleration(ship));
-    }
-
-    @Test
-    public void testGetMinTurns_Zero() {
-        final Move move = new Move(new Vector3(1, 0, -1), new Vector3(1, 1, 1), Direction.RIGHT);
-
-        assertEquals(0, move.getMinTurns(new ExampleGameState()));
-    }
-
-    @Test
-    public void testGetMinTurns_One() {
-        final Move move = new Move(new Vector3(2, 0, -2), new Vector3(1, 1, 1), Direction.RIGHT);
-
-        assertEquals(1, move.getMinTurns(new ExampleGameState()));
-    }
-
-    @Test
-    public void testGetMinTurns_Two() {
-        final Move move = new Move(new Vector3(2, -2, 0), new Vector3(1, 1, 1), Direction.UP_RIGHT);
-
-        assertEquals(2, move.getMinTurns(new ExampleGameState()));
     }
 
     @Test

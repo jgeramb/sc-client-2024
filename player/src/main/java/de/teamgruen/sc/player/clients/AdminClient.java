@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static de.teamgruen.sc.sdk.logging.AnsiColor.*;
@@ -32,13 +32,15 @@ public class AdminClient extends Client {
     private final Object gameEndLock = new Object();
     private final AtomicReference<String> currentRoomId = new AtomicReference<>();
     private final List<PlayerClient> playerClients = new ArrayList<>();
+    private final int[][] playerStats = new int[2][4];
     private final Logger logger;
-    private final Map<String, int[]> playStyleStats = new LinkedHashMap<>();
+    private final String playStyle;
 
-    public AdminClient(@NonNull Logger logger, @NonNull String host, int port) {
+    public AdminClient(@NonNull Logger logger, @NonNull String host, int port, String playStyle) {
         super(host, port);
 
         this.logger = logger;
+        this.playStyle = playStyle;
     }
 
     public void connect() throws TcpConnectException {
@@ -47,10 +49,12 @@ public class AdminClient extends Client {
             public void onRoomCreated(String roomId, List<String> reservations) {
                 currentRoomId.set(roomId);
 
-                for (int playerIndex = 0; playerIndex < 2; playerIndex++) {
+                for (int i = 0; i < playerStats.length; i++) {
+                    final int playerId = i;
+
                     try {
                         final Logger playerLogger = new Logger(new ByteArrayOutputStream());
-                        final GameHandler gameHandler = playerIndex == 0
+                        final GameHandler gameHandler = Objects.equals(playStyle, "simple") || (playerId == 0 && !Objects.equals(playStyle, "advanced"))
                                 ? new SimpleGameHandler(playerLogger)
                                 : new AdvancedGameHandler(playerLogger);
                         final PlayerClient playerClient = new PlayerClient(host, port, new GameHandler() {
@@ -78,17 +82,15 @@ public class AdminClient extends Client {
                             public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
                                 gameHandler.onResults(scores, result);
 
-                                final String playStyle = gameHandler instanceof SimpleGameHandler ? "Simple" : "Advanced";
-
                                 switch (result) {
                                     case WIN:
-                                        playStyleStats.get(playStyle)[0]++;
+                                        playerStats[playerId][0]++;
                                         break;
                                     case LOOSE:
-                                        playStyleStats.get(playStyle)[1]++;
+                                        playerStats[playerId][1]++;
                                         break;
                                     case DRAW:
-                                        playStyleStats.get(playStyle)[2]++;
+                                        playerStats[playerId][2]++;
                                         break;
                                 }
 
@@ -105,11 +107,11 @@ public class AdminClient extends Client {
 
                                 logger.error("Error by " + GREEN + playerName + RESET + ": " + WHITE + message + RESET);
 
-                                playStyleStats.get(playerName)[3]++;
+                                playerStats[playerId][3]++;
                             }
                         });
                         playerClient.connect();
-                        playerClient.joinPreparedRoom(reservations.get(playerIndex));
+                        playerClient.joinPreparedRoom(reservations.get(i));
 
                         playerClients.add(playerClient);
                     } catch (TcpConnectException ex) {
@@ -132,8 +134,9 @@ public class AdminClient extends Client {
     }
 
     public void runTests(@NonNull String password, int count) {
-        this.playStyleStats.put("Simple", new int[4]);
-        this.playStyleStats.put("Advanced", new int[4]);
+        // initialize the player stats
+        for (int i = 0; i < playerStats.length; i++)
+            playerStats[i] = new int[4];
 
         for (int i = 1; i <= count; i++) {
             final String currentCount = String.valueOf(i);
@@ -162,13 +165,20 @@ public class AdminClient extends Client {
 
         final String line = BLACK + "―".repeat(3);
 
-        for (Map.Entry<String, int[]> entry : this.playStyleStats.entrySet()) {
+        for (int playerId = 0; playerId < this.playerStats.length; playerId++) {
+            final int[] stats = this.playerStats[playerId];
+            final String playerDescription = switch (playStyle) {
+                case "simple" -> "Simple #" + (playerId + 1);
+                case "advanced" -> "Advanced #" + (playerId + 1);
+                default -> playerId == 0 ? "Simple" : "Advanced";
+            };
+
             this.logger.info("");
-            this.logger.info(line + " " + PURPLE + entry.getKey() + " " + line + RESET);
-            this.logger.info(WHITE + "┣" + RESET + " Wins:   " + entry.getValue()[0]);
-            this.logger.info(WHITE + "┣" + RESET + " Losses: " + entry.getValue()[1]);
-            this.logger.info(WHITE + "┣" + RESET + " Draws:  " + entry.getValue()[2]);
-            this.logger.info(WHITE + "┗" + RESET + " Errors:  " + entry.getValue()[3]);
+            this.logger.info(line + " " + PURPLE + playerDescription + " " + line + RESET);
+            this.logger.info(WHITE + "┣" + RESET + " Wins:   " + stats[0]);
+            this.logger.info(WHITE + "┣" + RESET + " Losses: " + stats[1]);
+            this.logger.info(WHITE + "┣" + RESET + " Draws:  " + stats[2]);
+            this.logger.info(WHITE + "┗" + RESET + " Errors:  " + stats[3]);
         }
 
         // shutdown the JVM

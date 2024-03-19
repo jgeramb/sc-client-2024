@@ -75,8 +75,6 @@ public class GameState {
     }
 
     /**
-     * Get all possible moves for the current ship.
-     *
      * @param position the start position of the ship
      * @param shipDirection the direction of the ship
      * @param freeTurns the amount of free turns
@@ -98,10 +96,9 @@ public class GameState {
 
         this.getDirectionCosts(shipDirection, position, maxCoal + freeTurns).forEach((turnDirection, turnCost) -> {
             final int currentFreeTurns = Math.max(0, freeTurns - turnCost);
-            final int availableCoal = Math.max(0, maxCoal - Math.max(0, turnCost - freeTurns));
-            final int minMovementPoints = Math.max(1, requiredMovementPoints - availableCoal);
+            final int availableCoal = maxCoal - Math.max(0, turnCost - freeTurns);
 
-            for (int currentMax = minMovementPoints; currentMax <= maxMovementPoints; currentMax++) {
+            for (int currentMax = Math.max(1, requiredMovementPoints - availableCoal); currentMax <= maxMovementPoints; currentMax++) {
                 final Move longestMove = new Move(position, enemyPosition, turnDirection);
 
                 if (shipDirection != turnDirection)
@@ -116,7 +113,6 @@ public class GameState {
                         availableCoal
                 );
                 final Vector3 endPosition = advanceInfo.getEndPosition(position, turnDirection);
-                final AdvanceInfo.Result result = advanceInfo.getResult();
                 final int cost = this.appendForwardMove(
                         position,
                         turnDirection,
@@ -125,35 +121,34 @@ public class GameState {
                         currentMax - advanceInfo.getCost()
                 );
 
-                if(cost == -1)
+                // skip impossible moves
+                if(cost == 0)
                     continue;
 
                 longestMove.segment(
-                        this.getBoard().getSegmentIndex(endPosition),
-                        this.getBoard().getSegmentColumn(endPosition)
+                        this.board.getSegmentIndex(endPosition),
+                        this.board.getSegmentColumn(endPosition)
                 );
 
-                final int extraCost = cost - longestMove.getDistance();
-                final boolean lookForMoves = switch (result) {
-                    case COUNTER_CURRENT, BLOCKED, PASSENGER, GOAL -> cost < currentMax;
-                    default -> false;
-                };
+                final AdvanceInfo.Result result = advanceInfo.getResult();
 
-                if (lookForMoves && (cost <= minMovementPoints || extraCost < freeAcceleration)) {
+                if (cost < currentMax && result != AdvanceInfo.Result.PASSENGER && result != AdvanceInfo.Result.GOAL) {
+                    final int extraCost = cost - longestMove.getDistance();
+
                     getMoves(
                             endPosition,
                             longestMove.getEnemyEndPosition(),
                             turnDirection,
                             currentFreeTurns,
                             Math.max(0, freeAcceleration - extraCost),
-                            requiredMovementPoints - cost,
+                            Math.max(0, requiredMovementPoints - cost),
                             currentMax - cost,
                             availableCoal - Math.max(0, extraCost - freeAcceleration)
                     ).forEach(move -> {
-                        final Move longestMoveCopy = longestMove.copy();
-                        longestMoveCopy.append(move);
+                        final Move variant = longestMove.copy();
+                        variant.append(move);
 
-                        moves.add(longestMoveCopy);
+                        moves.add(variant);
                     });
                 }
 
@@ -183,33 +178,28 @@ public class GameState {
         final AdvanceInfo.Result result = advanceInfo.getResult();
 
         if (result == AdvanceInfo.Result.SHIP) {
-            final boolean wasCounterCurrent = this.getBoard()
-                    .isCounterCurrent(endPosition);
-            final boolean isCounterCurrent = this.getBoard()
-                    .isCounterCurrent(endPosition.copy().add(direction.toVector3()));
-            final int pushCost = 2 + (!wasCounterCurrent && isCounterCurrent ? 1 : 0);
+            final boolean wasCounterCurrent = this.board.isCounterCurrent(endPosition);
+            final boolean isCounterCurrent = this.board.isCounterCurrent(endPosition.copy().add(direction.toVector3()));
+            final int moveCost = !wasCounterCurrent && isCounterCurrent ? 2 : 1;
 
-            if (pushCost <= remainingMovementPoints) {
-                final Direction pushDirection = this.getBestPushDirection(direction);
+            if(moveCost + 1 /* push cost */ > remainingMovementPoints)
+                return 0;
 
-                if (pushDirection != null) {
-                    final int forwardCost = advanceInfo.getCost() + pushCost - 1;
+            final Direction pushDirection = this.getBestPushDirection(direction);
 
-                    move.forward(advanceInfo.getDistance() + 1, forwardCost);
-                    move.push(pushDirection);
+            if (pushDirection == null)
+                return 0;
 
-                    return move.getTotalCost();
-                }
-            }
+            move.forward(advanceInfo.getDistance() + 1, advanceInfo.getCost() + moveCost);
+            move.push(pushDirection);
+
+            return move.getTotalCost();
         }
 
-        if (result == AdvanceInfo.Result.PASSENGER) {
+        if (result == AdvanceInfo.Result.PASSENGER)
             move.passenger();
-        } else if (result == AdvanceInfo.Result.GOAL)
+        else if (result == AdvanceInfo.Result.GOAL)
             move.goal();
-
-        if (advanceInfo.getDistance() == 0)
-            return -1;
 
         move.forward(advanceInfo.getDistance(), advanceInfo.getCost());
 
@@ -294,12 +284,10 @@ public class GameState {
 
                 if (canReachMinimumSpeed && canPickUpPassenger) {
                     advanceInfo.setResult(AdvanceInfo.Result.PASSENGER);
-                    break;
+
+                    return advanceInfo;
                 }
             }
-
-            if(advanceInfo.getResult().equals(AdvanceInfo.Result.PASSENGER))
-                break;
         }
 
         return advanceInfo;

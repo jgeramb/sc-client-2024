@@ -48,17 +48,17 @@ public class SoftwareChallengePlayer {
         final String host = (String) parser.getOptionValue(hostOption, "localhost");
         final int port = (Integer) parser.getOptionValue(portOption, 13050);
         final int tests = (int) parser.getOptionValue(testsOption, 0);
+        final String playStyle = (String) parser.getOptionValue(playStyleOption, null);
 
         try {
             if(tests > 0) {
-                final AdminClient adminClient = new AdminClient(LOGGER, host, port);
+                final AdminClient adminClient = new AdminClient(LOGGER, host, port, playStyle);
                 adminClient.connect();
 
                 final String password = (String) parser.getOptionValue(passwordOption, "admin");
 
                 adminClient.runTests(password, tests);
             } else {
-                final String playStyle = (String) parser.getOptionValue(playStyleOption, "simple");
                 final GameHandler gameHandler = switch (playStyle) {
                     case "simple" -> {
                         LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Simple" + AnsiColor.RESET);
@@ -68,14 +68,8 @@ public class SoftwareChallengePlayer {
                         LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Advanced" + AnsiColor.RESET);
                         yield new AdvancedGameHandler(LOGGER);
                     }
-                    default -> {
-                        LOGGER.error("Unknown play-style: " + playStyle);
-                        yield null;
-                    }
+                    default -> throw new IllegalArgumentException("Illegal play style: " + playStyle);
                 };
-
-                if(gameHandler == null)
-                    return;
 
                 final PlayerClient client = new PlayerClient(host, port, gameHandler);
                 client.connect();
@@ -95,6 +89,8 @@ public class SoftwareChallengePlayer {
             }
         } catch (TcpConnectException ex) {
             LOGGER.error("Could not connect to server: " + ex.getMessage());
+        } catch (IllegalArgumentException ex) {
+            LOGGER.error(ex.getMessage());
         }
     }
 

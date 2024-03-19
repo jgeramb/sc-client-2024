@@ -329,6 +329,52 @@ public class GameStateTest {
     }
 
     @Test
+    public void testAppendForwardMove_Ship_NotEnoughMovementPointsLeft() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-1, 1, 0));
+        playerShip.setDirection(Direction.LEFT);
+
+        final Vector3 position = playerShip.getPosition();
+        final Direction direction = playerShip.getDirection();
+        final AdvanceInfo advanceInfo = new AdvanceInfo();
+        advanceInfo.setResult(AdvanceInfo.Result.SHIP);
+
+        final int cost = this.gameState.appendForwardMove(
+                advanceInfo.getEndPosition(position, direction),
+                direction,
+                new Move(position, playerShip.getPosition(), direction),
+                advanceInfo,
+                1
+        );
+
+        assertEquals(0, cost);
+    }
+
+    @Test
+    public void testAppendForwardMove_Ship_NoPushDirection() {
+        this.gameState.getEnemyShip().setPosition(new Vector3(-3, 5, -2));
+
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-2, 4, -2));
+        playerShip.setDirection(Direction.DOWN_LEFT);
+
+        final Vector3 position = playerShip.getPosition();
+        final Direction direction = playerShip.getDirection();
+        final AdvanceInfo advanceInfo = new AdvanceInfo();
+        advanceInfo.setResult(AdvanceInfo.Result.SHIP);
+
+        final int cost = this.gameState.appendForwardMove(
+                advanceInfo.getEndPosition(position, direction),
+                direction,
+                new Move(position, playerShip.getPosition(), direction),
+                advanceInfo,
+                2
+        );
+
+        assertEquals(0, cost);
+    }
+
+    @Test
     public void testAppendForwardMove_Ship() {
         final Ship playerShip = this.gameState.getPlayerShip();
         playerShip.setPosition(new Vector3(-1, 1, 0));
@@ -336,7 +382,7 @@ public class GameStateTest {
 
         final Vector3 position = playerShip.getPosition();
         final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, new Vector3(0, -1, 1), direction);
+        final Move move = new Move(position, playerShip.getPosition(), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setResult(AdvanceInfo.Result.SHIP);
 
@@ -360,7 +406,7 @@ public class GameStateTest {
 
         final Vector3 position = playerShip.getPosition();
         final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, new Vector3(0, -1, 1), direction);
+        final Move move = new Move(position, playerShip.getPosition(), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setDistance(1);
         advanceInfo.setCost(1);
@@ -387,7 +433,7 @@ public class GameStateTest {
 
         final Vector3 position = playerShip.getPosition();
         final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, new Vector3(0, -1, 1), direction);
+        final Move move = new Move(position, playerShip.getPosition(), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setDistance(1);
         advanceInfo.setCost(2);
@@ -414,7 +460,7 @@ public class GameStateTest {
 
         final Vector3 position = playerShip.getPosition();
         final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, new Vector3(0, -1, 1), direction);
+        final Move move = new Move(position, playerShip.getPosition(), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setDistance(6);
         advanceInfo.setCost(6);
