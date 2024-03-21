@@ -5,9 +5,10 @@
 
 package de.teamgruen.sc.sdk.game.board;
 
+import de.teamgruen.sc.sdk.game.AdvanceInfo;
+import de.teamgruen.sc.sdk.game.Move;
 import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
-import de.teamgruen.sc.sdk.protocol.data.board.FieldArray;
 import de.teamgruen.sc.sdk.protocol.data.board.SegmentData;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Goal;
@@ -24,7 +25,8 @@ public class Board {
 
     private final Map<Vector3, Field> fields = new HashMap<>();
     private final List<Vector3> counterCurrent = new ArrayList<>();
-    private List<BoardSegment> segments = new ArrayList<>();
+    private final List<Vector3> nextFieldsPositions = new ArrayList<>();
+    private final List<BoardSegment> segments = new ArrayList<>();
     private Direction nextSegmentDirection;
 
     /**
@@ -127,41 +129,393 @@ public class Board {
     }
 
     /**
+     * Updates the nextFieldsPositions list for the next segment
+     */
+    public void updateNextFieldPositions() {
+        final Vector3 nextCenter = this.segments.get(this.segments.size() - 1)
+                .center()
+                .copy()
+                .add(this.nextSegmentDirection.toVector3().multiply(4));
+
+        this.nextFieldsPositions.clear();
+        this.nextFieldsPositions.addAll(this.getFieldPositions(nextCenter, this.nextSegmentDirection));
+    }
+
+    /**
      * Updates the segments and the counterCurrent list
      * @param segmentDataList the new segments
      */
     public void updateSegments(List<SegmentData> segmentDataList) {
         this.fields.clear();
-        this.segments = segmentDataList.stream().map(segment -> {
+        this.segments.clear();
+        this.segments.addAll(segmentDataList.stream().map(segment -> {
             final LinkedHashMap<Vector3, Field> fields = new LinkedHashMap<>();
             final Direction direction = segment.getDirection();
-            final Vector3 direction1 = direction.rotate(-2).toVector3();
-            final Vector3 direction2 = direction.rotate(2).toVector3();
-            final Vector3 center = segment.getCenter().toVector3().subtract(direction.toVector3());
+            final List<Vector3> positions = this.getFieldPositions(segment.getCenter().toVector3(), direction);
 
-            for (FieldArray columns : segment.getColumns()) {
-                int j = -(columns.getFields().size() - 1) / 2;
-
-                for (Field field : columns.getFields()) {
-                    Vector3 fieldPosition = center.copy();
-
-                    if (j != 0) {
-                        final Vector3 offsetVector = j < 0 ? direction1 : direction2;
-                        fieldPosition.add(offsetVector.copy().multiply(Math.abs(j)));
-                    }
-
-                    fields.put(fieldPosition, field);
-                    j++;
-                }
-
-                center.add(direction.toVector3());
-            }
+            for (int i = 0; i < positions.size(); i++)
+                fields.put(positions.get(i), segment.getColumns().get(i / 5).getFields().get(i % 5));
 
             this.fields.putAll(fields);
 
             return new BoardSegment(fields, segment.getCenter().toVector3(), direction);
-        }).toList();
+        }).toList());
+        this.updateNextFieldPositions();
         this.updateCounterCurrent();
+    }
+
+    /**
+     * @param center the center of the segment
+     * @param direction the direction of the segment
+     * @return the positions of the fields in the segment
+     */
+    public List<Vector3> getFieldPositions(Vector3 center, Direction direction) {
+        final List<Vector3> positions = new ArrayList<>();
+        final Vector3 direction1 = direction.rotate(-2).toVector3();
+        final Vector3 direction2 = direction.rotate(2).toVector3();
+
+        // 4 columns
+        for (int i = -1; i < 3; i++) {
+            final Vector3 columnCenter = center.copy().add(direction.toVector3().multiply(i));
+
+            // 5 rows
+            for (int j = -2; j <= 2; j++) {
+                Vector3 fieldPosition = columnCenter.copy();
+
+                if (j != 0)
+                    fieldPosition.add((j < 0 ? direction1 : direction2).copy().multiply(Math.abs(j)));
+
+                positions.add(fieldPosition);
+            }
+        }
+
+        return positions;
+    }
+
+    /**
+     * @param position the position of the ship
+     * @return whether the ship can pick up a passenger
+     */
+    public boolean canPickUpPassenger(@NonNull Vector3 position) {
+        for (Direction direction : Direction.values()) {
+            final Vector3 currentPosition = position.copy().add(direction.toVector3());
+            final Field currentField = this.getFieldAt(currentPosition);
+
+            if(!(currentField instanceof Passenger passenger))
+                continue;
+
+            final Vector3 collectPosition = currentPosition.copy().add(passenger.getDirection().toVector3());
+
+            if(passenger.getPassenger() > 0 && position.equals(collectPosition))
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param ship the current ship
+     * @param position the start position of the ship
+     * @param shipDirection the direction of the ship
+     * @param enemyShip the enemy ship
+     * @param enemyPosition the position of the enemy ship
+     * @param excludeDirection the direction to exclude, may be null
+     * @param freeTurns the amount of free turns
+     * @param freeAcceleration the remaining free accelerations
+     * @param requiredMovementPoints the minimum amount of movement points to use
+     * @param maxMovementPoints the maximum amount of movement points to use
+     * @param maxCoal the maximum amount of coal to use
+     * @return all possible moves for the current ship.
+     */
+    public Set<Move> getMoves(@NonNull Ship ship,
+                              @NonNull Vector3 position,
+                              @NonNull Direction shipDirection,
+                              @NonNull Ship enemyShip,
+                              @NonNull Vector3 enemyPosition,
+                              Direction excludeDirection,
+                              int freeTurns,
+                              int freeAcceleration,
+                              int requiredMovementPoints,
+                              int maxMovementPoints,
+                              int maxCoal) {
+        final Set<Move> moves = new HashSet<>();
+
+        this.getDirectionCosts(shipDirection, position, maxCoal + freeTurns).forEach((turnDirection, turnCost) -> {
+            if(Objects.equals(turnDirection, excludeDirection))
+                return;
+
+            final int availableCoal = maxCoal - Math.max(0, turnCost - freeTurns);
+
+            for (int currentMax = Math.max(1, requiredMovementPoints - availableCoal); currentMax <= maxMovementPoints; currentMax++) {
+                final Move move = new Move(position, enemyPosition, turnDirection);
+
+                if (shipDirection != turnDirection)
+                    move.turn(turnDirection);
+
+                final AdvanceInfo advanceInfo = this.getAdvanceLimit(
+                        ship,
+                        position,
+                        turnDirection,
+                        enemyPosition,
+                        move.getTotalCost(),
+                        currentMax,
+                        freeAcceleration,
+                        availableCoal
+                );
+
+                this.appendForwardMove(
+                        advanceInfo.getEndPosition(position, turnDirection),
+                        turnDirection,
+                        enemyShip,
+                        move,
+                        advanceInfo,
+                        currentMax - advanceInfo.getCost()
+                );
+
+                final Vector3 endPosition = move.getEndPosition();
+                final int cost = move.getTotalCost();
+
+                move.segment(
+                        this.getSegmentIndex(endPosition),
+                        this.getSegmentColumn(endPosition)
+                );
+
+                if (cost < currentMax
+                        && currentMax > 1
+                        && advanceInfo.getResult() != AdvanceInfo.Result.PASSENGER
+                        && advanceInfo.getResult() != AdvanceInfo.Result.GOAL) {
+                    final int extraCost = cost - move.getDistance();
+
+                    getMoves(
+                            ship,
+                            endPosition,
+                            turnDirection,
+                            enemyShip,
+                            move.getEnemyEndPosition(),
+                            cost == 0 ? turnDirection : null,
+                            Math.max(0, freeTurns - turnCost),
+                            Math.max(0, freeAcceleration - extraCost),
+                            Math.max(0, requiredMovementPoints - cost),
+                            currentMax - cost,
+                            availableCoal - Math.max(0, extraCost - freeAcceleration)
+                    ).forEach(currentMove -> moves.add(move.copy().append(currentMove)));
+                }
+
+                if (move.getTotalCost() >= requiredMovementPoints && move.getDistance() > 0)
+                    moves.add(move);
+            }
+        });
+
+        return moves;
+    }
+
+    /**
+     * Appends all actions for the advance to the given move.
+     *
+     * @param endPosition the end position of the advance
+     * @param direction the direction of the advance
+     * @param enemyShip the enemy ship
+     * @param move the move to append the actions to
+     * @param advanceInfo the information about the advance
+     * @param remainingMovementPoints the remaining movement points after the advance
+     */
+    public void appendForwardMove(@NonNull Vector3 endPosition,
+                                 @NonNull Direction direction,
+                                 @NonNull Ship enemyShip,
+                                 @NonNull Move move,
+                                 @NonNull AdvanceInfo advanceInfo,
+                                 int remainingMovementPoints) {
+        final AdvanceInfo.Result result = advanceInfo.getResult();
+
+        if (result == AdvanceInfo.Result.SHIP) {
+            final boolean wasCounterCurrent = this.isCounterCurrent(endPosition);
+            final boolean isCounterCurrent = this.isCounterCurrent(endPosition.copy().add(direction.toVector3()));
+            final int moveCost = !wasCounterCurrent && isCounterCurrent ? 2 : 1;
+
+            if(moveCost + 1 /* push cost */ <= remainingMovementPoints) {
+                final Direction pushDirection = this.getBestPushDirection(direction, enemyShip, move.getEnemyEndPosition());
+
+                if (pushDirection != null) {
+                    move.forward(advanceInfo.getDistance() + 1, advanceInfo.getCost() + moveCost);
+                    move.push(pushDirection);
+                    return;
+                }
+            }
+        } else if (result == AdvanceInfo.Result.PASSENGER)
+            move.passenger();
+        else if (result == AdvanceInfo.Result.GOAL)
+            move.goal();
+
+        if(advanceInfo.getDistance() > 0)
+            move.forward(advanceInfo.getDistance(), advanceInfo.getCost());
+    }
+
+    /**
+     * Get the maximum free forward moves.
+     *
+     * @param playerShip the player ship
+     * @param start the start position of the ship
+     * @param direction the direction of the ship
+     * @param enemyPosition the position of the enemy ship
+     * @param usedMovementPoints the used movement points so far
+     * @param remainingMovementPoints the maximum amount of movement points to use
+     * @param freeAcceleration the remaining free accelerations
+     * @param coal the maximum amount of coal to use
+     * @return the information about the maximum free forward moves
+     */
+    public AdvanceInfo getAdvanceLimit(@NonNull Ship playerShip,
+                                       @NonNull Vector3 start,
+                                       @NonNull Direction direction,
+                                       @NonNull Vector3 enemyPosition,
+                                       int usedMovementPoints,
+                                       int remainingMovementPoints,
+                                       int freeAcceleration,
+                                       int coal) {
+        final AdvanceInfo advanceInfo = new AdvanceInfo();
+        final Vector3 directionVector = direction.toVector3(), position = start.copy();
+
+        boolean onCounterCurrent = false;
+
+        while(advanceInfo.getCost() < remainingMovementPoints) {
+            position.add(directionVector);
+
+            final Field field = this.getFieldAt(position);
+
+            if(field == null || field.isObstacle()) {
+                advanceInfo.setResult(AdvanceInfo.Result.BLOCKED);
+                break;
+            }
+
+            if(position.equals(enemyPosition)) {
+                advanceInfo.setResult(AdvanceInfo.Result.SHIP);
+                break;
+            }
+
+            final boolean isCounterCurrent = this.isCounterCurrent(position);
+
+            if(!onCounterCurrent && isCounterCurrent) {
+                if(advanceInfo.getCost() + 2 > remainingMovementPoints) {
+                    advanceInfo.setResult(AdvanceInfo.Result.COUNTER_CURRENT);
+                    break;
+                }
+
+                advanceInfo.incrementCost();
+                onCounterCurrent = true;
+            }
+
+            advanceInfo.incrementDistance();
+            advanceInfo.incrementCost();
+
+            final int totalMovementPoints = usedMovementPoints + advanceInfo.getCost();
+            final boolean canReachSpeed = playerShip.getSpeed() - freeAcceleration - coal <= totalMovementPoints;
+
+            if(totalMovementPoints == (isCounterCurrent ? 2 : 1) && canReachSpeed) {
+                if (field instanceof Goal && playerShip.hasEnoughPassengers()) {
+                    advanceInfo.setResult(AdvanceInfo.Result.GOAL);
+                    break;
+                } else if (this.canPickUpPassenger(position)) {
+                    advanceInfo.setResult(AdvanceInfo.Result.PASSENGER);
+                    break;
+                }
+            }
+        }
+
+        return advanceInfo;
+    }
+
+    /**
+     * Returns the cost for all possible directions.
+     *
+     * @param direction the current direction of the ship
+     * @param position the current position of the ship
+     * @param maxTurns the maximum amount of turns to consider
+     * @return the required turn count for all possible directions
+     */
+    public Map<Direction, Integer> getDirectionCosts(@NonNull Direction direction, @NonNull Vector3 position, int maxTurns) {
+        final Map<Direction, Integer> costs = new HashMap<>();
+        final double maxRotations = Math.ceil((Direction.values().length - 1) / 2d);
+        final double turns = Math.min(maxTurns, maxRotations);
+
+        for(int i = (int) Math.floor(-turns); i <= turns; i++) {
+            final Direction currentDirection = direction.rotate(i);
+
+            if(costs.containsKey(currentDirection))
+                continue;
+
+            final int turnCost = direction.costTo(currentDirection);
+
+            if(turnCost > turns || this.isBlocked(position.copy().add(currentDirection.toVector3())))
+                continue;
+
+            costs.put(currentDirection, turnCost);
+        }
+
+        return costs;
+    }
+
+    /**
+     * Get the minimum required turn count for a direction.
+     *
+     * @param direction the target direction
+     * @param position the current position of the ship
+     * @return the minimum required turn count for the given direction
+     */
+    public int getMinTurns(@NonNull Direction direction, @NonNull Vector3 position) {
+        return this.getDirectionCosts(direction, position, 3)
+                .values()
+                .stream()
+                .min(Integer::compare)
+                .orElse(0);
+    }
+
+    /**
+     * Get the best push direction for the enemy ship.
+     *
+     * @param from the direction the ship is coming from
+     * @param enemyShip the enemy ship
+     * @param enemyPosition the position of the enemy ship
+     * @return the direction with the highest score, or null if no direction is available
+     */
+    public Direction getBestPushDirection(@NonNull Direction from, @NonNull Ship enemyShip, @NonNull Vector3 enemyPosition) {
+        final int enemySegmentIndex = this.getSegmentIndex(enemyPosition);
+        final int enemySegmentColumn = this.getSegmentColumn(enemyPosition);
+
+        Direction bestDirection = null;
+        double maxScore = Integer.MIN_VALUE;
+
+        for(Direction currentDirection : Direction.values()) {
+            if(currentDirection.toVector3().equals(from.toVector3().invert()))
+                continue;
+
+            final Vector3 pushPosition = enemyPosition.copy().add(currentDirection.toVector3());
+            final Field pushField = this.getFieldAt(pushPosition);
+
+            if(pushField == null || pushField.isObstacle())
+                continue;
+
+            final int counterCurrentBonus = this.isCounterCurrent(pushPosition) ? 1 : 0;
+            final boolean canReachMinimumSpeed = (enemyShip.getSpeed() - enemyShip.getCoal() - 1) <= (1 + counterCurrentBonus);
+
+            if(canReachMinimumSpeed) {
+                if(pushField instanceof Goal && enemyShip.hasEnoughPassengers())
+                    continue;
+
+                if(this.canPickUpPassenger(pushPosition))
+                    continue;
+            }
+
+            final int segmentIndex = this.getSegmentIndex(pushPosition);
+            final int segmentColumn = this.getSegmentColumn(pushPosition);
+            final double deltaSegmentPosition = (segmentIndex - enemySegmentIndex) + (segmentColumn - enemySegmentColumn) / 4d;
+            final double score = this.getMinTurns(enemyShip.getDirection(), pushPosition) + counterCurrentBonus - deltaSegmentPosition;
+
+            if(score > maxScore) {
+                maxScore = score;
+                bestDirection = currentDirection;
+            }
+        }
+
+        return bestDirection;
     }
 
 }

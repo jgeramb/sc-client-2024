@@ -25,16 +25,37 @@ public enum Direction {
         return new Vector3(this.q, this.r, this.s);
     }
 
-    public Direction rotate(int delta) {
-        return values()[Math.floorMod(this.ordinal() + delta, values().length)];
+    /**
+     * @param rotations the amount of rotations
+     * @return the rotated direction
+     */
+    public Direction rotate(int rotations) {
+        return values()[Math.floorMod(this.ordinal() + rotations, values().length)];
     }
 
+    /**
+     * @param destination the target direction
+     * @param maxRotations the maximum possible rotations
+     * @return the nearest possible direction to the target direction
+     */
+    public Direction rotateTo(@NonNull Direction destination, int maxRotations) {
+        return this.rotate(Math.max(-maxRotations, Math.min(maxRotations, this.delta(destination))));
+    }
+
+    /**
+     * @param direction the target direction
+     * @return the smallest delta between the current direction and the target direction
+     */
     public int delta(@NonNull Direction direction) {
         final int delta = Math.floorMod(direction.ordinal() - this.ordinal(), values().length);
 
         return (delta > values().length / 2) ? delta - values().length : delta;
     }
 
+    /**
+     * @param direction the target direction
+     * @return the cost to rotate to the target direction
+     */
     public int costTo(@NonNull Direction direction) {
         return Math.abs(this.delta(direction));
     }

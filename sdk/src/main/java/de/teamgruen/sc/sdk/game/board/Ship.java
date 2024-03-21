@@ -19,6 +19,7 @@ public class Ship {
     private int passengers = 0, coal = 6, speed = 1, freeTurns = 1, points = 0;
     private Direction direction = Direction.RIGHT;
     private Vector3 position = null;
+    private boolean stuck;
 
     /**
      * @return whether the ship has enough passengers to end the game

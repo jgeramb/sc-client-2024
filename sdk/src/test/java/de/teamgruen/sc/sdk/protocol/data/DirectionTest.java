@@ -3,9 +3,9 @@
  * All Rights Reserved.
  */
 
-package de.teamgruen.sc.sdk.game;
+package de.teamgruen.sc.sdk.protocol.data;
 
-import de.teamgruen.sc.sdk.protocol.data.Direction;
+import de.teamgruen.sc.sdk.game.Vector3;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,6 +36,21 @@ public class DirectionTest {
     @Test
     public void testRotate_CounterClockwise_Underflow() {
         assertEquals(Direction.UP_RIGHT, Direction.RIGHT.rotate(-1));
+    }
+
+    @Test
+    public void testRotateTo() {
+        assertEquals(Direction.UP_RIGHT, Direction.UP_LEFT.rotateTo(Direction.UP_RIGHT, 1));
+    }
+
+    @Test
+    public void testRotateTo_LessThanRequired() {
+        assertEquals(Direction.UP_RIGHT, Direction.UP_LEFT.rotateTo(Direction.RIGHT, 1));
+    }
+
+    @Test
+    public void testRotateTo_MoreThanRequired() {
+        assertEquals(Direction.RIGHT, Direction.UP_LEFT.rotateTo(Direction.RIGHT, 3));
     }
 
     @Test

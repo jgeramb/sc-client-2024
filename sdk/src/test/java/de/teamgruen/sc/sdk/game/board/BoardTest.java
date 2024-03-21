@@ -5,13 +5,14 @@
 
 package de.teamgruen.sc.sdk.game.board;
 
-import de.teamgruen.sc.sdk.game.ExampleGameState;
-import de.teamgruen.sc.sdk.game.Vector3;
+import de.teamgruen.sc.sdk.game.*;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
+import de.teamgruen.sc.sdk.protocol.data.actions.Action;
+import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Island;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -25,15 +26,19 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BoardTest {
 
+    private GameState gameState;
     private Board board;
 
-    @BeforeAll
-    public void prepareBoard() {
-        this.board = new ExampleGameState().getBoard();
+    @BeforeEach
+    public void setUp() {
+        this.gameState = new ExampleGameState();
+        this.board = gameState.getBoard();
     }
 
     @Test
     public void testUpdateSegments() {
+        assertEquals(Direction.DOWN_LEFT, this.board.getNextSegmentDirection());
+
         final BoardSegment actualSegment = this.board.getSegments().get(1);
 
         final Vector3 actualCenter = actualSegment.center();
@@ -152,8 +157,528 @@ public class BoardTest {
     }
 
     @Test
-    public void testGetNextSegmentDirection() {
-        assertEquals(Direction.DOWN_LEFT, this.board.getNextSegmentDirection());
+    public void testGetDirectionCosts_ZeroMaxTurns() {
+        assertEquals(1, this.board.getDirectionCosts(Direction.RIGHT, new Vector3(1, 0, -1), 0).size());
+    }
+
+    @Test
+    public void testGetDirectionCosts_NoAvailableTurns() {
+        final Map<Direction, Integer> actualDirectionCosts = this.board.getDirectionCosts(
+                Direction.DOWN_LEFT,
+                new Vector3(-3, 5, -2),
+                1
+        );
+
+        assertTrue(actualDirectionCosts.isEmpty());
+    }
+
+    @Test
+    public void testGetDirectionCosts() {
+        final Map<Direction, Integer> actualDirectionCosts = this.board.getDirectionCosts(
+                Direction.RIGHT,
+                new Vector3(0, 1, -1),
+                3
+        );
+
+        assertEquals(0, actualDirectionCosts.get(Direction.RIGHT));
+        assertEquals(1, actualDirectionCosts.get(Direction.DOWN_RIGHT));
+        assertEquals(2, actualDirectionCosts.get(Direction.DOWN_LEFT));
+        assertEquals(3, actualDirectionCosts.get(Direction.LEFT));
+        assertEquals(2, actualDirectionCosts.get(Direction.UP_LEFT));
+        assertEquals(1, actualDirectionCosts.get(Direction.UP_RIGHT));
+    }
+
+    @Test
+    public void testGetMinTurns_Zero() {
+        assertEquals(0, this.board.getMinTurns(Direction.RIGHT, new Vector3(1, 0, -1)));
+    }
+
+    @Test
+    public void testGetMinTurns_One() {
+        assertEquals(1, this.board.getMinTurns(Direction.RIGHT, new Vector3(2, 0, -2)));
+    }
+
+    @Test
+    public void testGetMinTurns_Two() {
+        assertEquals(2, this.board.getMinTurns(Direction.DOWN_RIGHT, new Vector3(-3, 5, -2)));
+    }
+
+    @Test
+    public void testGetMinTurns_Three() {
+        assertEquals(3, this.board.getMinTurns(Direction.DOWN_LEFT, new Vector3(-3, 5, -2)));
+    }
+
+    @Test
+    public void testGetBestPushDirection_None() {
+        assertNull(this.board.getBestPushDirection(
+                Direction.DOWN_LEFT,
+                this.gameState.getEnemyShip(),
+                new Vector3(-3, 5, -2)
+        ));
+    }
+
+    @Test
+    public void testGetBestPushDirection_CounterCurrent() {
+        assertEquals(Direction.DOWN_LEFT, this.board.getBestPushDirection(
+                Direction.DOWN_RIGHT,
+                this.gameState.getEnemyShip(),
+                new Vector3(0, 4, -4)
+        ));
+    }
+
+    @Test
+    public void testGetBestPushDirection_Obstacles() {
+        assertEquals(Direction.RIGHT, this.board.getBestPushDirection(
+                Direction.DOWN_RIGHT,
+                this.gameState.getEnemyShip(),
+                new Vector3(1, 4, -5)
+        ));
+    }
+
+    @Test
+    public void testGetBestPushDirection_MinCoalCost() {
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        enemyShip.setDirection(Direction.DOWN_LEFT);
+
+        assertEquals(Direction.DOWN_LEFT, this.board.getBestPushDirection(
+                Direction.RIGHT,
+                enemyShip,
+                new Vector3(1, 5, -6)
+        ));
+    }
+
+    @Test
+    public void testGetBestPushDirection_SegmentDistance() {
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        enemyShip.setDirection(Direction.DOWN_LEFT);
+
+        assertEquals(Direction.UP_LEFT, this.board.getBestPushDirection(
+                Direction.RIGHT,
+                enemyShip,
+                new Vector3(2, 4, -6)
+        ));
+    }
+
+    @Test
+    public void testGetBestPushDirection_NoGoal() {
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        enemyShip.setPassengers(2);
+        enemyShip.setSpeed(3);
+        enemyShip.setCoal(1);
+
+        assertEquals(Direction.RIGHT, this.board.getBestPushDirection(
+                Direction.DOWN_LEFT,
+                enemyShip,
+                new Vector3(-5, 9, -4)
+        ));
+    }
+
+    @Test
+    public void testGetBestPushDirection_NoPassengers() {
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        enemyShip.setDirection(Direction.DOWN_RIGHT);
+        enemyShip.setSpeed(2);
+
+        assertEquals(Direction.DOWN_RIGHT, this.board.getBestPushDirection(
+                Direction.DOWN_RIGHT,
+                enemyShip,
+                new Vector3(0, 5, -5)
+        ));
+    }
+
+    @Test
+    public void testGetAdvanceLimit_OutOfMap() {
+        final AdvanceInfo actualAdvanceLimit = this.board.getAdvanceLimit(
+                this.gameState.getPlayerShip(),
+                new Vector3(-1, 0, 1),
+                Direction.LEFT,
+                this.gameState.getEnemyShip().getPosition(),
+                0,
+                1,
+                0,
+                0
+        );
+
+        assertEquals(AdvanceInfo.Result.BLOCKED, actualAdvanceLimit.getResult());
+        assertEquals(0, actualAdvanceLimit.getDistance());
+    }
+
+    @Test
+    public void testGetAdvanceLimit_Blocked() {
+        final AdvanceInfo actualAdvanceLimit = this.board.getAdvanceLimit(
+                this.gameState.getPlayerShip(),
+                new Vector3(0, -1, 1),
+                Direction.RIGHT,
+                this.gameState.getEnemyShip().getPosition(),
+                0,
+                1,
+                0,
+                0
+        );
+
+        assertEquals(AdvanceInfo.Result.BLOCKED, actualAdvanceLimit.getResult());
+        assertEquals(0, actualAdvanceLimit.getDistance());
+    }
+
+    @Test
+    public void testGetAdvanceLimit_Ship() {
+        final AdvanceInfo actualAdvanceLimit = this.board.getAdvanceLimit(
+                this.gameState.getPlayerShip(),
+                new Vector3(-1, 1, 0),
+                Direction.LEFT,
+                this.gameState.getEnemyShip().getPosition(),
+                0,
+                1,
+                0,
+                0
+        );
+
+        assertEquals(AdvanceInfo.Result.SHIP, actualAdvanceLimit.getResult());
+        assertEquals(0, actualAdvanceLimit.getDistance());
+    }
+
+    @Test
+    public void testGetAdvanceLimit_CounterCurrent_Enter() {
+        final AdvanceInfo actualAdvanceLimit = this.board.getAdvanceLimit(
+                this.gameState.getPlayerShip(),
+                new Vector3(-1, 1, 0),
+                Direction.RIGHT,
+                this.gameState.getEnemyShip().getPosition(),
+                0,
+                1,
+                0,
+                0
+        );
+
+        assertEquals(AdvanceInfo.Result.COUNTER_CURRENT, actualAdvanceLimit.getResult());
+        assertEquals(0, actualAdvanceLimit.getDistance());
+    }
+
+    @Test
+    public void testGetAdvanceLimit_CounterCurrent_Move() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setSpeed(2);
+
+        final AdvanceInfo actualAdvanceLimit = this.board.getAdvanceLimit(
+                playerShip,
+                new Vector3(-1, 0, 1),
+                Direction.RIGHT,
+                this.gameState.getEnemyShip().getPosition(),
+                0,
+                2,
+                0,
+                0
+        );
+
+        assertEquals(AdvanceInfo.Result.NORMAL, actualAdvanceLimit.getResult());
+        assertEquals(1, actualAdvanceLimit.getDistance());
+    }
+
+    @Test
+    public void testGetAdvanceLimit_Goal_Water() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setSpeed(6);
+        playerShip.setPassengers(2);
+
+        final AdvanceInfo actualAdvanceLimit = this.board.getAdvanceLimit(
+                playerShip,
+                new Vector3(-5, 8, -3),
+                Direction.DOWN_LEFT,
+                this.gameState.getEnemyShip().getPosition(),
+                0,
+                1,
+                1,
+                4
+        );
+
+        assertEquals(AdvanceInfo.Result.GOAL, actualAdvanceLimit.getResult());
+        assertEquals(1, actualAdvanceLimit.getDistance());
+    }
+
+    @Test
+    public void testGetAdvanceLimit_Goal_CounterCurrent() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setSpeed(6);
+        playerShip.setPassengers(2);
+
+        final AdvanceInfo actualAdvanceLimit = this.board.getAdvanceLimit(
+                playerShip,
+                new Vector3(-5, 9, -4),
+                Direction.DOWN_LEFT,
+                this.gameState.getEnemyShip().getPosition(),
+                0,
+                2,
+                1,
+                3
+        );
+
+        assertEquals(AdvanceInfo.Result.GOAL, actualAdvanceLimit.getResult());
+        assertEquals(1, actualAdvanceLimit.getDistance());
+    }
+
+    @Test
+    public void testGetAdvanceLimit_Passenger() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setSpeed(2);
+
+        final AdvanceInfo actualAdvanceLimit = this.board.getAdvanceLimit(
+                playerShip,
+                new Vector3(2, 1, -3),
+                Direction.DOWN_RIGHT,
+                this.gameState.getEnemyShip().getPosition(),
+                0,
+                2,
+                1,
+                0
+        );
+
+        assertEquals(AdvanceInfo.Result.PASSENGER, actualAdvanceLimit.getResult());
+        assertEquals(1, actualAdvanceLimit.getDistance());
+    }
+
+    @Test
+    public void testGetAdvanceLimit_Passenger_NotReachable() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setSpeed(2);
+
+        final AdvanceInfo actualAdvanceLimit = this.board.getAdvanceLimit(
+                playerShip,
+                new Vector3(2, 1, -3),
+                Direction.DOWN_RIGHT,
+                this.gameState.getEnemyShip().getPosition(),
+                1,
+                2,
+                1,
+                0
+        );
+
+        assertEquals(AdvanceInfo.Result.NORMAL, actualAdvanceLimit.getResult());
+        assertEquals(2, actualAdvanceLimit.getDistance());
+    }
+
+    @Test
+    public void testGetAdvanceLimit_Normal() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setSpeed(5);
+
+        final AdvanceInfo actualAdvanceLimit = this.board.getAdvanceLimit(
+                playerShip,
+                new Vector3(2, -2, 0),
+                Direction.DOWN_RIGHT,
+                this.gameState.getEnemyShip().getPosition(),
+                0,
+                6,
+                1,
+                0
+        );
+
+        assertEquals(AdvanceInfo.Result.NORMAL, actualAdvanceLimit.getResult());
+        assertEquals(6, actualAdvanceLimit.getDistance());
+    }
+
+    @Test
+    public void testAppendForwardMove_Ship_NotEnoughMovementPointsLeft() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-1, 1, 0));
+        playerShip.setDirection(Direction.LEFT);
+
+        final Vector3 position = playerShip.getPosition();
+        final Direction direction = playerShip.getDirection();
+        final Move move = new Move(position, playerShip.getPosition(), direction);
+        final AdvanceInfo advanceInfo = new AdvanceInfo();
+        advanceInfo.setResult(AdvanceInfo.Result.SHIP);
+
+        this.board.appendForwardMove(
+                advanceInfo.getEndPosition(position, direction),
+                direction,
+                this.gameState.getEnemyShip(),
+                move,
+                advanceInfo,
+                1
+        );
+
+        assertEquals(0, move.getTotalCost());
+    }
+
+    @Test
+    public void testAppendForwardMove_Ship_NoPushDirection() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-2, 4, -2));
+        playerShip.setDirection(Direction.DOWN_LEFT);
+
+        final Vector3 position = playerShip.getPosition();
+        final Direction direction = playerShip.getDirection();
+        final Move move = new Move(position, new Vector3(-3, 5, -2), direction);
+        final AdvanceInfo advanceInfo = new AdvanceInfo();
+        advanceInfo.setResult(AdvanceInfo.Result.SHIP);
+
+        this.board.appendForwardMove(
+                advanceInfo.getEndPosition(position, direction),
+                direction,
+                this.gameState.getEnemyShip(),
+                move,
+                advanceInfo,
+                2
+        );
+
+        assertEquals(0, move.getTotalCost());
+    }
+
+    @Test
+    public void testAppendForwardMove_Ship() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-1, 1, 0));
+        playerShip.setDirection(Direction.LEFT);
+
+        final Vector3 position = playerShip.getPosition();
+        final Direction direction = playerShip.getDirection();
+        final Move move = new Move(position, playerShip.getPosition(), direction);
+        final AdvanceInfo advanceInfo = new AdvanceInfo();
+        advanceInfo.setResult(AdvanceInfo.Result.SHIP);
+
+        this.board.appendForwardMove(
+                advanceInfo.getEndPosition(position, direction),
+                direction,
+                this.gameState.getEnemyShip(),
+                move,
+                advanceInfo,
+                2
+        );
+
+        assertEquals(2, move.getTotalCost());
+        assertEquals(List.of(ActionFactory.forward(1), ActionFactory.push(Direction.UP_LEFT)), move.getActions());
+    }
+
+    @Test
+    public void testAppendForwardMove_Passenger() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(2, 1, -3));
+        playerShip.setDirection(Direction.DOWN_RIGHT);
+
+        final Vector3 position = playerShip.getPosition();
+        final Direction direction = playerShip.getDirection();
+        final Move move = new Move(position, playerShip.getPosition(), direction);
+        final AdvanceInfo advanceInfo = new AdvanceInfo();
+        advanceInfo.setDistance(1);
+        advanceInfo.setCost(1);
+        advanceInfo.setResult(AdvanceInfo.Result.PASSENGER);
+
+        this.board.appendForwardMove(
+                advanceInfo.getEndPosition(position, direction),
+                direction,
+                this.gameState.getEnemyShip(),
+                move,
+                advanceInfo,
+                0
+        );
+
+        assertEquals(1, move.getTotalCost());
+        assertEquals(List.of(ActionFactory.forward(1)), move.getActions());
+        assertEquals(1, move.getPassengers());
+    }
+
+    @Test
+    public void testAppendForwardMove_Goal() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-5, 8, -3));
+        playerShip.setDirection(Direction.DOWN_LEFT);
+
+        final Vector3 position = playerShip.getPosition();
+        final Direction direction = playerShip.getDirection();
+        final Move move = new Move(position, playerShip.getPosition(), direction);
+        final AdvanceInfo advanceInfo = new AdvanceInfo();
+        advanceInfo.setDistance(1);
+        advanceInfo.setCost(2);
+        advanceInfo.setResult(AdvanceInfo.Result.GOAL);
+
+        this.board.appendForwardMove(
+                advanceInfo.getEndPosition(position, direction),
+                direction,
+                this.gameState.getEnemyShip(),
+                move,
+                advanceInfo,
+                0
+        );
+
+        assertEquals(2, move.getTotalCost());
+        assertEquals(List.of(ActionFactory.forward(1)), move.getActions());
+        assertTrue(move.isGoal());
+    }
+
+    @Test
+    public void testAppendForwardMove_Normal() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(2, -2, 0));
+        playerShip.setDirection(Direction.DOWN_RIGHT);
+
+        final Vector3 position = playerShip.getPosition();
+        final Direction direction = playerShip.getDirection();
+        final Move move = new Move(position, playerShip.getPosition(), direction);
+        final AdvanceInfo advanceInfo = new AdvanceInfo();
+        advanceInfo.setDistance(6);
+        advanceInfo.setCost(6);
+        advanceInfo.setResult(AdvanceInfo.Result.NORMAL);
+
+        this.board.appendForwardMove(
+                advanceInfo.getEndPosition(position, direction),
+                direction,
+                this.gameState.getEnemyShip(),
+                move,
+                advanceInfo,
+                0
+        );
+
+        assertEquals(6, move.getTotalCost());
+        assertEquals(List.of(ActionFactory.forward(6)), move.getActions());
+    }
+
+    @Test
+    public void testGetMoves() {
+        final Ship playerShip = this.gameState.getPlayerShip(), enemyShip = this.gameState.getEnemyShip();
+        final List<List<Action>> actualMoves = this.board.getMoves(
+                playerShip,
+                new Vector3(0, -1, 1),
+                playerShip.getDirection(),
+                enemyShip,
+                enemyShip.getPosition(),
+                null,
+                playerShip.getFreeTurns(),
+                1,
+                1,
+                2,
+                playerShip.getCoal()
+        ).stream().map(Move::getActions).toList();
+        final List<List<Action>> expectedMoves = List.of(
+                List.of(ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1), ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1), ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1))
+        );
+
+        assertTrue(expectedMoves.containsAll(actualMoves));
+    }
+
+    @Test
+    public void testGetFieldPositions() {
+        final List<Vector3> expectedPositions = Arrays.asList(
+                new Vector3(-1, -2, 3), new Vector3(-1, -1, 2), new Vector3(-1, 0, 1), new Vector3(-2, 1, 1), new Vector3(-3, 2, 1),
+                new Vector3(0, -2, 2), new Vector3(0, -1, 1), new Vector3(0, 0, 0), new Vector3(-1, 1, 0), new Vector3(-2, 2, 0),
+                new Vector3(1, -2, 1), new Vector3(1, -1, 0), new Vector3(1, 0, -1), new Vector3(0, 1, -1), new Vector3(-1, 2, -1),
+                new Vector3(2, -2, 0), new Vector3(2, -1, -1), new Vector3(2, 0, -2), new Vector3(1, 1, -2), new Vector3(0, 2, -2)
+        );
+
+        assertEquals(expectedPositions, this.board.getFieldPositions(new Vector3(0, 0, 0), Direction.RIGHT));
     }
 
     public int[][] vectorsToArray(List<Vector3> vectors) {

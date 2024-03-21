@@ -46,7 +46,7 @@ public class Move {
         return move;
     }
 
-    public void append(@NonNull Move move) {
+    public Move append(@NonNull Move move) {
         this.endPosition = move.endPosition;
         this.enemyEndPosition = move.enemyEndPosition;
         this.endDirection = move.endDirection;
@@ -58,6 +58,8 @@ public class Move {
         this.segmentIndex = move.segmentIndex;
         this.segmentColumn = move.segmentColumn;
         this.goal = move.goal;
+
+        return this;
     }
 
     public void turn(@NonNull Direction direction) {

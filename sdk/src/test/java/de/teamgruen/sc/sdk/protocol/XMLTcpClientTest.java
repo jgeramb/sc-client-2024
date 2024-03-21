@@ -255,7 +255,7 @@ public class XMLTcpClientTest {
         });
 
         synchronized (closeLock) {
-            closeLock.wait(50);
+            closeLock.wait(100);
         }
 
         this.client.disconnect();

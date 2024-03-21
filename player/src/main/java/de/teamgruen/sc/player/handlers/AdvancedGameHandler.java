@@ -12,8 +12,6 @@ import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.game.board.Board;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.logging.Logger;
-import de.teamgruen.sc.sdk.protocol.data.Direction;
-import de.teamgruen.sc.sdk.protocol.data.board.fields.Goal;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.NonNull;
 
@@ -43,14 +41,14 @@ public class AdvancedGameHandler extends BaseGameHandler {
             return;
 
         final Board board = gameState.getBoard();
-        final Ship playerShip = gameState.getPlayerShip();
+        final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
         final Vector3 shipPosition = playerShip.getPosition();
         final List<List<Vector3>> paths = new ArrayList<>();
         final List<Runnable> tasks = new ArrayList<>();
 
         // check if enemy ship is more than 2 segments ahead
-        if(MoveUtil.isEnemyAhead(gameState))
-            tasks.add(() -> paths.add(PathFinder.findPath(shipPosition, gameState.getEnemyShip().getPosition())));
+        if(MoveUtil.isEnemyAhead(board, shipPosition, enemyShip.getPosition()))
+            tasks.add(() -> paths.add(PathFinder.findPath(shipPosition, enemyShip.getPosition())));
         // collect passengers and move towards goal after reaching the 5th segment
         else if(board.getSegmentIndex(playerShip.getPosition()) >= 4) {
             // passengers
@@ -65,8 +63,8 @@ public class AdvancedGameHandler extends BaseGameHandler {
                 tasks.add(() -> paths.add(PathFinder.findPath(shipPosition, collectPosition)));
             });
 
-            if (playerShip.hasEnoughPassengers()) {
-                // goals
+            // collect more passengers if the enemy ship is stuck, otherwise move towards a goal
+            if (playerShip.hasEnoughPassengers() && (!enemyShip.isStuck() || tasks.isEmpty())) {
                 board.getGoalFields().forEach((position, field) -> tasks.add(() ->
                         paths.add(PathFinder.findPath(shipPosition, position))
                 ));
@@ -94,21 +92,8 @@ public class AdvancedGameHandler extends BaseGameHandler {
                 executorService.shutdown();
             }
 
-            paths.removeIf(path -> {
-                if (path == null || path.size() < 2)
-                    return true;
-
-                final Vector3 endPosition = path.get(path.size() - 1);
-
-                if (gameState.getBoard().getFieldAt(endPosition) instanceof Goal)
-                    return false;
-
-                // remove path if it's not possible to go further after reaching the end position
-                final Vector3 beforeLastPosition = path.get(path.size() - 2);
-                final Direction direction = Direction.fromVector3(endPosition.copy().subtract(beforeLastPosition));
-
-                return gameState.getMinTurns(direction, endPosition) > Math.min(2, playerShip.getCoal() + 1);
-            });
+            // remove invalid paths
+            paths.removeIf(path -> path == null || path.size() < 2);
         }
 
         this.setNextMove(

@@ -51,6 +51,7 @@ public class MoveTest {
         final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.push(Direction.LEFT);
 
+        assertEquals(new Vector3(0, 1, 2), move.getEnemyEndPosition());
         assertEquals(1, move.getPushes());
         assertEquals(1, move.getTotalCost());
     }
