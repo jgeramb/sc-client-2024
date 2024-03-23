@@ -5,7 +5,6 @@
 
 package de.teamgruen.sc.sdk.game;
 
-import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
@@ -100,13 +99,12 @@ public class Move {
         this.goal = true;
     }
 
-    public int getAcceleration(@NonNull Ship ship) {
-        return this.totalCost - ship.getSpeed();
+    public int getAcceleration(int speed) {
+        return this.totalCost - speed;
     }
 
-    public int getCoalCost(@NonNull Ship ship) {
-        Direction direction = ship.getDirection();
-        int turnCosts = -ship.getFreeTurns();
+    public int getCoalCost(@NonNull Direction direction, int speed, int freeTurns) {
+        int turnCosts = -freeTurns;
 
         for (Action action : this.actions) {
             if (action instanceof Turn turn) {
@@ -117,7 +115,7 @@ public class Move {
             }
         }
 
-        return Math.max(0, Math.abs(this.getAcceleration(ship)) - 1) + Math.max(0, turnCosts);
+        return Math.max(0, Math.abs(this.getAcceleration(speed)) - 1) + Math.max(0, turnCosts);
     }
 
 }

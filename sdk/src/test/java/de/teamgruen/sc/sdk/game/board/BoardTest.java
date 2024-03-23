@@ -293,10 +293,9 @@ public class BoardTest {
                 new Vector3(-1, 0, 1),
                 Direction.LEFT,
                 this.gameState.getEnemyShip().getPosition(),
-                0,
                 1,
                 0,
-                0
+                1
         );
 
         assertEquals(AdvanceInfo.Result.BLOCKED, actualAdvanceLimit.getResult());
@@ -310,10 +309,9 @@ public class BoardTest {
                 new Vector3(0, -1, 1),
                 Direction.RIGHT,
                 this.gameState.getEnemyShip().getPosition(),
-                0,
                 1,
                 0,
-                0
+                1
         );
 
         assertEquals(AdvanceInfo.Result.BLOCKED, actualAdvanceLimit.getResult());
@@ -327,10 +325,9 @@ public class BoardTest {
                 new Vector3(-1, 1, 0),
                 Direction.LEFT,
                 this.gameState.getEnemyShip().getPosition(),
-                0,
                 1,
                 0,
-                0
+                1
         );
 
         assertEquals(AdvanceInfo.Result.SHIP, actualAdvanceLimit.getResult());
@@ -344,10 +341,9 @@ public class BoardTest {
                 new Vector3(-1, 1, 0),
                 Direction.RIGHT,
                 this.gameState.getEnemyShip().getPosition(),
-                0,
                 1,
                 0,
-                0
+                1
         );
 
         assertEquals(AdvanceInfo.Result.COUNTER_CURRENT, actualAdvanceLimit.getResult());
@@ -364,10 +360,9 @@ public class BoardTest {
                 new Vector3(-1, 0, 1),
                 Direction.RIGHT,
                 this.gameState.getEnemyShip().getPosition(),
+                1,
                 0,
-                2,
-                0,
-                0
+                2
         );
 
         assertEquals(AdvanceInfo.Result.NORMAL, actualAdvanceLimit.getResult());
@@ -385,10 +380,9 @@ public class BoardTest {
                 new Vector3(-5, 8, -3),
                 Direction.DOWN_LEFT,
                 this.gameState.getEnemyShip().getPosition(),
+                1,
                 0,
-                1,
-                1,
-                4
+                1
         );
 
         assertEquals(AdvanceInfo.Result.GOAL, actualAdvanceLimit.getResult());
@@ -406,10 +400,9 @@ public class BoardTest {
                 new Vector3(-5, 9, -4),
                 Direction.DOWN_LEFT,
                 this.gameState.getEnemyShip().getPosition(),
-                0,
-                2,
                 1,
-                3
+                0,
+                2
         );
 
         assertEquals(AdvanceInfo.Result.GOAL, actualAdvanceLimit.getResult());
@@ -426,10 +419,9 @@ public class BoardTest {
                 new Vector3(2, 1, -3),
                 Direction.DOWN_RIGHT,
                 this.gameState.getEnemyShip().getPosition(),
-                0,
-                2,
                 1,
-                0
+                0,
+                2
         );
 
         assertEquals(AdvanceInfo.Result.PASSENGER, actualAdvanceLimit.getResult());
@@ -447,9 +439,8 @@ public class BoardTest {
                 Direction.DOWN_RIGHT,
                 this.gameState.getEnemyShip().getPosition(),
                 1,
-                2,
                 1,
-                0
+                2
         );
 
         assertEquals(AdvanceInfo.Result.NORMAL, actualAdvanceLimit.getResult());
@@ -466,10 +457,9 @@ public class BoardTest {
                 new Vector3(2, -2, 0),
                 Direction.DOWN_RIGHT,
                 this.gameState.getEnemyShip().getPosition(),
-                0,
-                6,
                 1,
-                0
+                0,
+                6
         );
 
         assertEquals(AdvanceInfo.Result.NORMAL, actualAdvanceLimit.getResult());
@@ -641,12 +631,11 @@ public class BoardTest {
                 playerShip.getDirection(),
                 enemyShip,
                 enemyShip.getPosition(),
-                null,
+                playerShip.getSpeed(),
                 playerShip.getFreeTurns(),
                 1,
-                1,
                 2,
-                playerShip.getCoal()
+                0
         ).stream().map(Move::getActions).toList();
         final List<List<Action>> expectedMoves = List.of(
                 List.of(ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1)),

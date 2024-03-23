@@ -69,18 +69,16 @@ public class GameState {
     }
 
     /**
-     * Returns the minimum movement points for the current game state.
      * @param ship the ship to get the minimum movement points for
-     * @return the minimum movement points
+     * @return the minimum movement points for the ship
      */
     public int getMinMovementPoints(Ship ship) {
         return Math.max(1, ship.getSpeed() - 1);
     }
 
     /**
-     * Returns the maximum movement points for the current game state.
      * @param ship the ship to get the maximum movement points for
-     * @return the maximum movement points
+     * @return the maximum movement points for the ship
      */
     public int getMaxMovementPoints(Ship ship) {
         return Math.min(6, ship.getSpeed() + 1);

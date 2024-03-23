@@ -5,9 +5,7 @@
 
 package de.teamgruen.sc.sdk.game;
 
-import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
-import de.teamgruen.sc.sdk.protocol.data.Team;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -107,10 +105,7 @@ public class MoveTest {
         final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.forward(2, 2);
 
-        final Ship ship = new Ship(Team.ONE);
-        ship.setSpeed(1);
-
-        assertEquals(1, move.getAcceleration(ship));
+        assertEquals(1, move.getAcceleration(1));
     }
 
     @Test
@@ -118,10 +113,7 @@ public class MoveTest {
         final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.forward(2, 2);
 
-        final Ship ship = new Ship(Team.ONE);
-        ship.setSpeed(3);
-
-        assertEquals(-1, move.getAcceleration(ship));
+        assertEquals(-1, move.getAcceleration(3));
     }
 
     @Test
@@ -129,10 +121,7 @@ public class MoveTest {
         final Move move = new Move(new Vector3(0, 0, 0), new Vector3(1, 1, 1), Direction.RIGHT);
         move.forward(2, 2);
 
-        final Ship ship = new Ship(Team.ONE);
-        ship.setSpeed(2);
-
-        assertEquals(0, move.getAcceleration(ship));
+        assertEquals(0, move.getAcceleration(2));
     }
 
     @Test
@@ -174,10 +163,7 @@ public class MoveTest {
         move.push(Direction.DOWN_RIGHT);
         move.turn(Direction.DOWN_LEFT);
 
-        final Ship ship = new Ship(Team.ONE);
-        ship.setSpeed(1);
-
-        assertEquals(2, move.getCoalCost(ship));
+        assertEquals(2, move.getCoalCost(Direction.RIGHT, 1, 1));
     }
 
 }

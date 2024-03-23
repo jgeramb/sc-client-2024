@@ -30,35 +30,41 @@ public class Logger {
     private boolean debug;
 
     public void info(String message) {
-        this.log(Level.INFO, message);
+        this.log(Level.INFO, message, false);
     }
 
     public void warn(String message) {
-        this.log(Level.WARN, message);
+        this.log(Level.WARN, message, false);
     }
 
     public void error(String message) {
-        this.log(Level.ERROR, message);
+        this.log(Level.ERROR, message, false);
     }
 
     public void debug(String message) {
         if(this.debug)
-            this.log(Level.DEBUG, message);
+            this.log(Level.DEBUG, message, false);
     }
 
-    public void log(@NonNull Level logLevel, String message) {
+    public void log(@NonNull Level logLevel, String message, boolean replace) {
         final String time = DATE_FORMAT.format(new Date());
         final String levelName = logLevel.name();
         final String level = logLevel.getColor() + levelName + RESET + " ".repeat(5 - levelName.length());
         final String threadName = CYAN + Thread.currentThread().getName() + RESET;
 
-        this.print(OPEN_BRACKET + time + " " + level + CLOSE_BRACKET + " " + threadName + COLON + " " + message);
+        this.print(OPEN_BRACKET + time + " " + level + CLOSE_BRACKET + " " + threadName + COLON + " " + message, replace);
     }
 
-    private void print(String message) {
+    private void print(String message, boolean replace) {
         try {
+            if(replace)
+                this.out.write('\r');
+
             this.out.write(message.getBytes());
-            this.out.write('\n');
+
+            if(!replace)
+                this.out.write('\n');
+
             this.out.flush();
         } catch (IOException ex) {
             throw new RuntimeException("Could not write to output stream", ex);

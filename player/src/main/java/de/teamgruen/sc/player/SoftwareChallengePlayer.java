@@ -59,7 +59,7 @@ public class SoftwareChallengePlayer {
 
                 adminClient.runTests(password, tests);
             } else {
-                final GameHandler gameHandler = switch (playStyle) {
+                final GameHandler gameHandler = switch (playStyle == null ? "simple" : playStyle) {
                     case "simple" -> {
                         LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Simple" + AnsiColor.RESET);
                         yield new SimpleGameHandler(LOGGER);

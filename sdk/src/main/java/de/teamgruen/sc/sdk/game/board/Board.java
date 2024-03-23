@@ -132,12 +132,16 @@ public class Board {
      * Updates the nextFieldsPositions list for the next segment
      */
     public void updateNextFieldPositions() {
+        this.nextFieldsPositions.clear();
+
+        if(this.segments.size() == 8)
+            return;
+
         final Vector3 nextCenter = this.segments.get(this.segments.size() - 1)
                 .center()
                 .copy()
                 .add(this.nextSegmentDirection.toVector3().multiply(4));
 
-        this.nextFieldsPositions.clear();
         this.nextFieldsPositions.addAll(this.getFieldPositions(nextCenter, this.nextSegmentDirection));
     }
 
@@ -213,6 +217,36 @@ public class Board {
         return false;
     }
 
+    public Set<Move> getMoves(@NonNull Ship ship,
+                              @NonNull Vector3 position,
+                              @NonNull Direction shipDirection,
+                              @NonNull Ship enemyShip,
+                              @NonNull Vector3 enemyPosition,
+                              int speed,
+                              int freeTurns,
+                              int freeAcceleration,
+                              int turnCoal,
+                              int accelerationCoal) {
+        final int maxDeltaSpeed = freeAcceleration + accelerationCoal;
+
+        return this.getMoves(
+                ship,
+                position,
+                shipDirection,
+                enemyShip,
+                enemyPosition,
+                null,
+                speed,
+                Math.max(1, speed - maxDeltaSpeed),
+                Math.min(6, speed + maxDeltaSpeed),
+                freeTurns,
+                freeAcceleration,
+                0,
+                turnCoal,
+                accelerationCoal
+        );
+    }
+
     /**
      * @param ship the current ship
      * @param position the start position of the ship
@@ -220,48 +254,45 @@ public class Board {
      * @param enemyShip the enemy ship
      * @param enemyPosition the position of the enemy ship
      * @param excludeDirection the direction to exclude, may be null
+     * @param speed the speed of the ship
+     * @param minSpeed the minimum speed the ship can reach
+     * @param maxSpeed the maximum speed the ship can reach
      * @param freeTurns the amount of free turns
      * @param freeAcceleration the remaining free accelerations
-     * @param requiredMovementPoints the minimum amount of movement points to use
-     * @param maxMovementPoints the maximum amount of movement points to use
-     * @param maxCoal the maximum amount of coal to use
+     * @param usedPoints the available movement points
+     * @param turnCoal the maximum amount of coal to use for turns
+     * @param accelerationCoal the maximum amount of coal to use for acceleration
      * @return all possible moves for the current ship.
      */
-    public Set<Move> getMoves(@NonNull Ship ship,
+    private Set<Move> getMoves(@NonNull Ship ship,
                               @NonNull Vector3 position,
                               @NonNull Direction shipDirection,
                               @NonNull Ship enemyShip,
                               @NonNull Vector3 enemyPosition,
                               Direction excludeDirection,
+                              int speed,
+                              int minSpeed,
+                              int maxSpeed,
                               int freeTurns,
                               int freeAcceleration,
-                              int requiredMovementPoints,
-                              int maxMovementPoints,
-                              int maxCoal) {
+                              int usedPoints,
+                              int turnCoal,
+                              int accelerationCoal) {
         final Set<Move> moves = new HashSet<>();
 
-        this.getDirectionCosts(shipDirection, position, maxCoal + freeTurns).forEach((turnDirection, turnCost) -> {
+        this.getDirectionCosts(shipDirection, position, freeTurns + turnCoal).forEach((turnDirection, turnCost) -> {
             if(Objects.equals(turnDirection, excludeDirection))
                 return;
 
-            final int availableCoal = maxCoal - Math.max(0, turnCost - freeTurns);
+            final int minMovementPoints = Math.max(1, minSpeed - usedPoints);
 
-            for (int currentMax = Math.max(1, requiredMovementPoints - availableCoal); currentMax <= maxMovementPoints; currentMax++) {
+            for (int currentPoints = minMovementPoints; currentPoints <= maxSpeed - usedPoints; currentPoints++) {
                 final Move move = new Move(position, enemyPosition, turnDirection);
 
                 if (shipDirection != turnDirection)
                     move.turn(turnDirection);
 
-                final AdvanceInfo advanceInfo = this.getAdvanceLimit(
-                        ship,
-                        position,
-                        turnDirection,
-                        enemyPosition,
-                        move.getTotalCost(),
-                        currentMax,
-                        freeAcceleration,
-                        availableCoal
-                );
+                final AdvanceInfo advanceInfo = this.getAdvanceLimit(ship, position, turnDirection, enemyPosition, minSpeed, usedPoints, currentPoints);
 
                 this.appendForwardMove(
                         advanceInfo.getEndPosition(position, turnDirection),
@@ -269,7 +300,7 @@ public class Board {
                         enemyShip,
                         move,
                         advanceInfo,
-                        currentMax - advanceInfo.getCost()
+                        currentPoints
                 );
 
                 final Vector3 endPosition = move.getEndPosition();
@@ -280,11 +311,12 @@ public class Board {
                         this.getSegmentColumn(endPosition)
                 );
 
-                if (cost < currentMax
-                        && currentMax > 1
+                if (cost < currentPoints
+                        // prevent infinite loop
+                        && currentPoints > 1
                         && advanceInfo.getResult() != AdvanceInfo.Result.PASSENGER
                         && advanceInfo.getResult() != AdvanceInfo.Result.GOAL) {
-                    final int extraCost = cost - move.getDistance();
+                    final int accelerationCost = Math.abs(cost - speed);
 
                     getMoves(
                             ship,
@@ -292,16 +324,19 @@ public class Board {
                             turnDirection,
                             enemyShip,
                             move.getEnemyEndPosition(),
-                            cost == 0 ? turnDirection : null,
+                            turnDirection,
+                            move.getTotalCost(),
+                            minSpeed,
+                            maxSpeed,
                             Math.max(0, freeTurns - turnCost),
-                            Math.max(0, freeAcceleration - extraCost),
-                            Math.max(0, requiredMovementPoints - cost),
-                            currentMax - cost,
-                            availableCoal - Math.max(0, extraCost - freeAcceleration)
+                            Math.max(0, freeAcceleration - accelerationCost),
+                            usedPoints + cost,
+                            turnCoal - Math.max(0, turnCost - freeTurns),
+                            accelerationCoal - Math.max(0, accelerationCost - freeAcceleration)
                     ).forEach(currentMove -> moves.add(move.copy().append(currentMove)));
                 }
 
-                if (move.getTotalCost() >= requiredMovementPoints && move.getDistance() > 0)
+                if (move.getTotalCost() >= minMovementPoints && move.getDistance() > 0)
                     moves.add(move);
             }
         });
@@ -317,22 +352,22 @@ public class Board {
      * @param enemyShip the enemy ship
      * @param move the move to append the actions to
      * @param advanceInfo the information about the advance
-     * @param remainingMovementPoints the remaining movement points after the advance
+     * @param availableMovementPoints the available movement points
      */
     public void appendForwardMove(@NonNull Vector3 endPosition,
                                  @NonNull Direction direction,
                                  @NonNull Ship enemyShip,
                                  @NonNull Move move,
                                  @NonNull AdvanceInfo advanceInfo,
-                                 int remainingMovementPoints) {
+                                 int availableMovementPoints) {
         final AdvanceInfo.Result result = advanceInfo.getResult();
 
         if (result == AdvanceInfo.Result.SHIP) {
             final boolean wasCounterCurrent = this.isCounterCurrent(endPosition);
             final boolean isCounterCurrent = this.isCounterCurrent(endPosition.copy().add(direction.toVector3()));
-            final int moveCost = !wasCounterCurrent && isCounterCurrent ? 2 : 1;
+            final int moveCost = (!wasCounterCurrent || advanceInfo.getDistance() == 0) && isCounterCurrent ? 2 : 1;
 
-            if(moveCost + 1 /* push cost */ <= remainingMovementPoints) {
+            if(moveCost + 1 /* push cost */ + advanceInfo.getCost() <= availableMovementPoints) {
                 final Direction pushDirection = this.getBestPushDirection(direction, enemyShip, move.getEnemyEndPosition());
 
                 if (pushDirection != null) {
@@ -357,26 +392,24 @@ public class Board {
      * @param start the start position of the ship
      * @param direction the direction of the ship
      * @param enemyPosition the position of the enemy ship
+     * @param minReachableSpeed the minimum reachable speed
      * @param usedMovementPoints the used movement points so far
-     * @param remainingMovementPoints the maximum amount of movement points to use
-     * @param freeAcceleration the remaining free accelerations
-     * @param coal the maximum amount of coal to use
+     * @param movementPoints the maximum amount of movement points to use
      * @return the information about the maximum free forward moves
      */
     public AdvanceInfo getAdvanceLimit(@NonNull Ship playerShip,
                                        @NonNull Vector3 start,
                                        @NonNull Direction direction,
                                        @NonNull Vector3 enemyPosition,
+                                       int minReachableSpeed,
                                        int usedMovementPoints,
-                                       int remainingMovementPoints,
-                                       int freeAcceleration,
-                                       int coal) {
+                                       int movementPoints) {
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         final Vector3 directionVector = direction.toVector3(), position = start.copy();
 
         boolean onCounterCurrent = false;
 
-        while(advanceInfo.getCost() < remainingMovementPoints) {
+        while(advanceInfo.getCost() < movementPoints) {
             position.add(directionVector);
 
             final Field field = this.getFieldAt(position);
@@ -394,7 +427,7 @@ public class Board {
             final boolean isCounterCurrent = this.isCounterCurrent(position);
 
             if(!onCounterCurrent && isCounterCurrent) {
-                if(advanceInfo.getCost() + 2 > remainingMovementPoints) {
+                if(advanceInfo.getCost() + 2 > movementPoints) {
                     advanceInfo.setResult(AdvanceInfo.Result.COUNTER_CURRENT);
                     break;
                 }
@@ -407,9 +440,8 @@ public class Board {
             advanceInfo.incrementCost();
 
             final int totalMovementPoints = usedMovementPoints + advanceInfo.getCost();
-            final boolean canReachSpeed = playerShip.getSpeed() - freeAcceleration - coal <= totalMovementPoints;
 
-            if(totalMovementPoints == (isCounterCurrent ? 2 : 1) && canReachSpeed) {
+            if(totalMovementPoints == (isCounterCurrent ? 2 : 1) && minReachableSpeed <= totalMovementPoints) {
                 if (field instanceof Goal && playerShip.hasEnoughPassengers()) {
                     advanceInfo.setResult(AdvanceInfo.Result.GOAL);
                     break;

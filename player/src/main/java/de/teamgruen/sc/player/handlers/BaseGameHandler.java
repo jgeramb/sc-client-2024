@@ -52,7 +52,7 @@ public abstract class BaseGameHandler implements GameHandler {
             final Ship playerShip = gameState.getPlayerShip();
             final List<Action> actions = move.getActions();
             actions.forEach(action -> action.perform(gameState));
-            playerShip.setCoal(playerShip.getCoal() - move.getCoalCost(playerShip));
+            playerShip.setCoal(playerShip.getCoal() - move.getCoalCost(playerShip.getDirection(), playerShip.getSpeed(), playerShip.getFreeTurns()));
 
             this.nextActions = actions;
         }
