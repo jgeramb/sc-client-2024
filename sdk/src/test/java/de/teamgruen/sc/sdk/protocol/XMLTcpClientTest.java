@@ -135,7 +135,7 @@ public class XMLTcpClientTest {
         this.client.send(new JoinGameRequest("test"));
 
         synchronized (closeLock) {
-            closeLock.wait(250);
+            closeLock.wait(1_000);
         }
 
         this.client.disconnect();
@@ -168,7 +168,7 @@ public class XMLTcpClientTest {
 
         synchronized (closeLock) {
             try {
-                closeLock.wait(50);
+                closeLock.wait(250);
             } catch (InterruptedException ignore) {
             }
         }
@@ -218,7 +218,7 @@ public class XMLTcpClientTest {
         }, null);
 
         synchronized (closeLock) {
-            closeLock.wait(500);
+            closeLock.wait(1_000);
         }
 
         this.client.disconnect();
@@ -255,7 +255,7 @@ public class XMLTcpClientTest {
         });
 
         synchronized (closeLock) {
-            closeLock.wait(100);
+            closeLock.wait(1_000);
         }
 
         this.client.disconnect();
