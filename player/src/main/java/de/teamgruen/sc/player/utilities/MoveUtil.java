@@ -39,6 +39,7 @@ public class MoveUtil {
         final int coal = playerShip.getCoal();
 
         final Map<Move, Double> moves = getPossibleMoves(gameState, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition, speed, freeTurns, coal, isEnemyAhead ? 1 : 0);
+        final Map<Move, Map<Move, Double>> nextMoves = new HashMap<>();
         final Move bestMove = moves
                 .entrySet()
                 .stream()
@@ -46,21 +47,18 @@ public class MoveUtil {
                     final Move move = entry.getKey();
                     final int remainingCoal = coal - move.getCoalCost(direction, speed, freeTurns);
 
-                    if(endsAtLastBorderSegment(board, move, remainingCoal))
-                        return true;
-
-                    final Map<Move, Double> nextMoves = getNextPossibleMoves(
+                    final Map<Move, Double> currentNextMoves = getNextPossibleMoves(
                             gameState, turn,
                             playerShip, enemyShip,
                             null, remainingCoal, move
                     );
 
-                    if(nextMoves.isEmpty())
+                    if(currentNextMoves.isEmpty() && doesNotEndAtLastSegmentBorder(board, move, remainingCoal))
                         return false;
 
                     // subtract the minimum amount of coal required for the next move from the score
 
-                    final int minNextCoalCost = nextMoves.keySet()
+                    final int minNextCoalCost = currentNextMoves.keySet()
                             .stream()
                             .mapToInt(nextMove -> nextMove.getCoalCost(direction, speed, 1))
                             .min()
@@ -68,29 +66,7 @@ public class MoveUtil {
 
                     entry.setValue(entry.getValue() - minNextCoalCost);
 
-                    final Direction endDirection = move.getEndDirection();
-
-                    // turn to the best direction if the ship was not turned yet
-                    if (move.getActions().stream().noneMatch(action -> action instanceof Turn)) {
-                        Direction bestDirection = endDirection;
-                        double bestScore = Integer.MIN_VALUE;
-
-                        for(Map.Entry<Move, Double> nextMoveEntry : nextMoves.entrySet()) {
-                            if(!(nextMoveEntry.getKey().getActions().get(0) instanceof Turn turnAction))
-                                continue;
-
-                            final Direction nextDirection = turnAction.getDirection();
-                            final double moveScore = nextMoveEntry.getValue() - endDirection.costTo(nextDirection);
-
-                            if(moveScore > bestScore) {
-                                bestDirection = nextDirection;
-                                bestScore = moveScore;
-                            }
-                        }
-
-                        if(bestDirection != endDirection)
-                            move.getActions().add(ActionFactory.turn(endDirection.rotateTo(bestDirection, 1)));
-                    }
+                    nextMoves.put(move, currentNextMoves);
 
                     return true;
                 })
@@ -98,9 +74,33 @@ public class MoveUtil {
                 .map(Map.Entry::getKey)
                 .orElse(null);
 
-        // loose intentionally if the ship will be stuck in the next round
-        if (bestMove == null && !moves.isEmpty())
+        if(bestMove != null) {
+            final Direction endDirection = bestMove.getEndDirection();
+
+            // turn to the best direction if the ship was not turned yet
+            if (bestMove.getActions().stream().noneMatch(action -> action instanceof Turn)) {
+                Direction bestDirection = endDirection;
+                double bestScore = Integer.MIN_VALUE;
+
+                for(Map.Entry<Move, Double> nextMoveEntry : nextMoves.get(bestMove).entrySet()) {
+                    final Direction nextDirection = nextMoveEntry.getKey().getActions().get(0) instanceof Turn turnAction
+                            ? turnAction.getDirection()
+                            : endDirection;
+                    final double moveScore = nextMoveEntry.getValue() - endDirection.costTo(nextDirection);
+
+                    if(moveScore > bestScore) {
+                        bestDirection = nextDirection;
+                        bestScore = moveScore;
+                    }
+                }
+
+                if(bestDirection != endDirection)
+                    bestMove.getActions().add(ActionFactory.turn(endDirection.rotateTo(bestDirection, 1)));
+            }
+        } else if (!moves.isEmpty()) {
+            // loose intentionally if the ship will be stuck in the next 2 rounds
             return Optional.of(moves.keySet().iterator().next());
+        }
 
         return Optional.ofNullable(bestMove);
     }
@@ -126,11 +126,12 @@ public class MoveUtil {
      * @return the score of the move
      */
     public static double evaluateMove(@NonNull Board board,
+                                      int turn,
                                       @NonNull Ship ship, boolean isEnemyAhead, int availableCoal,
                                       @NonNull Move move) {
         final Vector3 nextPosition = move.getEndPosition().copy().add(move.getEndDirection().toVector3());
         final double segmentDistance = getSegmentDistance(board, ship, move);
-        final int coalCost = ship.getCoal() - availableCoal;
+        final int coalCost = Math.max(0, ship.getCoal() - availableCoal - (turn < 2 ? 1 : 0));
         final int segmentIndex = board.getSegmentIndex(move.getEndPosition());
         final int segmentDirectionCost = segmentIndex < board.getSegments().size() - 1
                 ? board.getSegments().get(segmentIndex + 1).direction().costTo(move.getEndDirection())
@@ -179,6 +180,7 @@ public class MoveUtil {
 
         return moves.stream().collect(HashMap::new, (map, move) -> map.put(move, evaluateMove(
                 board,
+                turn,
                 ship,
                 isEnemyAhead(board, position, enemyPosition),
                 coal - move.getCoalCost(direction, speed, 1),
@@ -223,25 +225,25 @@ public class MoveUtil {
         );
 
         if(!hasPreviousMove) {
-            new ArrayList<>(moves.entrySet()).forEach(entry -> {
+            moves.entrySet().removeIf(entry -> {
                 final Move nextMove = entry.getKey();
 
-                if (endsAtLastBorderSegment(gameState.getBoard(), nextMove, remainingCoal))
-                    return;
+                if (doesNotEndAtLastSegmentBorder(gameState.getBoard(), nextMove, remainingCoal)) {
+                    final Map<Move, Double> nextMoves = getNextPossibleMoves(gameState, turn, ship, enemyShip, move, remainingCoal, nextMove);
 
-                final Map<Move, Double> nextMoves = getNextPossibleMoves(gameState, turn, ship, enemyShip, move, remainingCoal, nextMove);
+                    if (nextMoves.isEmpty())
+                        return true;
 
-                if (nextMoves.isEmpty()) {
-                    moves.remove(nextMove);
-                    return;
+                    final double nextMinCoalCost = nextMoves.keySet()
+                            .stream()
+                            .mapToInt(next -> next.getCoalCost(move.getEndDirection(), move.getTotalCost(), 1))
+                            .min()
+                            .orElse(0);
+
+                    entry.setValue(entry.getValue() - 0.5 * nextMinCoalCost);
                 }
 
-                entry.setValue(entry.getValue() - nextMoves.keySet()
-                        .stream()
-                        .mapToInt(next -> next.getCoalCost(move.getEndDirection(), move.getTotalCost(), 1))
-                        .min()
-                        .orElse(0)
-                );
+                return false;
             });
         }
 
@@ -252,14 +254,14 @@ public class MoveUtil {
      * @param board the game board
      * @param move the move to evaluate
      * @param coal the available coal
-     * @return whether the player should stop at the given position
+     * @return whether the move ends on a goal or in front of a field that will be revealed in the next round
      */
-    public static boolean endsAtLastBorderSegment(@NonNull Board board, @NonNull Move move, int coal) {
+    public static boolean doesNotEndAtLastSegmentBorder(@NonNull Board board, @NonNull Move move, int coal) {
         final boolean willNextSegmentBeGeneratedInRange = Arrays.stream(Direction.values())
                 .filter(nextDirection -> move.getEndDirection().costTo(nextDirection) <= 1 + coal)
                 .anyMatch(nextDirection -> board.getNextFieldsPositions().contains(move.getEndPosition().copy().add(nextDirection.toVector3())));
 
-        return move.isGoal() || willNextSegmentBeGeneratedInRange;
+        return !(move.isGoal() || willNextSegmentBeGeneratedInRange);
     }
 
     /**

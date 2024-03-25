@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -154,46 +155,47 @@ public class AdminClient extends Client {
         for (int i = 0; i < playerStats.length; i++)
             playerStats[i] = new int[4];
 
-        final ExecutorService executor = Executors.newFixedThreadPool(4);
+        final ExecutorService executor = Executors.newFixedThreadPool(5);
         final CountDownLatch latch = new CountDownLatch(count);
 
         for (int i = 0; i < count; i++) {
             executor.submit(() -> {
-                // create a room and wait for the response
+                try {
+                    // create a room and wait for the response
 
-                this.client.prepareRoom(password);
+                    this.client.prepareRoom(password);
 
-                synchronized (roomCreateLock) {
-                    try {
-                        roomCreateLock.wait();
-                    } catch (InterruptedException ignore) {
+                    synchronized (roomCreateLock) {
+                        try {
+                            roomCreateLock.wait();
+                        } catch (InterruptedException ignore) {
+                        }
                     }
-                }
 
-                final int gameId = controlledRooms.size();
+                    final int gameId = controlledRooms.size();
 
-                Thread.currentThread().setName("GameThread-" + gameId);
+                    Thread.currentThread().setName("GameThread-" + gameId);
 
-                final String spacer = " ".repeat(String.valueOf(count).length() - String.valueOf(gameId).length());
+                    final String spacer = " ".repeat(String.valueOf(count).length() - String.valueOf(gameId).length());
 
-                synchronized (this.logger) {
-                    this.logger.log(Level.INFO, "Running game " + GREEN + spacer + gameId + RESET + " of " + WHITE + count + RESET, true);
-                    replaceRequired.set(true);
-                }
-
-                // wait for the game to end
-
-                final ControlledRoom controlledRoom = controlledRooms.get(gameId - 1);
-
-                synchronized (controlledRoom.endLock) {
-                    try {
-                        controlledRoom.endLock.wait();
-                    } catch (InterruptedException ignore) {
+                    synchronized (this.logger) {
+                        this.logger.log(Level.INFO, "Running game " + GREEN + spacer + gameId + RESET + " of " + WHITE + count + RESET, true);
+                        replaceRequired.set(true);
                     }
-                }
 
-                // mark the game as finished
-                latch.countDown();
+                    // wait for the game to end
+
+                    final ControlledRoom controlledRoom = controlledRooms.get(gameId - 1);
+
+                    synchronized (controlledRoom.endLock) {
+                        try {
+                            controlledRoom.endLock.wait(TimeUnit.SECONDS.toMillis(30));
+                        } catch (InterruptedException ignore) {
+                        }
+                    }
+                } finally {
+                    latch.countDown();
+                }
             });
         }
 
