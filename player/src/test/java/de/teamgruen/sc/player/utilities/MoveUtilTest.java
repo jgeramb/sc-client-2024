@@ -94,10 +94,20 @@ public class MoveUtilTest {
 
     @Test
     public void testGetPossibleMoves() {
-        final List<List<Action>> actualMoves = MoveUtil.getPossibleMoves(this.gameState, 0)
-                .stream()
-                .map(Move::getActions)
-                .toList();
+        final Ship playerShip = this.gameState.getPlayerShip(), enemyShip = this.gameState.getEnemyShip();
+        final List<List<Action>> actualMoves = MoveUtil.getPossibleMoves(
+            this.gameState,
+            0,
+            playerShip,
+            playerShip.getPosition(),
+            playerShip.getDirection(),
+            enemyShip,
+            enemyShip.getPosition(),
+            playerShip.getSpeed(),
+            playerShip.getFreeTurns(),
+            playerShip.getCoal(),
+            0
+        ).keySet().stream().map(Move::getActions).toList();
 
         final List<List<Action>> expectedMoves = List.of(
                 List.of(ActionFactory.forward(1)),
@@ -122,16 +132,20 @@ public class MoveUtilTest {
     public void testGetPossibleMoves_MoreCoal() {
         this.gameState.setTurn(2);
 
-        final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(-3, 5, -2));
-        playerShip.setDirection(Direction.DOWN_LEFT);
-        playerShip.setCoal(2);
-        playerShip.setSpeed(1);
-
-        final List<List<Action>> actualMoves = MoveUtil.getPossibleMoves(this.gameState, 0)
-                .stream()
-                .map(Move::getActions)
-                .toList();
+        final Ship playerShip = this.gameState.getPlayerShip(), enemyShip = this.gameState.getEnemyShip();
+        final List<List<Action>> actualMoves = MoveUtil.getPossibleMoves(
+                this.gameState,
+                0,
+                playerShip,
+                new Vector3(-3, 5, -2),
+                Direction.DOWN_LEFT,
+                enemyShip,
+                enemyShip.getPosition(),
+                1,
+                playerShip.getFreeTurns(),
+                2,
+                0
+        ).keySet().stream().map(Move::getActions).toList();
         final List<List<Action>> expectedMoves = List.of(
                 List.of(ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(2))
@@ -145,7 +159,7 @@ public class MoveUtilTest {
         final Move move = new Move(new Vector3(-1, -1, 2), new Vector3(-2, 1, 1), Direction.RIGHT);
         move.forward(1, 2);
 
-        MoveUtil.addAcceleration(this.gameState.getPlayerShip(), move);
+        MoveUtil.addAcceleration(1, move);
 
         assertInstanceOf(ChangeVelocity.class, move.getActions().get(0));
         assertEquals(1, ((ChangeVelocity) move.getActions().get(0)).getDeltaVelocity());
@@ -153,13 +167,10 @@ public class MoveUtilTest {
 
     @Test
     public void testAddAcceleration_Decelerate() {
-        final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setSpeed(2);
-
         final Move move = new Move(new Vector3(-1, -1, 2), new Vector3(-2, 1, 1), Direction.RIGHT);
         move.forward(1, 1);
 
-        MoveUtil.addAcceleration(playerShip, move);
+        MoveUtil.addAcceleration(2, move);
 
         assertInstanceOf(ChangeVelocity.class, move.getActions().get(0));
         assertEquals(-1, ((ChangeVelocity) move.getActions().get(0)).getDeltaVelocity());
@@ -167,14 +178,24 @@ public class MoveUtilTest {
 
     @Test
     public void testGetAccelerationCoal_UseMoreCoal() {
-        assertEquals(1, MoveUtil.getAccelerationCoal(this.gameState));
+        assertEquals(1, MoveUtil.getAccelerationCoal(
+                this.gameState.getBoard(),
+                0,
+                this.gameState.getPlayerShip().getPosition(),
+                this.gameState.getEnemyShip().getPosition(),
+                6
+        ));
     }
 
     @Test
     public void testGetAccelerationCoal_NoCoalAvailable() {
-        this.gameState.getPlayerShip().setCoal(0);
-
-        assertEquals(0, MoveUtil.getAccelerationCoal(this.gameState));
+        assertEquals(0, MoveUtil.getAccelerationCoal(
+                this.gameState.getBoard(),
+                0,
+                this.gameState.getPlayerShip().getPosition(),
+                this.gameState.getEnemyShip().getPosition(),
+                0
+        ));
     }
 
     @Test
