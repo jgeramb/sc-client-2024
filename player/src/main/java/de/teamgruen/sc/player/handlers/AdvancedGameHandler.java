@@ -72,7 +72,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
         }
 
         if(!tasks.isEmpty()) {
-            final ExecutorService executorService = Executors.newFixedThreadPool(4);
+            final ExecutorService executorService = Executors.newFixedThreadPool(2);
             final CountDownLatch countDownLatch = new CountDownLatch(tasks.size());
 
             tasks.forEach(task -> executorService.submit(() -> {

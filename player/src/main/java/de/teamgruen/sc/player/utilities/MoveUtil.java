@@ -12,6 +12,7 @@ import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.game.board.Board;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
+import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.actions.Turn;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
@@ -28,6 +29,8 @@ public class MoveUtil {
      * @return the most efficient move
      */
     public static Optional<Move> getMostEfficientMove(@NonNull GameState gameState) {
+        final long startMillis = System.currentTimeMillis();
+
         final Board board = gameState.getBoard();
         final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
         final int turn = gameState.getTurn();
@@ -44,6 +47,10 @@ public class MoveUtil {
                 .entrySet()
                 .stream()
                 .filter(entry -> {
+                    // stop if the time is running out
+                    if(System.currentTimeMillis() - startMillis > 450L)
+                        return true;
+
                     final Move move = entry.getKey();
                     final int remainingCoal = coal - move.getCoalCost(direction, speed, freeTurns);
 
@@ -75,34 +82,49 @@ public class MoveUtil {
                 .orElse(null);
 
         if(bestMove != null) {
-            final Direction endDirection = bestMove.getEndDirection();
+            if(nextMoves.containsKey(bestMove)) {
+                final Direction endDirection = bestMove.getEndDirection();
+                int turnCost = 0;
+                Direction current = direction;
 
-            // turn to the best direction if the ship was not turned yet
-            if (bestMove.getActions().stream().noneMatch(action -> action instanceof Turn)) {
-                Direction bestDirection = endDirection;
-                double bestScore = Integer.MIN_VALUE;
-
-                for(Map.Entry<Move, Double> nextMoveEntry : nextMoves.get(bestMove).entrySet()) {
-                    final Direction nextDirection = nextMoveEntry.getKey().getActions().get(0) instanceof Turn turnAction
-                            ? turnAction.getDirection()
-                            : endDirection;
-                    final double moveScore = nextMoveEntry.getValue() - endDirection.costTo(nextDirection);
-
-                    if(moveScore > bestScore) {
-                        bestDirection = nextDirection;
-                        bestScore = moveScore;
+                for (Action action : bestMove.getActions()) {
+                    if (action instanceof Turn turnAction) {
+                        turnCost += current.costTo(turnAction.getDirection());
+                        current = turnAction.getDirection();
                     }
                 }
 
-                if(bestDirection != endDirection)
-                    bestMove.getActions().add(ActionFactory.turn(endDirection.rotateTo(bestDirection, 1)));
+                // turn to the best direction if the ship was not turned yet
+                if (turnCost < freeTurns && doesNotEndAtLastSegmentBorder(board, bestMove, 0)) {
+                    Direction bestDirection = endDirection;
+                    double bestScore = Integer.MIN_VALUE;
+
+                    for (Map.Entry<Move, Double> nextMoveEntry : nextMoves.get(bestMove).entrySet()) {
+                        final Move nextMove = nextMoveEntry.getKey();
+                        final int firstActionIndex = nextMove.getAcceleration(bestMove.getTotalCost()) == 0 ? 0 : 1;
+                        final Direction nextDirection = nextMove.getActions().get(firstActionIndex) instanceof Turn turnAction
+                                ? turnAction.getDirection()
+                                : endDirection;
+
+                        if (nextMoveEntry.getValue() > bestScore) {
+                            bestDirection = nextDirection;
+                            bestScore = nextMoveEntry.getValue();
+                        }
+                    }
+
+                    if (bestDirection != endDirection)
+                        bestMove.getActions().add(ActionFactory.turn(endDirection.rotateTo(bestDirection, freeTurns - turnCost)));
+                }
             }
-        } else if (!moves.isEmpty()) {
-            // loose intentionally if the ship will be stuck in the next 2 rounds
-            return Optional.of(moves.keySet().iterator().next());
+
+            return Optional.of(bestMove);
         }
 
-        return Optional.ofNullable(bestMove);
+        // loose intentionally if the ship will be stuck in the next 2 rounds
+        if (!moves.isEmpty())
+            return Optional.of(moves.keySet().iterator().next());
+
+        return Optional.empty();
     }
 
     /**
@@ -240,7 +262,7 @@ public class MoveUtil {
                             .min()
                             .orElse(0);
 
-                    entry.setValue(entry.getValue() - 0.5 * nextMinCoalCost);
+                    entry.setValue(entry.getValue() - nextMinCoalCost);
                 }
 
                 return false;

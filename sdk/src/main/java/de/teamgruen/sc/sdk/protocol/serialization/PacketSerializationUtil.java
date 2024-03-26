@@ -21,7 +21,6 @@ import de.teamgruen.sc.sdk.protocol.room.RoomPacket;
 import lombok.NonNull;
 
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -61,44 +60,17 @@ public class PacketSerializationUtil {
     }
 
     /**
-     * Deserializes an XML string to a list of packets.
-     *
-     * @param xml the XML to deserialize
-     * @return The deserialized packets
-     * @throws DeserializationException if the XML could not be deserialized
-     */
-    public static LinkedList<XMLProtocolPacket> deserialize(String xml) throws DeserializationException {
-        if(xml == null)
-            throw new IllegalArgumentException("XML cannot be null");
-
-        LinkedList<XMLProtocolPacket> packets = new LinkedList<>();
-
-        while(!xml.isBlank()) {
-            final String rootTag = parseXMLTagName(xml);
-
-            if (rootTag == null)
-                throw new IllegalArgumentException("No valid XML tag found");
-
-            final int closeTagPosition = xml.indexOf("</" + rootTag + ">");
-            final String packetXml = xml.substring(0, closeTagPosition == -1 ? xml.length() : (closeTagPosition + rootTag.length() + 3));
-
-            packets.add(deserializeXML(rootTag, packetXml));
-
-            // remove the packet from the xml
-            xml = xml.substring(packetXml.length()).strip();
-        }
-
-        return packets;
-    }
-
-    /**
      * Deserializes an XML string to a packet.
      *
      * @param xml the XML to deserialize
      * @return The deserialized packet
+     * @throws IllegalArgumentException if no root tag is provided
      * @throws DeserializationException if the XML could not be deserialized
      */
-    private static XMLProtocolPacket deserializeXML(@NonNull String rootTag, @NonNull String xml) throws DeserializationException {
+    public static XMLProtocolPacket deserializeXML(String rootTag, @NonNull String xml) throws DeserializationException {
+        if(rootTag == null)
+            throw new IllegalArgumentException("Root tag must not be null");
+
         try {
             final Class<? extends XMLProtocolPacket> packetType = INCOMING_PACKET_TYPES.stream()
                     .filter(type -> rootTag.equals(getRootTag(type)))

@@ -51,10 +51,7 @@ public class SoftwareChallengeClient {
 
         final ClientPacketHandler packetHandler = new ClientPacketHandler(this, this.gameHandler);
 
-        this.client.connect(
-                packet -> new Thread(() -> packetHandler.handlePacket(packet), "PacketHandler").start(),
-                this.gameHandler::onError
-        );
+        this.client.connect(packetHandler::handlePacket, this.gameHandler::onError);
     }
 
     /**
@@ -69,11 +66,17 @@ public class SoftwareChallengeClient {
     }
 
     /**
-     * Authenticates the client with the given password and prepares a room.
-     * @param password the password to authenticate with
+     * Authenticates the client with the server.
+     * @param password the password
      */
-    public void prepareRoom(String password) {
+    public void authenticate(@NonNull String password) {
         this.client.send(new AuthenticationRequest(password));
+    }
+
+    /**
+     * Prepares a room with the default settings.
+     */
+    public void prepareRoom() {
         this.client.send(new PrepareRoomRequest("swc_2024_mississippi_queen", false, List.of(
                 new RoomSlot("Player 1", true, true),
                 new RoomSlot("Player 2", true, true)

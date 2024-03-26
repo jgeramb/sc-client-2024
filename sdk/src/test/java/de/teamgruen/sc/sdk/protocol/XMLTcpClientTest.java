@@ -202,7 +202,7 @@ public class XMLTcpClientTest {
                 false,
                 false,
                 false,
-                new LinkedList<>(List.of("<packet>" + "x".repeat(512) + "</packet>", "<protocol>", "<joined roomId=\"test\"/>")),
+                new LinkedList<>(List.of("<protocol>", "<packet>" + "x".repeat(512) + "</packet>", "<joined roomId=\"test\"/>")),
                 xml -> {}
         ));
         this.client.connect(packet -> {

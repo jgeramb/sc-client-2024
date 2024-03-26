@@ -170,9 +170,8 @@ public class SoftwareChallengeClientTest {
     }
 
     @Test
-    public void testPrepareRoom() {
-        final AtomicBoolean authenticated = new AtomicBoolean(false),
-                prepared = new AtomicBoolean(false);
+    public void testAuthenticate() {
+        final AtomicBoolean authenticated = new AtomicBoolean(false);
         final SoftwareChallengeClient client = new SoftwareChallengeClient("", 0, null);
         client.setClient(new XMLTcpClient("", 0) {
             @Override
@@ -186,7 +185,24 @@ public class SoftwareChallengeClientTest {
                     assertEquals("test", request.password());
 
                     authenticated.set(true);
-                } else if(!prepared.get()) {
+                }
+            }
+        });
+        client.authenticate("test");
+
+        assertTrue(authenticated.get());
+    }
+
+    @Test
+    public void testPrepareRoom() {
+        final AtomicBoolean prepared = new AtomicBoolean(false);
+        final SoftwareChallengeClient client = new SoftwareChallengeClient("", 0, null);
+        client.setClient(new XMLTcpClient("", 0) {
+            @Override
+            public void send(XMLProtocolPacket... packets) {
+                assertTrue(packets.length > 0);
+
+                if(!prepared.get()) {
                     assertInstanceOf(PrepareRoomRequest.class, packets[0]);
 
                     final PrepareRoomRequest request = (PrepareRoomRequest) packets[0];
@@ -203,9 +219,8 @@ public class SoftwareChallengeClientTest {
                 }
             }
         });
-        client.prepareRoom("test");
+        client.prepareRoom();
 
-        assertTrue(authenticated.get());
         assertTrue(prepared.get());
     }
 

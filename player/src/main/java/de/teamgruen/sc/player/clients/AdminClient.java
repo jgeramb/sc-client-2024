@@ -59,10 +59,6 @@ public class AdminClient extends Client {
 
                 final int gameId = controlledRooms.size();
 
-                synchronized (roomCreateLock) {
-                    roomCreateLock.notify();
-                }
-
                 for (int i = 0; i < playerStats.length; i++) {
                     final int playerId = i;
 
@@ -135,6 +131,10 @@ public class AdminClient extends Client {
                         print(Level.ERROR, "Error: " + ex.getMessage());
                     }
                 }
+
+                synchronized (roomCreateLock) {
+                    roomCreateLock.notify();
+                }
             }
 
             @Override
@@ -151,11 +151,14 @@ public class AdminClient extends Client {
     }
 
     public void runTests(@NonNull String password, int count) {
+        // authenticate the client
+        this.client.authenticate(password);
+
         // initialize the player stats
         for (int i = 0; i < playerStats.length; i++)
             playerStats[i] = new int[4];
 
-        final ExecutorService executor = Executors.newFixedThreadPool(5);
+        final ExecutorService executor = Executors.newFixedThreadPool(4);
         final CountDownLatch latch = new CountDownLatch(count);
 
         for (int i = 0; i < count; i++) {
@@ -163,7 +166,7 @@ public class AdminClient extends Client {
                 try {
                     // create a room and wait for the response
 
-                    this.client.prepareRoom(password);
+                    this.client.prepareRoom();
 
                     synchronized (roomCreateLock) {
                         try {

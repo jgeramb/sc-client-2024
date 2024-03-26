@@ -20,10 +20,11 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
 public class XMLTcpClient {
@@ -40,11 +41,11 @@ public class XMLTcpClient {
     /**
      * Connects to the server and starts the read and write threads.
      *
-     * @param responseListener the listener for incoming packets
+     * @param packetListener the listener for incoming packets
      * @param errorListener the listener for errors
      * @throws TcpConnectException if the connection fails
      */
-    public void connect(@NonNull Consumer<XMLProtocolPacket> responseListener,
+    public void connect(@NonNull Consumer<XMLProtocolPacket> packetListener,
                         Consumer<String> errorListener) throws TcpConnectException {
         try {
             this.socket.setTcpNoDelay(true);
@@ -53,6 +54,9 @@ public class XMLTcpClient {
         } catch (IOException ex) {
             throw new TcpConnectException(ex);
         }
+
+        // warm up CPU for faster deserialization
+        PacketSerializationUtil.deserializeXML("joined", "<joined roomId=\"warmUp\" />");
 
         // read packets
         (this.readThread = new Thread(() -> {
@@ -63,39 +67,57 @@ public class XMLTcpClient {
                 boolean protocolInitiated = false;
 
                 final byte[] buffer = new byte[512];
+                StringBuilder builder = new StringBuilder();
                 int nRead;
 
                 while((nRead = in.read(buffer)) != -1) {
-                    StringBuilder builder = new StringBuilder(new String(buffer, 0, nRead, StandardCharsets.UTF_8));
-                    long readStart = System.currentTimeMillis();
+                    builder.append(new String(buffer, 0, nRead, StandardCharsets.UTF_8));
 
-                    if(nRead == buffer.length) {
-                        final String tagName = Objects.requireNonNull(PacketSerializationUtil.parseXMLTagName(builder.toString()));
+                    if(!protocolInitiated) {
+                        final int protocolIndex = builder.toString().indexOf("<protocol>");
 
-                        while(System.currentTimeMillis() - readStart <= 2_500
-                                && (in.available() > 0 || !builder.toString().contains("</" + tagName + ">"))) {
-                            nRead = in.read(buffer);
+                        if (protocolIndex != -1) {
+                            builder.delete(protocolIndex, protocolIndex + 10);
+                            protocolInitiated = true;
+                        } else
+                            continue;
+                    }
+
+                    String tagName;
+
+                    while((tagName = PacketSerializationUtil.parseXMLTagName(builder.toString())) != null) {
+                        final Pattern pattern = Pattern.compile("<" + tagName + "(.+)?/>");
+                        int endTagIndex;
+
+                        while(true) {
+                            endTagIndex = builder.toString().indexOf("</" + tagName + ">");
+
+                            if(endTagIndex != -1) {
+                                endTagIndex += tagName.length() + 3;
+                                break;
+                            }
+
+                            final Matcher matcher = pattern.matcher(builder.toString());
+
+                            if (matcher.find()) {
+                                endTagIndex = matcher.end();
+                                break;
+                            }
+
+                            if ((nRead = in.read(buffer)) == -1)
+                                return;
 
                             builder.append(new String(buffer, 0, nRead, StandardCharsets.UTF_8));
                         }
-                    }
 
-                    String xml = builder.toString().strip();
-                    final int protocolIndex = xml.indexOf("<protocol>");
+                        try {
+                            packetListener.accept(PacketSerializationUtil.deserializeXML(tagName, builder.substring(0, endTagIndex)));
+                        } catch (DeserializationException ex) {
+                            if(errorListener != null)
+                                errorListener.accept("Failed to deserialize XML: " + ex.getMessage());
+                        }
 
-                    if(protocolIndex != -1 && !protocolInitiated) {
-                        xml = xml.substring(protocolIndex + 10).stripLeading();
-                        protocolInitiated = true;
-                    }
-
-                    if(xml.isEmpty() || !protocolInitiated)
-                        continue;
-
-                    try {
-                        PacketSerializationUtil.deserialize(xml).forEach(responseListener);
-                    } catch (DeserializationException ex) {
-                        if(errorListener != null)
-                            errorListener.accept("Failed to deserialize XML: " + ex.getMessage());
+                        builder.delete(0, endTagIndex);
                     }
                 }
             } catch (IOException ex) {

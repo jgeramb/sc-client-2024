@@ -104,10 +104,8 @@ public class Board {
     /**
      * Updates the counterCurrent list for the current segments
      */
-    public void updateCounterCurrent() {
-        this.counterCurrent.clear();
-
-        for (int j = 0; j < this.segments.size(); j++) {
+    public void updateCounterCurrent(int startSegment) {
+        for (int j = startSegment; j < this.segments.size(); j++) {
             final BoardSegment segment = this.segments.get(j);
             final Vector3 turnPosition = segment.center().copy();
 
@@ -150,22 +148,45 @@ public class Board {
      * @param segmentDataList the new segments
      */
     public void updateSegments(List<SegmentData> segmentDataList) {
-        this.fields.clear();
-        this.segments.clear();
-        this.segments.addAll(segmentDataList.stream().map(segment -> {
-            final LinkedHashMap<Vector3, Field> fields = new LinkedHashMap<>();
-            final Direction direction = segment.getDirection();
-            final List<Vector3> positions = this.getFieldPositions(segment.getCenter().toVector3(), direction);
+        final int nextSegmentIndex = this.segments.size();
 
-            for (int i = 0; i < positions.size(); i++)
-                fields.put(positions.get(i), segment.getColumns().get(i / 5).getFields().get(i % 5));
+        segmentDataList.forEach(segment -> {
+            final Vector3 center = segment.getCenter().toVector3();
+            final Optional<BoardSegment> optionalBoardSegment = this.segments.stream()
+                    .filter(currentSegment -> currentSegment.center().equals(center))
+                    .findFirst();
 
-            this.fields.putAll(fields);
+            if(optionalBoardSegment.isPresent()) {
+                int i = 0;
 
-            return new BoardSegment(fields, segment.getCenter().toVector3(), direction);
-        }).toList());
+                // update the passenger counts of the existing fields
+                for (Map.Entry<Vector3, Field> fieldEntry : optionalBoardSegment.get().fields().entrySet()) {
+                    if(fieldEntry.getValue() instanceof Passenger passenger) {
+                        final Field newField = segment.getColumns().get(i / 5).getFields().get(i % 5);
+
+                        if(!(newField instanceof Passenger newPassenger))
+                            continue;
+
+                        passenger.setPassenger(newPassenger.getPassenger());
+                    }
+
+                    i++;
+                }
+            } else {
+                final LinkedHashMap<Vector3, Field> fields = new LinkedHashMap<>();
+                final Direction direction = segment.getDirection();
+                final List<Vector3> positions = this.getFieldPositions(center, direction);
+
+                for (int i = 0; i < positions.size(); i++)
+                    fields.put(positions.get(i), segment.getColumns().get(i / 5).getFields().get(i % 5));
+
+                this.fields.putAll(fields);
+                this.segments.add(new BoardSegment(fields, center, direction));
+            }
+        });
+
         this.updateNextFieldPositions();
-        this.updateCounterCurrent();
+        this.updateCounterCurrent(nextSegmentIndex);
     }
 
     /**

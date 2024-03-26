@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static de.teamgruen.sc.sdk.logging.AnsiColor.*;
@@ -27,8 +26,6 @@ import static de.teamgruen.sc.sdk.logging.AnsiColor.*;
 public abstract class BaseGameHandler implements GameHandler {
 
     protected final Logger logger;
-    private final Object readyLock = new Object();
-    private final AtomicBoolean ready = new AtomicBoolean(false);
     protected List<Action> nextActions;
 
     protected BaseGameHandler(Logger logger) {
@@ -56,12 +53,6 @@ public abstract class BaseGameHandler implements GameHandler {
 
             this.nextActions = actions;
         }
-
-        this.ready.set(true);
-
-        synchronized (this.readyLock) {
-            this.readyLock.notify();
-        }
     }
 
     @Override
@@ -69,22 +60,13 @@ public abstract class BaseGameHandler implements GameHandler {
         final long startTime = System.nanoTime();
 
         try {
-            if(!this.ready.get()) {
-                synchronized (this.readyLock) {
-                    this.readyLock.wait();
-                }
-            }
-
             if(this.nextActions == null || this.nextActions.isEmpty()) {
                 this.onError("No actions available");
                 return Collections.emptyList();
             }
 
             return this.nextActions;
-        } catch (InterruptedException ignore) {
         } finally {
-            this.ready.set(false);
-
             final double numerator = TimeUnit.NANOSECONDS.convert(1, TimeUnit.MILLISECONDS);
             final int turn = gameState.getTurn();
 
@@ -94,8 +76,6 @@ public abstract class BaseGameHandler implements GameHandler {
                     RESET
             );
         }
-
-        return Collections.emptyList();
     }
 
     @Override

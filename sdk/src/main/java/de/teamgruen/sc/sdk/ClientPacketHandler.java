@@ -40,9 +40,8 @@ public class ClientPacketHandler {
 
     private final SoftwareChallengeClient client;
     private final GameHandler gameHandler;
-    private final Object roomUpdateLock = new Object();
+    private final GameState gameState = new GameState();
     private String roomId;
-    private GameState gameState;
 
     public void handlePacket(@NonNull XMLProtocolPacket xmlProtocolPacket) {
         if(xmlProtocolPacket instanceof ErrorPacket packet)
@@ -72,24 +71,9 @@ public class ClientPacketHandler {
             final RoomMessage data = packet.getData();
 
             if (data instanceof WelcomeMessage message) {
-                this.gameState = new GameState(message.getTeam());
-
+                this.gameState.setPlayerTeam(message.getTeam());
                 this.gameHandler.onGameStart(this.gameState);
-
-                synchronized (this.roomUpdateLock) {
-                    this.roomUpdateLock.notifyAll();
-                }
             } else if (data instanceof MementoMessage message) {
-                synchronized (this.roomUpdateLock) {
-                    if(this.gameState == null) {
-                        try {
-                            this.roomUpdateLock.wait();
-                        } catch (InterruptedException ignore) {
-                            return;
-                        }
-                    }
-                }
-
                 final State state = message.getState();
                 final BoardData board = state.getBoard();
                 final Board stateBoard = this.gameState.getBoard();
@@ -102,22 +86,15 @@ public class ClientPacketHandler {
 
                 this.gameHandler.onBoardUpdate(this.gameState);
             } else if (data instanceof MoveRequestMessage) {
-                synchronized (this.roomUpdateLock) {
-                    if(this.gameState == null) {
-                        try {
-                            this.roomUpdateLock.wait();
-                        } catch (InterruptedException ignore) {
-                            return;
-                        }
-                    }
-                }
-
                 final List<Action> actions = this.gameHandler.getNextActions(this.gameState);
 
                 if (actions.isEmpty())
                     return;
 
                 this.client.sendPacket(new MovePacket(this.roomId, new Move(actions)));
+
+                // collect garbage to reduce probability of lags
+                System.gc();
             } else if (data instanceof ResultMessage message) {
                 final List<ScoreFragment> fragments = message.getDefinition().getFragments();
                 final Winner winner = message.getWinner();

@@ -11,7 +11,6 @@ import de.teamgruen.sc.sdk.protocol.data.ShipData;
 import de.teamgruen.sc.sdk.protocol.data.Team;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.util.Arrays;
@@ -20,14 +19,12 @@ import java.util.NoSuchElementException;
 
 @Getter
 @Setter
-@RequiredArgsConstructor
 public class GameState {
 
     protected final Board board = new Board();
     protected final List<Ship> ships = Arrays.stream(Team.values()).map(Ship::new).toList();
-    protected final Team playerTeam;
     protected GamePhase gamePhase = GamePhase.LOBBY;
-    protected Team currentTeam;
+    protected Team playerTeam, currentTeam;
     protected int turn;
 
     public Ship getShip(Team team) {

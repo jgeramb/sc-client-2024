@@ -20,14 +20,13 @@ import java.util.List;
 public class ExampleGameState extends GameState {
 
     public ExampleGameState() {
-        super(Team.ONE);
-
         this.board.setNextSegmentDirection(Direction.DOWN_LEFT);
         this.board.updateSegments(getSampleSegments());
+        this.playerTeam = Team.ONE;
+        this.currentTeam = Team.ONE;
         this.getPlayerShip().setPosition(new Vector3(-1, -1, 2));
         this.getEnemyShip().setPosition(new Vector3(-2, 1, 1));
         this.gamePhase = GamePhase.RUNNING;
-        this.currentTeam = Team.ONE;
         this.turn = 0;
     }
 

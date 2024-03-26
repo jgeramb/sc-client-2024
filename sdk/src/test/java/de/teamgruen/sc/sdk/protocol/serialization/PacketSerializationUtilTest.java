@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -59,141 +58,120 @@ public class PacketSerializationUtilTest {
     }
 
     @Test
-    public void testDeserialize_Null() {
-        assertThrows(IllegalArgumentException.class, () -> PacketSerializationUtil.deserialize(null));
+    public void testDeserialize_NullRootTag() {
+        assertThrows(IllegalArgumentException.class, () -> PacketSerializationUtil.deserializeXML(null, ""));
     }
 
     @Test
     public void testDeserialize_Invalid() {
-        assertThrows(IllegalArgumentException.class, () -> PacketSerializationUtil.deserialize("<"));
+        assertThrows(DeserializationException.class, () -> PacketSerializationUtil.deserializeXML("invalid", "<"));
     }
 
     @Test
     public void testDeserialize_Unknown() {
-        assertThrows(DeserializationException.class, () -> PacketSerializationUtil.deserialize("<tag></tag>"));
+        assertThrows(DeserializationException.class, () -> PacketSerializationUtil.deserializeXML("", "<tag></tag>"));
     }
 
     @Test
     public void testDeserialize_ErrorPacket() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<errorpacket message=\"test\" />");
+        final XMLProtocolPacket packet = PacketSerializationUtil.deserializeXML("errorpacket", "<errorpacket message=\"test\" />");
 
-        assertEquals(1, packets.size());
-        assertInstanceOf(ErrorPacket.class, packets.get(0));
-
-        final ErrorPacket packet = (ErrorPacket) packets.get(0);
-
-        assertEquals("test", packet.getMessage());
+        assertInstanceOf(ErrorPacket.class, packet);
+        assertEquals("test", ((ErrorPacket) packet).getMessage());
     }
 
     @Test
     public void testDeserialize_Joined() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<joined roomId=\"test\"/>");
+        final XMLProtocolPacket packet = PacketSerializationUtil.deserializeXML("joined", "<joined roomId=\"test\"/>");
 
-        assertEquals(1, packets.size());
-        assertInstanceOf(JoinedRoomResponse.class, packets.get(0));
-
-        final JoinedRoomResponse packet = (JoinedRoomResponse) packets.get(0);
-
-        assertEquals("test", packet.getRoomId());
+        assertInstanceOf(JoinedRoomResponse.class, packet);
+        assertEquals("test", ((JoinedRoomResponse) packet).getRoomId());
     }
 
     @Test
     public void testDeserialize_Prepared() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<prepared roomId=\"test\"><reservation>test2</reservation><reservation>test3</reservation></prepared>");
+        final XMLProtocolPacket packet = PacketSerializationUtil.deserializeXML("prepared", "<prepared roomId=\"test\"><reservation>test2</reservation><reservation>test3</reservation></prepared>");
 
-        assertEquals(1, packets.size());
-        assertInstanceOf(PreparedRoomResponse.class, packets.get(0));
+        assertInstanceOf(PreparedRoomResponse.class, packet);
 
-        final PreparedRoomResponse packet = (PreparedRoomResponse) packets.get(0);
+        final PreparedRoomResponse response = (PreparedRoomResponse) packet;
 
-        assertEquals("test", packet.getRoomId());
-        assertEquals(List.of("test2", "test3"), packet.getReservations());
+        assertEquals("test", response.getRoomId());
+        assertEquals(List.of("test2", "test3"), response.getReservations());
     }
 
     @Test
     public void testDeserialize_PlayerJoinedRoom() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<joinedGameRoom roomId=\"test\" playerCount=\"2\"/>");
+        final XMLProtocolPacket packet = PacketSerializationUtil.deserializeXML("joinedGameRoom", "<joinedGameRoom roomId=\"test\" playerCount=\"2\"/>");
 
-        assertEquals(1, packets.size());
-        assertInstanceOf(PlayerJoinedRoomResponse.class, packets.get(0));
+        assertInstanceOf(PlayerJoinedRoomResponse.class, packet);
 
-        final PlayerJoinedRoomResponse packet = (PlayerJoinedRoomResponse) packets.get(0);
+        final PlayerJoinedRoomResponse response = (PlayerJoinedRoomResponse) packet;
 
-        assertEquals("test", packet.getRoomId());
-        assertEquals(2, packet.getPlayerCount());
+        assertEquals("test", response.getRoomId());
+        assertEquals(2, response.getPlayerCount());
     }
 
     @Test
     public void testDeserialize_Left() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<left roomId=\"test\"/>");
+        final XMLProtocolPacket packet = PacketSerializationUtil.deserializeXML("left", "<left roomId=\"test\"/>");
 
-        assertEquals(1, packets.size());
-        assertInstanceOf(LeftPacket.class, packets.get(0));
-
-        final LeftPacket packet = (LeftPacket) packets.get(0);
-
-        assertEquals("test", packet.getRoomId());
+        assertInstanceOf(LeftPacket.class, packet);
+        assertEquals("test", ((LeftPacket) packet).getRoomId());
     }
 
     @Test
     public void testDeserialize_Room() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<room roomId=\"test\"></room>");
+        final XMLProtocolPacket packet = PacketSerializationUtil.deserializeXML("room", "<room roomId=\"test\"></room>");
 
-        assertEquals(1, packets.size());
-        assertInstanceOf(RoomPacket.class, packets.get(0));
-
-        final RoomPacket packet = (RoomPacket) packets.get(0);
-
-        assertEquals("test", packet.getRoomId());
+        assertInstanceOf(RoomPacket.class, packet);
+        assertEquals("test", ((RoomPacket) packet).getRoomId());
     }
 
     @Test
     public void testDeserialize_Room_Error() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<room roomId=\"test\"><data class=\"error\" message=\"test\"/></room>");
+        final XMLProtocolPacket packet = PacketSerializationUtil.deserializeXML("room", "<room roomId=\"test\"><data class=\"error\" message=\"test\"/></room>");
 
-        assertEquals(1, packets.size());
-        assertInstanceOf(RoomPacket.class, packets.get(0));
+        assertInstanceOf(RoomPacket.class, packet);
 
-        final RoomPacket packet = (RoomPacket) packets.get(0);
+        final RoomPacket roomPacket = (RoomPacket) packet;
 
-        assertEquals("test", packet.getRoomId());
-        assertInstanceOf(ErrorMessage.class, packet.getData());
+        assertEquals("test", roomPacket.getRoomId());
+        assertInstanceOf(ErrorMessage.class, roomPacket.getData());
 
-        final ErrorMessage message = (ErrorMessage) packet.getData();
+        final ErrorMessage message = (ErrorMessage) roomPacket.getData();
 
         assertEquals("test", message.getMessage());
     }
 
     @Test
     public void testDeserialize_Room_Welcome() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<room roomId=\"test\"><data class=\"welcomeMessage\" color=\"ONE\"/></room>");
+        final XMLProtocolPacket packet = PacketSerializationUtil.deserializeXML("room", "<room roomId=\"test\"><data class=\"welcomeMessage\" color=\"ONE\"/></room>");
 
-        assertEquals(1, packets.size());
-        assertInstanceOf(RoomPacket.class, packets.get(0));
+        assertInstanceOf(RoomPacket.class, packet);
 
-        final RoomPacket packet = (RoomPacket) packets.get(0);
+        final RoomPacket roomPacket = (RoomPacket) packet;
 
-        assertEquals("test", packet.getRoomId());
-        assertInstanceOf(WelcomeMessage.class, packet.getData());
+        assertEquals("test", roomPacket.getRoomId());
+        assertInstanceOf(WelcomeMessage.class, roomPacket.getData());
 
-        final WelcomeMessage message = (WelcomeMessage) packet.getData();
+        final WelcomeMessage message = (WelcomeMessage) roomPacket.getData();
 
         assertEquals(Team.ONE, message.getTeam());
     }
 
     @Test
     public void testDeserialize_Room_Memento() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<room roomId=\"test\"><data class=\"memento\"><state class=\"state\" startTeam=\"ONE\" currentTeam=\"ONE\" turn=\"6\"><board nextDirection=\"DOWN_LEFT\"><segment direction=\"RIGHT\"><center q=\"0\" r=\"0\" s=\"0\"/><field-array><water/><water/><water/><water/><water/></field-array><field-array><water/><water/><water/><water/><water/></field-array><field-array><water/><island/><water/><water/><water/></field-array><field-array><water/><water/><water/><water/><water/></field-array></segment><segment direction=\"DOWN_RIGHT\"><center q=\"0\" r=\"4\" s=\"-4\"/><field-array><water/><passenger direction=\"RIGHT\" passenger=\"1\"/><water/><water/><water/></field-array><field-array><water/><water/><water/><water/><water/></field-array><field-array><water/><water/><water/><water/><island/></field-array><field-array><water/><water/><water/><water/><water/></field-array></segment><segment direction=\"DOWN_LEFT\"><center q=\"-4\" r=\"8\" s=\"-4\"/><field-array><passenger direction=\"UP_LEFT\" passenger=\"1\"/><water/><water/><island/><water/></field-array><field-array><water/><water/><water/><water/><island/></field-array><field-array><water/><water/><water/><water/><water/></field-array><field-array><water/><goal/><goal/><goal/><water/></field-array></segment></board><ship team=\"ONE\" direction=\"LEFT\" speed=\"1\" coal=\"5\" passengers=\"2\" freeTurns=\"2\" points=\"16\" stuck=\"false\"><position q=\"2\" r=\"0\" s=\"-2\"/></ship><ship team=\"TWO\" direction=\"RIGHT\" speed=\"2\" coal=\"6\" passengers=\"1\" freeTurns=\"1\" points=\"10\" stuck=\"false\"><position q=\"1\" r=\"0\" s=\"-1\"/></ship><lastMove><actions><acceleration acc=\"1\"/><advance distance=\"2\"/><push direction=\"RIGHT\"/><turn direction=\"RIGHT\"/></actions></lastMove></state></data></room>");
+        final XMLProtocolPacket packet = PacketSerializationUtil.deserializeXML("room", "<room roomId=\"test\"><data class=\"memento\"><state class=\"state\" startTeam=\"ONE\" currentTeam=\"ONE\" turn=\"6\"><board nextDirection=\"DOWN_LEFT\"><segment direction=\"RIGHT\"><center q=\"0\" r=\"0\" s=\"0\"/><field-array><water/><water/><water/><water/><water/></field-array><field-array><water/><water/><water/><water/><water/></field-array><field-array><water/><island/><water/><water/><water/></field-array><field-array><water/><water/><water/><water/><water/></field-array></segment><segment direction=\"DOWN_RIGHT\"><center q=\"0\" r=\"4\" s=\"-4\"/><field-array><water/><passenger direction=\"RIGHT\" passenger=\"1\"/><water/><water/><water/></field-array><field-array><water/><water/><water/><water/><water/></field-array><field-array><water/><water/><water/><water/><island/></field-array><field-array><water/><water/><water/><water/><water/></field-array></segment><segment direction=\"DOWN_LEFT\"><center q=\"-4\" r=\"8\" s=\"-4\"/><field-array><passenger direction=\"UP_LEFT\" passenger=\"1\"/><water/><water/><island/><water/></field-array><field-array><water/><water/><water/><water/><island/></field-array><field-array><water/><water/><water/><water/><water/></field-array><field-array><water/><goal/><goal/><goal/><water/></field-array></segment></board><ship team=\"ONE\" direction=\"LEFT\" speed=\"1\" coal=\"5\" passengers=\"2\" freeTurns=\"2\" points=\"16\" stuck=\"false\"><position q=\"2\" r=\"0\" s=\"-2\"/></ship><ship team=\"TWO\" direction=\"RIGHT\" speed=\"2\" coal=\"6\" passengers=\"1\" freeTurns=\"1\" points=\"10\" stuck=\"false\"><position q=\"1\" r=\"0\" s=\"-1\"/></ship><lastMove><actions><acceleration acc=\"1\"/><advance distance=\"2\"/><push direction=\"RIGHT\"/><turn direction=\"RIGHT\"/></actions></lastMove></state></data></room>");
 
-        assertEquals(1, packets.size());
-        assertInstanceOf(RoomPacket.class, packets.get(0));
+        assertInstanceOf(RoomPacket.class, packet);
 
-        final RoomPacket packet = (RoomPacket) packets.get(0);
+        final RoomPacket roomPacket = (RoomPacket) packet;
 
-        assertEquals("test", packet.getRoomId());
-        assertInstanceOf(MementoMessage.class, packet.getData());
+        assertEquals("test", roomPacket.getRoomId());
+        assertInstanceOf(MementoMessage.class, roomPacket.getData());
 
-        final MementoMessage message = (MementoMessage) packet.getData();
+        final MementoMessage message = (MementoMessage) roomPacket.getData();
         final State state = message.getState();
 
         assertEquals("state", state.getClassName());
@@ -220,30 +198,28 @@ public class PacketSerializationUtilTest {
 
     @Test
     public void testDeserialize_Room_MoveRequest() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<room roomId=\"test\"><data class=\"moveRequest\"/></room>");
+        final XMLProtocolPacket packet = PacketSerializationUtil.deserializeXML("room", "<room roomId=\"test\"><data class=\"moveRequest\"/></room>");
 
-        assertEquals(1, packets.size());
-        assertInstanceOf(RoomPacket.class, packets.get(0));
+        assertInstanceOf(RoomPacket.class, packet);
 
-        final RoomPacket packet = (RoomPacket) packets.get(0);
+        final RoomPacket roomPacket = (RoomPacket) packet;
 
-        assertEquals("test", packet.getRoomId());
-        assertInstanceOf(MoveRequestMessage.class, packet.getData());
+        assertEquals("test", roomPacket.getRoomId());
+        assertInstanceOf(MoveRequestMessage.class, roomPacket.getData());
     }
 
     @Test
     public void testDeserialize_Room_Result() {
-        final LinkedList<XMLProtocolPacket> packets = PacketSerializationUtil.deserialize("<room roomId=\"test\"><data class=\"result\"><winner team=\"ONE\" regular=\"true\" reason=\"test\"/><definition><fragment name=\"Siegpunkte\"><aggregation>SUM</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Punkte\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Kohle\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Gewonnen\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment></definition><scores><entry><player name=\"Spieler 1\" team=\"ONE\"/><score><part>1</part><part>2</part><part>3</part><part>4</part></score></entry><entry><player name=\"Spieler 2\" team=\"TWO\"/><score><part>5</part><part>6</part><part>7</part><part>8</part></score></entry></scores></data></room>");
+        final XMLProtocolPacket packet = PacketSerializationUtil.deserializeXML("room", "<room roomId=\"test\"><data class=\"result\"><winner team=\"ONE\" regular=\"true\" reason=\"test\"/><definition><fragment name=\"Siegpunkte\"><aggregation>SUM</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Punkte\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Kohle\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment><fragment name=\"Gewonnen\"><aggregation>AVERAGE</aggregation><relevantForRanking>true</relevantForRanking></fragment></definition><scores><entry><player name=\"Spieler 1\" team=\"ONE\"/><score><part>1</part><part>2</part><part>3</part><part>4</part></score></entry><entry><player name=\"Spieler 2\" team=\"TWO\"/><score><part>5</part><part>6</part><part>7</part><part>8</part></score></entry></scores></data></room>");
 
-        assertEquals(1, packets.size());
-        assertInstanceOf(RoomPacket.class, packets.get(0));
+        assertInstanceOf(RoomPacket.class, packet);
 
-        final RoomPacket packet = (RoomPacket) packets.get(0);
+        final RoomPacket roomPacket = (RoomPacket) packet;
 
-        assertEquals("test", packet.getRoomId());
-        assertInstanceOf(ResultMessage.class, packet.getData());
+        assertEquals("test", roomPacket.getRoomId());
+        assertInstanceOf(ResultMessage.class, roomPacket.getData());
 
-        final ResultMessage message = (ResultMessage) packet.getData();
+        final ResultMessage message = (ResultMessage) roomPacket.getData();
 
         final Winner winner = message.getWinner();
         assertNotNull(winner);
@@ -272,7 +248,7 @@ public class PacketSerializationUtilTest {
 
     @Test
     public void testDeserialize_Move_Null() {
-        assertThrows(DeserializationException.class, () -> PacketSerializationUtil.deserialize("<room roomId=\"test\"><data class=\"memento\"><state class=\"state\"><lastMove><actions><null/></actions></lastMove></state></data></room>"));
+        assertThrows(DeserializationException.class, () -> PacketSerializationUtil.deserializeXML("room", "<room roomId=\"test\"><data class=\"memento\"><state class=\"state\"><lastMove><actions><null/></actions></lastMove></state></data></room>"));
     }
 
     @Test
