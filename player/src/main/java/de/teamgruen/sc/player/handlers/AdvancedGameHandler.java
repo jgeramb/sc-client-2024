@@ -37,9 +37,21 @@ public class AdvancedGameHandler extends BaseGameHandler {
 
     @Override
     public void onBoardUpdate(@NonNull GameState gameState) {
-        if(!gameState.getPlayerTeam().equals(gameState.getCurrentTeam()))
-            return;
+        this.setNextMove(
+                gameState,
+                () -> {
+                    final List<Vector3> shortestPath = getPaths(gameState)
+                            .stream()
+                            .min(Comparator.comparingInt(List::size))
+                            .orElse(null);
 
+                    return MoveUtil.moveFromPath(gameState, shortestPath)
+                            .orElseGet(() -> MoveUtil.getMostEfficientMove(gameState).orElse(null));
+                }
+        );
+    }
+
+    private List<List<Vector3>> getPaths(GameState gameState) {
         final Board board = gameState.getBoard();
         final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
         final Vector3 shipPosition = playerShip.getPosition();
@@ -49,7 +61,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
         // check if enemy ship is more than 2 segments ahead
         if(MoveUtil.isEnemyAhead(board, shipPosition, enemyShip.getPosition()))
             tasks.add(() -> paths.add(PathFinder.findPath(shipPosition, enemyShip.getPosition())));
-        // collect passengers and move towards goal after reaching the 5th segment
+            // collect passengers and move towards goal after reaching the 5th segment
         else if(board.getSegmentIndex(playerShip.getPosition()) >= 4) {
             // passengers
             board.getPassengerFields().forEach((position, field) -> {
@@ -96,11 +108,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
             paths.removeIf(path -> path == null || path.size() < 2);
         }
 
-        this.setNextMove(
-                gameState,
-                MoveUtil.moveFromPath(gameState, paths.stream().min(Comparator.comparingInt(List::size)).orElse(null))
-                        .orElse(MoveUtil.getMostEfficientMove(gameState).orElse(null))
-        );
+        return paths;
     }
 
 }

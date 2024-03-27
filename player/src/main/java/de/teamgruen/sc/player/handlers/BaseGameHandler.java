@@ -18,8 +18,8 @@ import lombok.NonNull;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static de.teamgruen.sc.sdk.logging.AnsiColor.*;
 
@@ -27,6 +27,7 @@ public abstract class BaseGameHandler implements GameHandler {
 
     protected final Logger logger;
     protected List<Action> nextActions;
+    private long moveStartMillis;
 
     protected BaseGameHandler(Logger logger) {
         this.logger = logger;
@@ -42,7 +43,14 @@ public abstract class BaseGameHandler implements GameHandler {
         this.logger.info("Joined room " + PURPLE + roomId + RESET);
     }
 
-    public void setNextMove(GameState gameState, Move move) {
+    public void setNextMove(GameState gameState, Supplier<Move> moveSupplier) {
+        if(!gameState.getPlayerTeam().equals(gameState.getCurrentTeam()))
+            return;
+
+        this.moveStartMillis = System.currentTimeMillis();
+
+        final Move move = moveSupplier.get();
+
         if(move == null)
             this.nextActions = null;
         else {
@@ -57,8 +65,6 @@ public abstract class BaseGameHandler implements GameHandler {
 
     @Override
     public List<Action> getNextActions(@NonNull GameState gameState) {
-        final long startTime = System.nanoTime();
-
         try {
             if(this.nextActions == null || this.nextActions.isEmpty()) {
                 this.onError("No actions available");
@@ -67,12 +73,11 @@ public abstract class BaseGameHandler implements GameHandler {
 
             return this.nextActions;
         } finally {
-            final double numerator = TimeUnit.NANOSECONDS.convert(1, TimeUnit.MILLISECONDS);
             final int turn = gameState.getTurn();
 
             this.logger.debug(
                     "Turn " + WHITE + "#" + GREEN + " ".repeat(turn < 10 ? 1 : 0) + turn + RESET + " took " +
-                    PURPLE + String.format("%.3f", (System.nanoTime() - startTime) / numerator) + WHITE + "ms" +
+                    PURPLE + String.format("%,d", System.currentTimeMillis() - this.moveStartMillis) + WHITE + "ms" +
                     RESET
             );
         }

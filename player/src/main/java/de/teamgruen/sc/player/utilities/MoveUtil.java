@@ -47,7 +47,7 @@ public class MoveUtil {
                 .entrySet()
                 .stream()
                 .filter(entry -> {
-                    // stop if the time is running out
+                    // skip next move calculation if the time is running out
                     if(System.currentTimeMillis() - startMillis > 450L)
                         return true;
 
@@ -252,17 +252,24 @@ public class MoveUtil {
 
                 if (doesNotEndAtLastSegmentBorder(gameState.getBoard(), nextMove, remainingCoal)) {
                     final Map<Move, Double> nextMoves = getNextPossibleMoves(gameState, turn, ship, enemyShip, move, remainingCoal, nextMove);
+                    final Move bestNextMove = nextMoves
+                            .entrySet()
+                            .stream()
+                            .max(Comparator.comparingDouble(Map.Entry::getValue))
+                            .map(Map.Entry::getKey)
+                            .orElse(null);
 
-                    if (nextMoves.isEmpty())
+                    if (bestNextMove == null)
                         return true;
 
+                    final int extraPoints = (bestNextMove.isGoal() ? 10 : 0) + bestNextMove.getPassengers() * 5;
                     final double nextMinCoalCost = nextMoves.keySet()
                             .stream()
                             .mapToInt(next -> next.getCoalCost(move.getEndDirection(), move.getTotalCost(), 1))
                             .min()
                             .orElse(0);
 
-                    entry.setValue(entry.getValue() - nextMinCoalCost);
+                    entry.setValue(entry.getValue() - nextMinCoalCost + extraPoints);
                 }
 
                 return false;

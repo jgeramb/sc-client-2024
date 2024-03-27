@@ -25,13 +25,19 @@ jobs:
       - name: Build with Maven
         run: |
           mvn -B package --file pom.xml
-          mkdir artifacts/
-          mv */target/*.jar artifacts/
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts/player
+          mv player/target/teamgruen-player.jar artifacts/player/
+          mv sdk/target/sdk.jar artifacts/
+          mv player/assets/* artifacts/player/
+          zip -r artifacts/teamgruen-player.zip artifacts/player
+          rm -rf artifacts/*/
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jars
-          path: artifacts/*.jar
+          name: archives
+          path: artifacts/*
   create-release:
     needs: build
     name: Create Release
@@ -40,7 +46,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: jars
+          name: archives
           path: artifacts
       - name: Create Release
         id: create_release
@@ -51,7 +57,7 @@ jobs:
           title: v${{ needs.build.outputs.version }}
           draft: false
           prerelease: false
-          files: artifacts/*.jar
+          files: artifacts/*
   deploy:
     needs: build
     name: Deploy
@@ -61,18 +67,18 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: jars
+          name: archives
           path: artifacts
-          pattern: '*-player.jar'
+          file: teamgruen-player.zip
       - name: Upload client
         uses: fjogeleit/http-request-action@v1
         with:
-          url: 'https://sc-upload.justix.dev/api/v1/upload/v${{ needs.build.outputs.version }}?fileName=teamgruen-player.jar&params=--debug%20--batch-mode%20--play-style%20simple'
+          url: 'https://sc-upload.justix.dev/api/v1/upload/v${{ needs.build.outputs.version }}?fileName=teamgruen-player.zip'
           method: 'POST'
-          timeout: 15000
+          timeout: 5000
           customHeaders: |
             {
               "Content-Type": "application/octet-stream",
               "X-API-Key": "${{ secrets.UPLOAD_API_KEY }}"
             }
-          file: artifacts/teamgruen-player.jar
+          file: artifacts/teamgruen-player.zip
