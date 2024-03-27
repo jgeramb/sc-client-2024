@@ -72,6 +72,17 @@ public class LoggerTest {
     }
 
     @Test
+    public void testLog_Replace() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        new Logger(out).log(Level.INFO, "Test", true);
+
+        final String actualOutput = out.toString();
+
+        assertTrue(actualOutput.startsWith("\r") && actualOutput.endsWith("Test"));
+    }
+
+    @Test
     public void testClosedOutputStream() {
         final OutputStream out = new OutputStream() {
             @Override

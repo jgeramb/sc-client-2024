@@ -36,6 +36,18 @@ public class BoardTest {
     }
 
     @Test
+    public void testUpdateSegments_UpdatePassengers() {
+        this.board.updateSegments(ExampleGameState.getSampleSegments().stream().peek(segment -> {
+            segment.getColumns().forEach(column -> column.getFields().forEach(field -> {
+                if (field instanceof Passenger)
+                    ((Passenger) field).setPassenger(0);
+            }));
+        }).toList());
+
+        assertTrue(this.board.getPassengerFields().isEmpty());
+    }
+
+    @Test
     public void testUpdateSegments() {
         assertEquals(Direction.DOWN_LEFT, this.board.getNextSegmentDirection());
 
