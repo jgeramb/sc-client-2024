@@ -17,6 +17,7 @@ import de.teamgruen.sc.sdk.protocol.data.actions.ChangeVelocity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,7 +36,7 @@ public class MoveUtilTest {
     public void testGetMostEfficientMove() {
         this.gameState.getPlayerShip().setCoal(0);
 
-        final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState);
+        final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, 500);
         final List<Action> expectedActions = List.of(
                 ActionFactory.changeVelocity(1),
                 ActionFactory.turn(Direction.DOWN_RIGHT),
@@ -55,7 +56,7 @@ public class MoveUtilTest {
         playerShip.setSpeed(3);
         playerShip.setCoal(0);
 
-        final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState);
+        final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, 500);
         final List<Action> expectedActions = List.of(
                 ActionFactory.changeVelocity(-1),
                 ActionFactory.turn(Direction.DOWN_LEFT),
@@ -77,7 +78,7 @@ public class MoveUtilTest {
         playerShip.setDirection(Direction.RIGHT);
         playerShip.setSpeed(2);
 
-        final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState);
+        final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, 500);
         final List<Action> expectedActions = List.of(
                 ActionFactory.changeVelocity(-1),
                 ActionFactory.turn(Direction.UP_RIGHT),
@@ -90,6 +91,102 @@ public class MoveUtilTest {
 
         assertTrue(move.getPassengers() > 0);
         assertEquals(expectedActions, move.getActions());
+    }
+
+    @Test
+    public void testGetMostEfficientMove_NoForecastDueToTimeout() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-2, 4, -2));
+        playerShip.setDirection(Direction.DOWN_LEFT);
+        playerShip.setSpeed(1);
+        playerShip.setCoal(0);
+        playerShip.setFreeTurns(0);
+
+        final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, -1);
+        final List<Action> expectedActions = List.of(
+                ActionFactory.forward(1)
+        );
+
+        assertTrue(actualMove.isPresent());
+
+        final Move move = actualMove.get();
+
+        assertEquals(expectedActions, move.getActions());
+    }
+
+    @Test
+    public void testGetMostEfficientMove_TurnToBestNext_CurrentDirection() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-2, 1, 1));
+        playerShip.setDirection(Direction.DOWN_RIGHT);
+        playerShip.setSpeed(1);
+        playerShip.setCoal(0);
+
+        final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, 500);
+        final List<Action> expectedActions = List.of(
+                ActionFactory.changeVelocity(1),
+                ActionFactory.forward(2)
+        );
+
+        assertTrue(actualMove.isPresent());
+
+        final Move move = actualMove.get();
+
+        assertEquals(expectedActions, move.getActions());
+    }
+
+    @Test
+    public void testGetMostEfficientMove_TurnToBestNext() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-2, 2, 0));
+        playerShip.setDirection(Direction.DOWN_RIGHT);
+        playerShip.setSpeed(1);
+        playerShip.setCoal(0);
+
+        final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, 500);
+        final List<Action> expectedActions = List.of(
+                ActionFactory.changeVelocity(1),
+                ActionFactory.forward(2),
+                ActionFactory.turn(Direction.RIGHT)
+        );
+
+        assertTrue(actualMove.isPresent());
+
+        final Move move = actualMove.get();
+
+        assertEquals(expectedActions, move.getActions());
+    }
+
+    @Test
+    public void testGetMostEfficientMove_LooseIntentionally() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-2, 4, -2));
+        playerShip.setDirection(Direction.DOWN_LEFT);
+        playerShip.setSpeed(1);
+        playerShip.setCoal(0);
+        playerShip.setFreeTurns(0);
+
+        final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, 500);
+        final List<Action> expectedActions = List.of(
+                ActionFactory.forward(1)
+        );
+
+        assertTrue(actualMove.isPresent());
+
+        final Move move = actualMove.get();
+
+        assertEquals(expectedActions, move.getActions());
+    }
+
+    @Test
+    public void testGetMostEfficientMove_NoMovesAvailable() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-3, 5, -2));
+        playerShip.setDirection(Direction.DOWN_LEFT);
+        playerShip.setSpeed(1);
+        playerShip.setCoal(0);
+
+        assertFalse(MoveUtil.getMostEfficientMove(this.gameState, 500).isPresent());
     }
 
     @Test
@@ -211,18 +308,147 @@ public class MoveUtilTest {
         playerShip.setSpeed(5);
         playerShip.setCoal(0);
 
-        final Optional<Move> actualMove = MoveUtil.moveFromPath(this.gameState, List.of(
+        final Optional<Move> actualMove = MoveUtil.moveFromPath(this.gameState, new LinkedList<>(List.of(
                 new Vector3(0, 0, 0),
                 new Vector3(0, 1, -1),
                 new Vector3(0, 2, -2),
                 new Vector3(0, 3, -3),
                 new Vector3(1, 3, -4),
                 new Vector3(2, 3, -5)
-        ));
+        )));
         final List<Action> expectedActions = List.of(
                 ActionFactory.changeVelocity(1),
                 ActionFactory.forward(3),
                 ActionFactory.turn(Direction.RIGHT),
+                ActionFactory.forward(2)
+        );
+
+        assertTrue(actualMove.isPresent());
+        assertEquals(expectedActions, actualMove.get().getActions());
+    }
+
+    @Test
+    public void testMoveFromPath_Push() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(0, 0, 0));
+        playerShip.setDirection(Direction.DOWN_LEFT);
+        playerShip.setSpeed(3);
+
+        final Optional<Move> actualMove = MoveUtil.moveFromPath(this.gameState, new LinkedList<>(List.of(
+                new Vector3(0, 0, 0),
+                new Vector3(-1, 1, 0),
+                new Vector3(-2, 1, 1)
+        )));
+        final List<Action> expectedActions = List.of(
+                ActionFactory.forward(1),
+                ActionFactory.turn(Direction.LEFT),
+                ActionFactory.forward(1),
+                ActionFactory.push(Direction.UP_RIGHT)
+        );
+
+        assertTrue(actualMove.isPresent());
+        assertEquals(expectedActions, actualMove.get().getActions());
+    }
+
+    @Test
+    public void testMoveFromPath_NotEnoughMovementPoints() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(0, 0, 0));
+        playerShip.setDirection(Direction.RIGHT);
+        playerShip.setSpeed(1);
+        playerShip.setCoal(0);
+
+        final Optional<Move> actualMove = MoveUtil.moveFromPath(this.gameState, new LinkedList<>(List.of(
+                new Vector3(-2, 1, 1),
+                new Vector3(-1, 1, 0),
+                new Vector3(0, 1, -1)
+        )));
+        final List<Action> expectedActions = List.of(
+                ActionFactory.forward(1)
+        );
+
+        assertTrue(actualMove.isPresent());
+        assertEquals(expectedActions, actualMove.get().getActions());
+    }
+
+    @Test
+    public void testMoveFromPath_CannotTurnToDestination() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(0, 0, 0));
+        playerShip.setDirection(Direction.RIGHT);
+        playerShip.setSpeed(2);
+        playerShip.setCoal(0);
+
+        final Optional<Move> actualMove = MoveUtil.moveFromPath(this.gameState, new LinkedList<>(List.of(
+                new Vector3(0, 0, 0),
+                new Vector3(-1, 1, 0)
+        )));
+
+        assertFalse(actualMove.isPresent());
+    }
+
+    @Test
+    public void testMoveFromPath_TurnToNext() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(0, 0, 0));
+        playerShip.setDirection(Direction.RIGHT);
+        playerShip.setSpeed(1);
+        playerShip.setCoal(0);
+
+        final Optional<Move> actualMove = MoveUtil.moveFromPath(this.gameState, new LinkedList<>(List.of(
+                new Vector3(0, 0, 0),
+                new Vector3(1, 0, -1),
+                new Vector3(2, 0, -2),
+                new Vector3(2, 1, -3)
+        )));
+        final List<Action> expectedActions = List.of(
+                ActionFactory.changeVelocity(1),
+                ActionFactory.forward(2),
+                ActionFactory.turn(Direction.DOWN_RIGHT)
+        );
+
+        assertTrue(actualMove.isPresent());
+        assertEquals(expectedActions, actualMove.get().getActions());
+    }
+
+    @Test
+    public void testMoveFromPath_ReachHigherSpeed() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-6, 8, -2));
+        playerShip.setDirection(Direction.DOWN_RIGHT);
+        playerShip.setSpeed(1);
+        playerShip.setCoal(1);
+
+        final Optional<Move> actualMove = MoveUtil.moveFromPath(this.gameState, new LinkedList<>(List.of(
+                new Vector3(-6, 8, -2),
+                new Vector3(-6, 9, -3),
+                new Vector3(-6, 10, -4)
+        )));
+        final List<Action> expectedActions = List.of(
+                ActionFactory.forward(1)
+        );
+
+        assertTrue(actualMove.isPresent());
+        assertEquals(expectedActions, actualMove.get().getActions());
+    }
+
+    @Test
+    public void testMoveFromPath_ReachLowerSpeed() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-6, 8, -2));
+        playerShip.setDirection(Direction.DOWN_RIGHT);
+        playerShip.setSpeed(3);
+        playerShip.setCoal(1);
+
+        final Optional<Move> actualMove = MoveUtil.moveFromPath(this.gameState, new LinkedList<>(List.of(
+                new Vector3(2, -2, 0),
+                new Vector3(2, -1, -1),
+                new Vector3(2, 0, -2),
+                new Vector3(2, 1, -3),
+                new Vector3(2, 2, -4)
+        )));
+        final List<Action> expectedActions = List.of(
+                ActionFactory.changeVelocity(-1),
                 ActionFactory.forward(2)
         );
 

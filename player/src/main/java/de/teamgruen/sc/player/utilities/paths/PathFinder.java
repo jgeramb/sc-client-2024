@@ -28,9 +28,8 @@ public class PathFinder {
      * @return the shortest path from start to end (start and end included)
      *         or null if no path was found
      */
-    public static List<Vector3> findPath(@NonNull Vector3 start, @NonNull Vector3 end) {
+    public static LinkedList<Vector3> findPath(@NonNull Vector3 start, @NonNull Vector3 end) {
         PathNode currentNode = getOrCreateNode(start);
-        Direction currentDirection = gameState.getPlayerShip().getDirection();
 
         final PriorityQueue<PathNode> frontier = new PriorityQueue<>(Comparator.comparingInt(PathNode::getTotalCost));
         frontier.add(currentNode);
@@ -54,12 +53,9 @@ public class PathFinder {
 
             for (PathNode neighbour : getNeighbours(currentNode)) {
                 final Vector3 neighbourPosition = neighbour.getPosition();
-                final Vector3 deltaPosition = neighbourPosition.copy().subtract(currentPosition);
-                final Direction neighbourDirection = Direction.fromVector3(deltaPosition);
                 final int gCost = currentCost
-                        + currentDirection.costTo(neighbourDirection)
                         + (gameState.getBoard().isCounterCurrent(neighbourPosition) ? 1 : 0)
-                        + 1 ;
+                        + 1;
 
                 if(!costSoFar.containsKey(neighbourPosition) || gCost < costSoFar.get(neighbourPosition)) {
                     neighbour.setGraphCost(gCost);
@@ -68,8 +64,6 @@ public class PathFinder {
                     frontier.add(neighbour);
                     costSoFar.put(neighbourPosition, gCost);
                     cameFrom.put(neighbourPosition, currentPosition);
-
-                    currentDirection = neighbourDirection;
                 }
             }
         }
@@ -83,8 +77,8 @@ public class PathFinder {
      * @param destination the destination
      * @return the reconstructed path
      */
-    private static List<Vector3> reconstructPath(Map<Vector3, Vector3> cameFrom, Vector3 destination) {
-        final List<Vector3> path = new ArrayList<>();
+    private static LinkedList<Vector3> reconstructPath(Map<Vector3, Vector3> cameFrom, Vector3 destination) {
+        final LinkedList<Vector3> path = new LinkedList<>();
         Vector3 current = destination;
 
         do {
@@ -133,10 +127,8 @@ public class PathFinder {
      * @param position the position to get or create a node for
      * @return the node for the given position
      */
-    private static PathNode getOrCreateNode(Vector3 position) {
-        synchronized (CACHE) {
-            return CACHE.computeIfAbsent(position, PathNode::new);
-        }
+    private static synchronized PathNode getOrCreateNode(Vector3 position) {
+        return CACHE.computeIfAbsent(position, PathNode::new);
     }
 
 }

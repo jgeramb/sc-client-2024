@@ -12,17 +12,18 @@ import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.game.board.Board;
 import de.teamgruen.sc.sdk.game.board.Ship;
 import de.teamgruen.sc.sdk.logging.Logger;
+import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.NonNull;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class AdvancedGameHandler extends BaseGameHandler {
+
+    private static final int CPU_THREADS = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() / 2));
 
     public AdvancedGameHandler(Logger logger) {
         super(logger);
@@ -40,29 +41,57 @@ public class AdvancedGameHandler extends BaseGameHandler {
         this.setNextMove(
                 gameState,
                 () -> {
-                    final List<Vector3> shortestPath = getPaths(gameState)
+                    final Ship playerShip = gameState.getPlayerShip();
+                    final int minSpeed = Math.max(1, playerShip.getSpeed() - 1 - Math.min(playerShip.getCoal(), 2));
+                    final Direction playerDirection = playerShip.getDirection();
+                    final HashMap<LinkedList<Vector3>, Integer> costs = new HashMap<>();
+
+                    getPaths(gameState).forEach(path -> {
+                        Direction direction = playerDirection;
+                        int turns = 0;
+
+                        for (int i = 1; i < path.size(); i++) {
+                            final Direction nextDirection = Direction.fromVector3(path.get(i).copy().subtract(path.get(i - 1)));
+
+                            turns += direction.costTo(nextDirection);
+                            direction = nextDirection;
+                        }
+
+                        // skip paths that require at least 50% of the path length as turns
+                        if(turns > Math.max(2, path.size() / 2))
+                            return;
+
+                        // skip impossible paths
+                        if(path.size() <= minSpeed)
+                            return;
+
+                        costs.put(path, turns);
+                    });
+
+                    final LinkedList<Vector3> shortestPath = costs.entrySet()
                             .stream()
-                            .min(Comparator.comparingInt(List::size))
+                            .min(Comparator.comparingInt(Map.Entry::getValue))
+                            .map(Map.Entry::getKey)
                             .orElse(null);
 
                     return MoveUtil.moveFromPath(gameState, shortestPath)
-                            .orElseGet(() -> MoveUtil.getMostEfficientMove(gameState).orElse(null));
+                            .orElseGet(() -> MoveUtil.getMostEfficientMove(gameState, 250).orElse(null));
                 }
         );
     }
 
-    private List<List<Vector3>> getPaths(GameState gameState) {
+    private List<LinkedList<Vector3>> getPaths(GameState gameState) {
         final Board board = gameState.getBoard();
         final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
         final Vector3 shipPosition = playerShip.getPosition();
-        final List<List<Vector3>> paths = new ArrayList<>();
+        final List<LinkedList<Vector3>> paths = new ArrayList<>();
         final List<Runnable> tasks = new ArrayList<>();
 
         // check if enemy ship is more than 2 segments ahead
         if(MoveUtil.isEnemyAhead(board, shipPosition, enemyShip.getPosition()))
             tasks.add(() -> paths.add(PathFinder.findPath(shipPosition, enemyShip.getPosition())));
-            // collect passengers and move towards goal after reaching the 5th segment
-        else if(board.getSegmentIndex(playerShip.getPosition()) >= 4) {
+            // collect passengers and move towards goal after reaching the 4th segment
+        else if(board.getSegmentIndex(playerShip.getPosition()) >= 3) {
             // passengers
             board.getPassengerFields().forEach((position, field) -> {
                 final Passenger passenger = (Passenger) field;
@@ -84,7 +113,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
         }
 
         if(!tasks.isEmpty()) {
-            final ExecutorService executorService = Executors.newFixedThreadPool(2);
+            final ExecutorService executorService = Executors.newFixedThreadPool(CPU_THREADS);
             final CountDownLatch countDownLatch = new CountDownLatch(tasks.size());
 
             tasks.forEach(task -> executorService.submit(() -> {
