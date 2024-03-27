@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p artifacts/player
           mv player/target/teamgruen-player.jar artifacts/player/
-          mv sdk/target/sdk.jar artifacts/
+          mv sdk/target/sdk-*.jar artifacts/
           mv player/assets/* artifacts/player/
           zip -r artifacts/teamgruen-player.zip artifacts/player
           rm -rf artifacts/*/
