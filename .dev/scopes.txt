@@ -1,0 +1,20 @@
+# docs
+readme
+scopes
+
+# chore
+ci
+build
+release
+deploy
+
+# modules
+player
+- admin
+- simple
+- advanced
+
+sdk
+- game
+- network
+- logging
