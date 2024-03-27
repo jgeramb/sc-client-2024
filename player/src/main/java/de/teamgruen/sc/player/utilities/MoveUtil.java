@@ -390,7 +390,7 @@ public class MoveUtil {
                 final int pushCost = nextPosition.equals(enemyPosition) ? 1 : 0;
                 final int moveCost = isCounterCurrent && !wasCounterCurrent ? 2 : 1 + pushCost;
 
-                if(forwardCost + moveCost < availablePoints)
+                if(forwardCost + moveCost > availablePoints)
                     break;
 
                 if(mustReachSpeed) {
@@ -399,9 +399,9 @@ public class MoveUtil {
                     final int maxSpeed;
 
                     if(accelerate)
-                        maxSpeed = Math.max(destinationSpeed - (fieldsToDestination - 1), playerShip.getSpeed());
-                    else
                         maxSpeed = Math.min(fieldsToDestination - (destinationSpeed - 1), playerShip.getSpeed());
+                    else
+                        maxSpeed = Math.max(destinationSpeed - (fieldsToDestination - 1), playerShip.getSpeed());
 
                     if (move.getTotalCost() + forwardCost + moveCost > maxSpeed)
                         break;
@@ -483,7 +483,12 @@ public class MoveUtil {
      * @return whether the enemy is at least 2 segments ahead of the player
      */
     public static boolean isEnemyAhead(Board board, Vector3 playerPosition, Vector3 enemyPosition) {
-        return board.getSegmentIndex(enemyPosition) > board.getSegmentIndex(playerPosition) + 1;
+        final double playerSegmentPosition = board.getSegmentIndex(playerPosition)
+                + board.getSegmentColumn(playerPosition) / 4d;
+        final double enemySegmentPosition = board.getSegmentIndex(enemyPosition)
+                + board.getSegmentColumn(enemyPosition) / 4d;
+
+        return enemySegmentPosition > playerSegmentPosition + 1.5;
     }
 
 }
