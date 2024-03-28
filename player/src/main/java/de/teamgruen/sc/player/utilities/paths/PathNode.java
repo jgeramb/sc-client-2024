@@ -6,6 +6,7 @@
 package de.teamgruen.sc.player.utilities.paths;
 
 import de.teamgruen.sc.sdk.game.Vector3;
+import de.teamgruen.sc.sdk.protocol.data.Direction;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
@@ -18,6 +19,10 @@ public class PathNode {
 
     public int getTotalCost() {
         return this.graphCost + this.heuristicCost;
+    }
+
+    public Direction directionTo(Vector3 otherPosition) {
+        return Direction.fromVector3(otherPosition.copy().subtract(this.position));
     }
 
 }

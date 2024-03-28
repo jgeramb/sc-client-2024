@@ -44,22 +44,29 @@ public class PathFinder {
             currentNode = frontier.poll();
 
             final Vector3 currentPosition = currentNode.getPosition();
+            final Vector3 lastNode = cameFrom.get(currentPosition);
+            final Direction currentDirection = lastNode != null
+                    ? currentNode.directionTo(lastNode)
+                    : gameState.getPlayerShip().getDirection();
 
             // early exit if the end position was reached
             if (currentPosition.equals(end))
                 return reconstructPath(cameFrom, currentPosition);
 
+            final boolean wasCounterCurrent = gameState.getBoard().isCounterCurrent(currentPosition);
             final int currentCost = costSoFar.get(currentPosition);
 
             for (PathNode neighbour : getNeighbours(currentNode)) {
                 final Vector3 neighbourPosition = neighbour.getPosition();
-                final int gCost = currentCost
-                        + (gameState.getBoard().isCounterCurrent(neighbourPosition) ? 1 : 0)
-                        + 1;
+                final int gCost = currentCost + 1;
 
                 if(!costSoFar.containsKey(neighbourPosition) || gCost < costSoFar.get(neighbourPosition)) {
+                    final int moveCost = !wasCounterCurrent && gameState.getBoard().isCounterCurrent(neighbourPosition) ? 1 : 0;
+                    final Vector3 delta = neighbourPosition.copy().subtract(currentNode.getPosition());
+                    final int turnCost = currentDirection.costTo(Direction.fromVector3(delta));
+
                     neighbour.setGraphCost(gCost);
-                    neighbour.setHeuristicCost(getEstimatedPathCost(neighbourPosition, end));
+                    neighbour.setHeuristicCost(getEstimatedPathCost(neighbourPosition, end) + moveCost + turnCost);
 
                     frontier.add(neighbour);
                     costSoFar.put(neighbourPosition, gCost);
