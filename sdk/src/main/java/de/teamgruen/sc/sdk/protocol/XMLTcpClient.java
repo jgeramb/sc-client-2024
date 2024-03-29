@@ -8,6 +8,7 @@ package de.teamgruen.sc.sdk.protocol;
 import de.teamgruen.sc.sdk.protocol.exceptions.DeserializationException;
 import de.teamgruen.sc.sdk.protocol.exceptions.SerializationException;
 import de.teamgruen.sc.sdk.protocol.exceptions.TcpConnectException;
+import de.teamgruen.sc.sdk.protocol.room.MovePacket;
 import de.teamgruen.sc.sdk.protocol.serialization.PacketSerializationUtil;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -157,6 +158,11 @@ public class XMLTcpClient {
                         } catch (SerializationException ex) {
                             if(errorListener != null)
                                 errorListener.accept("Failed to serialize XMLProtocolPacket: " + ex.getMessage());
+                        }
+
+                        if(packet instanceof MovePacket) {
+                            // collect garbage to reduce probability of lags
+                            System.gc();
                         }
                     }
                 }

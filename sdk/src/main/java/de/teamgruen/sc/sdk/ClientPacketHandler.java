@@ -92,9 +92,6 @@ public class ClientPacketHandler {
                     return;
 
                 this.client.sendPacket(new MovePacket(this.roomId, new Move(actions)));
-
-                // collect garbage to reduce probability of lags
-                System.gc();
             } else if (data instanceof ResultMessage message) {
                 final List<ScoreFragment> fragments = message.getDefinition().getFragments();
                 final Winner winner = message.getWinner();
