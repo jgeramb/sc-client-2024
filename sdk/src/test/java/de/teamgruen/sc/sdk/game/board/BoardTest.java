@@ -37,12 +37,12 @@ public class BoardTest {
 
     @Test
     public void testUpdateSegments_UpdatePassengers() {
-        this.board.updateSegments(ExampleGameState.getSampleSegments().stream().peek(segment -> {
+        this.board.updateSegments(ExampleGameState.getSampleSegments().stream().peek(segment ->
             segment.getColumns().forEach(column -> column.getFields().forEach(field -> {
                 if (field instanceof Passenger)
                     ((Passenger) field).setPassenger(0);
-            }));
-        }).toList());
+            })
+        )).toList());
 
         assertTrue(this.board.getPassengerFields().isEmpty());
     }
@@ -169,6 +169,27 @@ public class BoardTest {
     }
 
     @Test
+    public void testGetSegmentPosition() {
+        final double actualSegmentPosition = this.board.getSegmentPosition(new Vector3(0, 0, 0));
+
+        assertEquals(0.25, actualSegmentPosition);
+    }
+
+    @Test
+    public void testGetSegmentDistance_Positive() {
+        final double actualSegmentPosition = this.board.getSegmentDistance(new Vector3(0, 0, 0), new Vector3(1, 0, -1));
+
+        assertEquals(0.25, actualSegmentPosition);
+    }
+
+    @Test
+    public void testGetSegmentDistance_Negative() {
+        final double actualSegmentPosition = this.board.getSegmentDistance(new Vector3(0, 0, 0), new Vector3(-1, 0, 1));
+
+        assertEquals(-0.25, actualSegmentPosition);
+    }
+
+    @Test
     public void testGetDirectionCosts_ZeroMaxTurns() {
         assertEquals(1, this.board.getDirectionCosts(Direction.RIGHT, new Vector3(1, 0, -1), 0).size());
     }
@@ -225,6 +246,18 @@ public class BoardTest {
         assertNull(this.board.getBestPushDirection(
                 Direction.DOWN_LEFT,
                 this.gameState.getEnemyShip(),
+                new Vector3(-3, 5, -2)
+        ));
+    }
+
+    @Test
+    public void testGetBestPushDirection_AlreadyStuck() {
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        enemyShip.setStuck(true);
+
+        assertNull(this.board.getBestPushDirection(
+                Direction.DOWN_LEFT,
+                enemyShip,
                 new Vector3(-3, 5, -2)
         ));
     }

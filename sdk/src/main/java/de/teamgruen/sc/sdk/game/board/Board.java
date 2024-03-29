@@ -60,6 +60,26 @@ public class Board {
     }
 
     /**
+     * @param position the position to calculate the segment position for
+     * @return the segment position (each column is 1/4 of a segment)
+     */
+    public double getSegmentPosition(@NonNull Vector3 position) {
+        final int segmentIndex = this.getSegmentIndex(position);
+        final int segmentColumn = this.getSegmentColumn(position);
+
+        return segmentIndex + segmentColumn / 4d;
+    }
+
+    /**
+     * @param position the first position
+     * @param otherPosition the second position
+     * @return the segment distance between the two positions
+     */
+    public double getSegmentDistance(@NonNull Vector3 position, @NonNull Vector3 otherPosition) {
+        return this.getSegmentPosition(otherPosition) - this.getSegmentPosition(position);
+    }
+
+    /**
      * @param position the position to check
      * @return whether the position is not passable
      */
@@ -530,6 +550,9 @@ public class Board {
      * @return the direction with the highest score, or null if no direction is available
      */
     public Direction getBestPushDirection(@NonNull Direction from, @NonNull Ship enemyShip, @NonNull Vector3 enemyPosition) {
+        if(enemyShip.isStuck())
+            return null;
+
         final int enemySegmentIndex = this.getSegmentIndex(enemyPosition);
         final int enemySegmentColumn = this.getSegmentColumn(enemyPosition);
 
