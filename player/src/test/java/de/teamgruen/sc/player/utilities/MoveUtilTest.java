@@ -275,10 +275,13 @@ public class MoveUtilTest {
 
     @Test
     public void testGetAccelerationCoal_UseMoreCoal() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+
         assertEquals(1, MoveUtil.getAccelerationCoal(
                 this.gameState.getBoard(),
                 0,
-                this.gameState.getPlayerShip().getPosition(),
+                playerShip.getPosition(),
+                playerShip.getDirection(),
                 this.gameState.getEnemyShip().getPosition(),
                 6
         ));
@@ -286,10 +289,13 @@ public class MoveUtilTest {
 
     @Test
     public void testGetAccelerationCoal_NoCoalAvailable() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+
         assertEquals(0, MoveUtil.getAccelerationCoal(
                 this.gameState.getBoard(),
                 0,
-                this.gameState.getPlayerShip().getPosition(),
+                playerShip.getPosition(),
+                playerShip.getDirection(),
                 this.gameState.getEnemyShip().getPosition(),
                 0
         ));

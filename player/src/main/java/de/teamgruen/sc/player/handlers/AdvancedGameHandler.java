@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class AdvancedGameHandler extends BaseGameHandler {
 
@@ -88,8 +89,8 @@ public class AdvancedGameHandler extends BaseGameHandler {
         final List<Runnable> tasks = new ArrayList<>();
 
         // check if enemy ship is more than 2 segments ahead
-        if(MoveUtil.isEnemyAhead(board, shipPosition, enemyShip.getPosition()))
-            tasks.add(() -> paths.add(PathFinder.findPath(shipPosition, enemyShip.getPosition())));
+        if(MoveUtil.isEnemyAhead(board, shipPosition, playerShip.getDirection(), enemyShip.getPosition()))
+            tasks.add(() -> paths.add(PathFinder.findPath(playerShip, shipPosition, enemyShip.getPosition())));
             // collect passengers and move towards goal after reaching the 4th segment
         else if(board.getSegmentIndex(playerShip.getPosition()) >= 3) {
             // passengers
@@ -101,13 +102,13 @@ public class AdvancedGameHandler extends BaseGameHandler {
 
                 final Vector3 collectPosition = position.copy().add(passenger.getDirection().toVector3());
 
-                tasks.add(() -> paths.add(PathFinder.findPath(shipPosition, collectPosition)));
+                tasks.add(() -> paths.add(PathFinder.findPath(playerShip, shipPosition, collectPosition)));
             });
 
             // collect more passengers if the enemy ship is stuck, otherwise move towards a goal
             if (playerShip.hasEnoughPassengers() && (!enemyShip.isStuck() || tasks.isEmpty())) {
                 board.getGoalFields().forEach((position, field) -> tasks.add(() ->
-                        paths.add(PathFinder.findPath(shipPosition, position))
+                        paths.add(PathFinder.findPath(playerShip, shipPosition, position))
                 ));
             }
         }
@@ -127,10 +128,11 @@ public class AdvancedGameHandler extends BaseGameHandler {
             }));
 
             try {
-                countDownLatch.await();
+                if(!countDownLatch.await(750, TimeUnit.MILLISECONDS))
+                    executorService.shutdownNow();
+                else
+                    executorService.shutdown();
             } catch (InterruptedException ignore) {
-            } finally {
-                executorService.shutdown();
             }
 
             // remove invalid paths
