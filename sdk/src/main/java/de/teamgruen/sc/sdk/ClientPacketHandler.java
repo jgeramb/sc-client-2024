@@ -88,9 +88,6 @@ public class ClientPacketHandler {
             } else if (data instanceof MoveRequestMessage) {
                 final List<Action> actions = this.gameHandler.getNextActions(this.gameState);
 
-                if (actions.isEmpty())
-                    return;
-
                 this.client.sendPacket(new MovePacket(this.roomId, new Move(actions)));
             } else if (data instanceof ResultMessage message) {
                 final List<ScoreFragment> fragments = message.getDefinition().getFragments();

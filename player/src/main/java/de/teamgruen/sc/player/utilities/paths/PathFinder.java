@@ -29,8 +29,6 @@ public class PathFinder {
      *         or null if no path was found
      */
     public static LinkedList<Vector3> findPath(Ship ship, @NonNull Vector3 start, @NonNull Vector3 end) {
-        final long startMillis = System.currentTimeMillis();
-
         PathNode currentNode = getOrCreateNode(start);
 
         final Map<Vector3, Integer> turnsSoFar = new HashMap<>(Map.of(start, 0));
@@ -53,10 +51,6 @@ public class PathFinder {
             // early exit if the end position was reached
             if (currentPosition.equals(end))
                 return reconstructPath(cameFrom, currentPosition);
-
-            // early exit if the algorithm takes too long
-            if(System.currentTimeMillis() - startMillis > 50)
-                return null;
 
             final boolean wasCounterCurrent = gameState.getBoard().isCounterCurrent(currentPosition);
             final int gCost = costSoFar.get(currentPosition);

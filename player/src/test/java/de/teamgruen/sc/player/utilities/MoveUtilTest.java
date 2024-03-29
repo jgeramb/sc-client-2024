@@ -357,6 +357,30 @@ public class MoveUtilTest {
     }
 
     @Test
+    public void testMoveFromPath_Push_NoDirectionAvailable() {
+        final Ship playerShip = this.gameState.getPlayerShip();
+        playerShip.setPosition(new Vector3(-2, 3, -1));
+        playerShip.setDirection(Direction.DOWN_RIGHT);
+        playerShip.setSpeed(2);
+
+        this.gameState.getEnemyShip().setPosition(new Vector3(-3, 5, -2));
+
+        final Optional<Move> actualMove = MoveUtil.moveFromPath(this.gameState, new LinkedList<>(List.of(
+                new Vector3(-2, 3, -1),
+                new Vector3(-2, 4, -2),
+                new Vector3(-3, 5, -2)
+        )));
+        final List<Action> expectedActions = List.of(
+                ActionFactory.changeVelocity(-1),
+                ActionFactory.forward(1),
+                ActionFactory.turn(Direction.DOWN_LEFT)
+        );
+
+        assertTrue(actualMove.isPresent());
+        assertEquals(expectedActions, actualMove.get().getActions());
+    }
+
+    @Test
     public void testMoveFromPath_NotEnoughMovementPoints() {
         final Ship playerShip = this.gameState.getPlayerShip();
         playerShip.setPosition(new Vector3(0, 0, 0));

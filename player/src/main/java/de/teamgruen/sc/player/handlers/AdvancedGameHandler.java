@@ -8,6 +8,7 @@ package de.teamgruen.sc.player.handlers;
 import de.teamgruen.sc.player.utilities.MoveUtil;
 import de.teamgruen.sc.player.utilities.paths.PathFinder;
 import de.teamgruen.sc.sdk.game.GameState;
+import de.teamgruen.sc.sdk.game.Move;
 import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.game.board.Board;
 import de.teamgruen.sc.sdk.game.board.Ship;
@@ -61,6 +62,10 @@ public class AdvancedGameHandler extends BaseGameHandler {
                         if(path.size() <= minSpeed)
                             return;
 
+                        // skip paths that require two or more turns after reaching the destination
+                        if(gameState.getBoard().getMinTurns(direction, path.get(path.size() - 1)) >= 2)
+                            return;
+
                         costs.put(path, turns);
                     });
 
@@ -69,9 +74,9 @@ public class AdvancedGameHandler extends BaseGameHandler {
                             .min(Comparator.comparingInt(Map.Entry::getValue))
                             .map(Map.Entry::getKey)
                             .orElse(null);
+                    final Optional<Move> move = MoveUtil.moveFromPath(gameState, shortestPath);
 
-                    return MoveUtil.moveFromPath(gameState, shortestPath)
-                            .orElseGet(() -> MoveUtil.getMostEfficientMove(gameState, 250).orElse(null));
+                    return move.orElseGet(() -> MoveUtil.getMostEfficientMove(gameState, 250).orElse(null));
                 }
         );
     }
@@ -83,10 +88,10 @@ public class AdvancedGameHandler extends BaseGameHandler {
         final List<LinkedList<Vector3>> paths = new ArrayList<>();
         final List<Runnable> tasks = new ArrayList<>();
 
-        // check if enemy ship is more than 2 segments ahead
+        // check if the enemy ship is at least 2 segments ahead
         if(MoveUtil.isEnemyAhead(board, shipPosition, playerShip.getDirection(), enemyShip.getPosition()))
             tasks.add(() -> paths.add(PathFinder.findPath(playerShip, shipPosition, enemyShip.getPosition())));
-            // collect passengers and move towards goal after reaching the 4th segment
+        // collect passengers and move towards goal after reaching the 4th segment
         else if(board.getSegmentIndex(playerShip.getPosition()) >= 3) {
             final boolean hasEnoughPassengers = playerShip.hasEnoughPassengers();
             final boolean canEnemyMove = !enemyShip.isStuck();
@@ -110,13 +115,6 @@ public class AdvancedGameHandler extends BaseGameHandler {
 
                 tasks.add(() -> paths.add(PathFinder.findPath(playerShip, shipPosition, collectPosition)));
             });
-
-            // collect more passengers if the enemy ship is stuck, otherwise move towards a goal
-            if (hasEnoughPassengers && (canEnemyMove || tasks.isEmpty())) {
-                board.getGoalFields().forEach((position, field) -> tasks.add(() ->
-                        paths.add(PathFinder.findPath(playerShip, shipPosition, position))
-                ));
-            }
         }
 
         if(!tasks.isEmpty()) {

@@ -42,6 +42,10 @@ public class MoveUtil {
         final int coal = playerShip.getCoal();
 
         final Map<Move, Double> moves = getPossibleMoves(gameState, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition, speed, freeTurns, coal, isEnemyAhead ? 1 : 0);
+
+        if(moves.isEmpty())
+            return Optional.empty();
+
         final Map<Move, Map<Move, Double>> nextMoves = new HashMap<>();
         final Move bestMove = moves
                 .entrySet()
@@ -125,10 +129,7 @@ public class MoveUtil {
         }
 
         // loose intentionally if the ship will be stuck in the next 2 rounds
-        if (!moves.isEmpty())
-            return Optional.of(moves.keySet().iterator().next());
-
-        return Optional.empty();
+        return Optional.of(moves.keySet().iterator().next());
     }
 
     /**
@@ -146,7 +147,7 @@ public class MoveUtil {
      *
      * @param board the game board
      * @param ship the player's ship
-     * @param isEnemyAhead whether the enemy is at least 2 segments ahead of the player
+     * @param isEnemyAhead whether the enemy is ahead of the player
      * @param availableCoal the amount of coal available after the move
      * @param move the move to evaluate
      * @return the score of the move
@@ -391,8 +392,13 @@ public class MoveUtil {
                 if(!nextPosition.copy().subtract(lastPosition).equals(direction.toVector3()))
                     break;
 
-                final boolean isCounterCurrent = board.isCounterCurrent(nextPosition);
                 final int pushCost = nextPosition.equals(enemyPosition) ? 1 : 0;
+                final Direction bestPushDirection = board.getBestPushDirection(direction, enemyShip, enemyPosition);
+
+                if(pushCost > 0 && bestPushDirection == null)
+                    break;
+
+                final boolean isCounterCurrent = board.isCounterCurrent(nextPosition);
                 final int moveCost = isCounterCurrent && !wasCounterCurrent ? 2 : 1 + pushCost;
 
                 if(forwardCost + moveCost > availablePoints)
@@ -413,7 +419,7 @@ public class MoveUtil {
                 }
 
                 if(pushCost > 0)
-                    enemyPosition.add(board.getBestPushDirection(direction, enemyShip, enemyPosition).toVector3());
+                    enemyPosition.add(bestPushDirection.toVector3());
 
                 distance++;
                 forwardCost += moveCost;
@@ -497,7 +503,7 @@ public class MoveUtil {
      * @param playerPosition the player's position
      * @param playerDirection the player's direction
      * @param enemyPosition the enemy's position
-     * @return whether the enemy is at least 2 segments ahead of the player
+     * @return whether the enemy is ahead of the player
      */
     public static boolean isEnemyAhead(@NonNull Board board,
                                        @NonNull Vector3 playerPosition, @NonNull Direction playerDirection,

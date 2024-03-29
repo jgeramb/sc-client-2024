@@ -15,7 +15,6 @@ import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreFragment;
 import lombok.NonNull;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,12 +63,10 @@ public abstract class BaseGameHandler implements GameHandler {
     }
 
     @Override
-    public List<Action> getNextActions(@NonNull GameState gameState) {
+    public List<Action> getNextActions(@NonNull GameState gameState) throws IllegalStateException {
         try {
-            if(this.nextActions == null || this.nextActions.isEmpty()) {
-                this.onError("No actions available");
-                return Collections.emptyList();
-            }
+            if(this.nextActions == null || this.nextActions.isEmpty())
+                throw new IllegalStateException("No actions available");
 
             return this.nextActions;
         } finally {

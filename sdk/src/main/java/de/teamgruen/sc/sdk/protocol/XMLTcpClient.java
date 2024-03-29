@@ -68,7 +68,7 @@ public class XMLTcpClient {
                 boolean protocolInitiated = false;
 
                 final byte[] buffer = new byte[512];
-                StringBuilder builder = new StringBuilder();
+                final StringBuilder builder = new StringBuilder();
                 int nRead;
 
                 while((nRead = in.read(buffer)) != -1) {
