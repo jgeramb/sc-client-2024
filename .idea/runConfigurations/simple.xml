@@ -5,6 +5,7 @@
     <option name="MAIN_CLASS_NAME" value="de.teamgruen.sc.player.SoftwareChallengePlayer" />
     <module name="player" />
     <option name="PROGRAM_PARAMETERS" value="--debug --play-style simple" />
+    <option name="VM_PARAMETERS" value="-XX:+UseZGC" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
