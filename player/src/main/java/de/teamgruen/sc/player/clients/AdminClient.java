@@ -20,10 +20,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -85,7 +82,13 @@ public class AdminClient extends Client {
 
                             @Override
                             public List<Action> getNextActions(@NonNull GameState gameState) {
-                                return gameHandler.getNextActions(gameState);
+                                try {
+                                    return gameHandler.getNextActions(gameState);
+                                } catch (Exception ex) {
+                                    onError(ex.getMessage());
+
+                                    return Collections.emptyList();
+                                }
                             }
 
                             @Override
@@ -158,7 +161,8 @@ public class AdminClient extends Client {
         for (int i = 0; i < playerStats.length; i++)
             playerStats[i] = new int[4];
 
-        final ExecutorService executor = Executors.newFixedThreadPool(4);
+        final int threads = Math.max(1, Runtime.getRuntime().availableProcessors() / 4);
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
         final CountDownLatch latch = new CountDownLatch(count);
 
         for (int i = 0; i < count; i++) {
