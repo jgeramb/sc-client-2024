@@ -20,7 +20,6 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class AdvancedGameHandler extends BaseGameHandler {
 
@@ -58,11 +57,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
                             direction = nextDirection;
                         }
 
-                        // skip paths that require at least 50% of the path length as turns
-                        if(turns > Math.max(2, path.size() / 2))
-                            return;
-
-                        // skip impossible paths
+                        // skip impossible paths (start excluded from distance calculation)
                         if(path.size() <= minSpeed)
                             return;
 
@@ -93,6 +88,9 @@ public class AdvancedGameHandler extends BaseGameHandler {
             tasks.add(() -> paths.add(PathFinder.findPath(playerShip, shipPosition, enemyShip.getPosition())));
             // collect passengers and move towards goal after reaching the 4th segment
         else if(board.getSegmentIndex(playerShip.getPosition()) >= 3) {
+            final boolean hasEnoughPassengers = playerShip.hasEnoughPassengers();
+            final boolean canEnemyMove = !enemyShip.isStuck();
+
             // passengers
             board.getPassengerFields().forEach((position, field) -> {
                 final Passenger passenger = (Passenger) field;
@@ -101,12 +99,20 @@ public class AdvancedGameHandler extends BaseGameHandler {
                     return;
 
                 final Vector3 collectPosition = position.copy().add(passenger.getDirection().toVector3());
+                final double segmentDistance = board.getSegmentDistance(shipPosition, collectPosition);
+
+                if(segmentDistance < -1.5 && (hasEnoughPassengers || canEnemyMove))
+                    return;
+
+                // skip passengers that are too far away
+                if(segmentDistance > 2)
+                    return;
 
                 tasks.add(() -> paths.add(PathFinder.findPath(playerShip, shipPosition, collectPosition)));
             });
 
             // collect more passengers if the enemy ship is stuck, otherwise move towards a goal
-            if (playerShip.hasEnoughPassengers() && (!enemyShip.isStuck() || tasks.isEmpty())) {
+            if (hasEnoughPassengers && (canEnemyMove || tasks.isEmpty())) {
                 board.getGoalFields().forEach((position, field) -> tasks.add(() ->
                         paths.add(PathFinder.findPath(playerShip, shipPosition, position))
                 ));
@@ -128,11 +134,10 @@ public class AdvancedGameHandler extends BaseGameHandler {
             }));
 
             try {
-                if(!countDownLatch.await(750, TimeUnit.MILLISECONDS))
-                    executorService.shutdownNow();
-                else
-                    executorService.shutdown();
+                countDownLatch.await();
             } catch (InterruptedException ignore) {
+            } finally {
+                executorService.shutdown();
             }
 
             // remove invalid paths
