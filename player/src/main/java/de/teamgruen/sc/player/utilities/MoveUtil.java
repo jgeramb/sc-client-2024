@@ -41,10 +41,18 @@ public class MoveUtil {
         final int freeTurns = playerShip.getFreeTurns();
         final int coal = playerShip.getCoal();
 
-        final Map<Move, Double> moves = getPossibleMoves(gameState, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition, speed, freeTurns, coal, isEnemyAhead ? 1 : 0);
+        final Map<Move, Double> moves = getPossibleMoves(gameState, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition,
+                speed, freeTurns, coal, isEnemyAhead ? 1 : 0, false);
 
-        if(moves.isEmpty())
-            return Optional.empty();
+        if(moves.isEmpty()) {
+            final Map<Move, Double> forcedMoves = getPossibleMoves(gameState, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition,
+                    speed, freeTurns, coal, Math.max(0, coal - 1), true);
+
+            if (forcedMoves.isEmpty())
+                return Optional.empty();
+
+            moves.putAll(forcedMoves);
+        }
 
         final Map<Move, Map<Move, Double>> nextMoves = new HashMap<>();
         final Move bestMove = moves
@@ -182,23 +190,25 @@ public class MoveUtil {
      * @param freeTurns the player's free turns
      * @param coal the available coal
      * @param extraCoal the extra coal to use
+     * @param forceMultiplePushes whether to force multiple pushes if possible
      * @return all possible moves for the current game state
      */
     public static Map<Move, Double> getPossibleMoves(@NonNull GameState gameState, int turn,
                                                      @NonNull Ship ship, @NonNull Vector3 position, @NonNull Direction direction,
                                                      @NonNull Ship enemyShip, @NonNull Vector3 enemyPosition,
                                                      int speed, int freeTurns, int coal,
-                                                     int extraCoal) {
+                                                     int extraCoal,
+                                                     boolean forceMultiplePushes) {
         final Board board = gameState.getBoard();
         final int turnCoal = Math.min(coal, 1 + extraCoal);
         final int accelerationCoal = getAccelerationCoal(board, turn, position, direction, enemyPosition, coal - turnCoal);
         final Set<Move> moves = board.getMoves(ship, position, direction, enemyShip, enemyPosition,
-                speed, freeTurns, 1, turnCoal, accelerationCoal);
+                speed, freeTurns, 1, turnCoal, accelerationCoal, forceMultiplePushes);
 
         // if no moves are possible, try moves that require more coal
         if(moves.isEmpty() && extraCoal < coal - 1) {
             return getPossibleMoves(gameState, turn, ship, position, direction, enemyShip, enemyPosition,
-                    speed, freeTurns, coal, extraCoal + 1);
+                    speed, freeTurns, coal, extraCoal + 1, forceMultiplePushes);
         }
 
         moves.forEach(move -> addAcceleration(speed, move));
@@ -246,7 +256,8 @@ public class MoveUtil {
                 move.getTotalCost(),
                 1,
                 remainingCoal,
-                0
+                0,
+                false
         );
 
         if(!hasPreviousMove) {
@@ -393,7 +404,7 @@ public class MoveUtil {
                     break;
 
                 final int pushCost = nextPosition.equals(enemyPosition) ? 1 : 0;
-                final Direction bestPushDirection = board.getBestPushDirection(direction, enemyShip, enemyPosition);
+                final Direction bestPushDirection = board.getBestPushDirection(direction, enemyShip, enemyPosition, false);
 
                 if(pushCost > 0 && bestPushDirection == null)
                     break;
@@ -447,7 +458,8 @@ public class MoveUtil {
                         gameState.getEnemyShip(),
                         move,
                         advanceInfo,
-                        availablePoints
+                        availablePoints,
+                        false
                 );
 
                 pathIndex = path.subList(0, pathIndex).lastIndexOf(move.getEndPosition()) + 1;

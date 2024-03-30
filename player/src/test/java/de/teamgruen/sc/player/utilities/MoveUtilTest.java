@@ -193,17 +193,18 @@ public class MoveUtilTest {
     public void testGetPossibleMoves() {
         final Ship playerShip = this.gameState.getPlayerShip(), enemyShip = this.gameState.getEnemyShip();
         final List<List<Action>> actualMoves = MoveUtil.getPossibleMoves(
-            this.gameState,
-            0,
-            playerShip,
-            playerShip.getPosition(),
-            playerShip.getDirection(),
-            enemyShip,
-            enemyShip.getPosition(),
-            playerShip.getSpeed(),
-            playerShip.getFreeTurns(),
-            playerShip.getCoal(),
-            0
+                this.gameState,
+                0,
+                playerShip,
+                playerShip.getPosition(),
+                playerShip.getDirection(),
+                enemyShip,
+                enemyShip.getPosition(),
+                playerShip.getSpeed(),
+                playerShip.getFreeTurns(),
+                playerShip.getCoal(),
+                0,
+                false
         ).keySet().stream().map(Move::getActions).toList();
 
         final List<List<Action>> expectedMoves = List.of(
@@ -241,7 +242,8 @@ public class MoveUtilTest {
                 1,
                 playerShip.getFreeTurns(),
                 2,
-                0
+                0,
+                false
         ).keySet().stream().map(Move::getActions).toList();
         final List<List<Action>> expectedMoves = List.of(
                 List.of(ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1)),

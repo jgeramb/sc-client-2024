@@ -258,6 +258,20 @@ public class Board {
         return false;
     }
 
+    /**
+     * @param ship the current ship
+     * @param position the start position of the ship
+     * @param shipDirection the direction of the ship
+     * @param enemyShip the enemy ship
+     * @param enemyPosition the position of the enemy ship
+     * @param speed the current speed of the ship
+     * @param freeTurns the amount of free turns
+     * @param freeAcceleration the amount of free acceleration
+     * @param turnCoal the maximum amount of coal to use for turns
+     * @param accelerationCoal the maximum amount of coal to use for acceleration
+     * @param forceMultiplePushes whether to force multiple pushes if possible
+     * @return all possible moves for the current ship
+     */
     public Set<Move> getMoves(@NonNull Ship ship,
                               @NonNull Vector3 position,
                               @NonNull Direction shipDirection,
@@ -267,7 +281,8 @@ public class Board {
                               int freeTurns,
                               int freeAcceleration,
                               int turnCoal,
-                              int accelerationCoal) {
+                              int accelerationCoal,
+                              boolean forceMultiplePushes) {
         final int maxDeltaSpeed = freeAcceleration + accelerationCoal;
 
         return this.getMoves(
@@ -281,7 +296,8 @@ public class Board {
                 Math.min(6, speed + maxDeltaSpeed),
                 freeTurns,
                 0,
-                turnCoal
+                turnCoal,
+                forceMultiplePushes
         );
     }
 
@@ -297,19 +313,21 @@ public class Board {
      * @param freeTurns the amount of free turns
      * @param usedPoints the available movement points
      * @param turnCoal the maximum amount of coal to use for turns
-     * @return all possible moves for the current ship.
+     * @param forceMultiplePushes whether to force multiple pushes if possible
+     * @return all possible moves for the current ship
      */
     private Set<Move> getMoves(@NonNull Ship ship,
-                              @NonNull Vector3 position,
-                              @NonNull Direction shipDirection,
-                              @NonNull Ship enemyShip,
-                              @NonNull Vector3 enemyPosition,
-                              Direction excludeDirection,
-                              int minSpeed,
-                              int maxSpeed,
-                              int freeTurns,
-                              int usedPoints,
-                              int turnCoal) {
+                               @NonNull Vector3 position,
+                               @NonNull Direction shipDirection,
+                               @NonNull Ship enemyShip,
+                               @NonNull Vector3 enemyPosition,
+                               Direction excludeDirection,
+                               int minSpeed,
+                               int maxSpeed,
+                               int freeTurns,
+                               int usedPoints,
+                               int turnCoal,
+                               boolean forceMultiplePushes) {
         final Set<Move> moves = new HashSet<>();
 
         this.getDirectionCosts(shipDirection, position, freeTurns + turnCoal).forEach((turnDirection, turnCost) -> {
@@ -331,7 +349,8 @@ public class Board {
                         enemyShip,
                         move,
                         advanceInfo,
-                        currentPoints
+                        currentPoints,
+                        forceMultiplePushes
                 );
 
                 final Vector3 endPosition = move.getEndPosition();
@@ -359,7 +378,8 @@ public class Board {
                             maxSpeed,
                             Math.max(0, freeTurns - turnCost),
                             usedPoints + cost,
-                            turnCoal - Math.max(0, turnCost - freeTurns)
+                            turnCoal - Math.max(0, turnCost - freeTurns),
+                            forceMultiplePushes
                     ).forEach(currentMove -> moves.add(move.copy().append(currentMove)));
                 }
 
@@ -380,14 +400,16 @@ public class Board {
      * @param move the move to append the actions to
      * @param advanceInfo the information about the advance
      * @param availableMovementPoints the available movement points
+     * @param forceMultiplePushes whether to force multiple pushes if possible
      * @return the actual result of the advance
      */
     public AdvanceInfo.Result appendForwardMove(@NonNull Vector3 endPosition,
-                                 @NonNull Direction direction,
-                                 @NonNull Ship enemyShip,
-                                 @NonNull Move move,
-                                 @NonNull AdvanceInfo advanceInfo,
-                                 int availableMovementPoints) {
+                                                @NonNull Direction direction,
+                                                @NonNull Ship enemyShip,
+                                                @NonNull Move move,
+                                                @NonNull AdvanceInfo advanceInfo,
+                                                int availableMovementPoints,
+                                                boolean forceMultiplePushes) {
         AdvanceInfo.Result result = advanceInfo.getResult();
 
         if (result == AdvanceInfo.Result.SHIP) {
@@ -397,7 +419,12 @@ public class Board {
             final int moveCost = payCounterCurrentCost ? 2 : 1;
 
             if(moveCost + 1 /* push cost */ + advanceInfo.getCost() <= availableMovementPoints) {
-                final Direction pushDirection = this.getBestPushDirection(direction, enemyShip, move.getEnemyEndPosition());
+                final Direction pushDirection;
+
+                if(forceMultiplePushes && !this.isBlocked(endPosition.copy().add(direction.toVector3().multiply(2))))
+                    pushDirection = direction;
+                else
+                    pushDirection = this.getBestPushDirection(direction, enemyShip, move.getEnemyEndPosition(), forceMultiplePushes);
 
                 if (pushDirection != null) {
                     move.forward(advanceInfo.getDistance() + 1, advanceInfo.getCost() + moveCost);
@@ -540,9 +567,13 @@ public class Board {
      * @param from the direction the ship is coming from
      * @param enemyShip the enemy ship
      * @param enemyPosition the position of the enemy ship
+     * @param allowGoalAndPassengerPickUp whether to allow goal and passenger pick up
      * @return the direction with the highest score, or null if no direction is available
      */
-    public Direction getBestPushDirection(@NonNull Direction from, @NonNull Ship enemyShip, @NonNull Vector3 enemyPosition) {
+    public Direction getBestPushDirection(@NonNull Direction from,
+                                          @NonNull Ship enemyShip,
+                                          @NonNull Vector3 enemyPosition,
+                                          boolean allowGoalAndPassengerPickUp) {
         if(enemyShip.isStuck())
             return null;
 
@@ -563,9 +594,8 @@ public class Board {
                 continue;
 
             final int counterCurrentBonus = this.isCounterCurrent(pushPosition) ? 1 : 0;
-            final boolean canReachMinimumSpeed = (enemyShip.getSpeed() - enemyShip.getCoal() - 1) <= (1 + counterCurrentBonus);
 
-            if(canReachMinimumSpeed) {
+            if(!allowGoalAndPassengerPickUp && enemyShip.getSpeed() == 1 + counterCurrentBonus) {
                 if(pushField instanceof Goal && enemyShip.hasEnoughPassengers())
                     continue;
 
