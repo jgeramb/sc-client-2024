@@ -190,8 +190,8 @@ public class MoveUtil {
                                                      int speed, int freeTurns, int coal,
                                                      int extraCoal) {
         final Board board = gameState.getBoard();
-        final int turnCoal = Math.min(ship.getCoal(), 1 + extraCoal);
-        final int accelerationCoal = Math.min(coal - turnCoal, getAccelerationCoal(board, turn, position, direction, enemyPosition, coal));
+        final int turnCoal = Math.min(coal, 1 + extraCoal);
+        final int accelerationCoal = getAccelerationCoal(board, turn, position, direction, enemyPosition, coal - turnCoal);
         final Set<Move> moves = board.getMoves(ship, position, direction, enemyShip, enemyPosition,
                 speed, freeTurns, 1, turnCoal, accelerationCoal);
 

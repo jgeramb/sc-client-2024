@@ -277,14 +277,11 @@ public class Board {
                 enemyShip,
                 enemyPosition,
                 null,
-                speed,
                 Math.max(1, speed - maxDeltaSpeed),
                 Math.min(6, speed + maxDeltaSpeed),
                 freeTurns,
-                freeAcceleration,
                 0,
-                turnCoal,
-                accelerationCoal
+                turnCoal
         );
     }
 
@@ -295,14 +292,11 @@ public class Board {
      * @param enemyShip the enemy ship
      * @param enemyPosition the position of the enemy ship
      * @param excludeDirection the direction to exclude, may be null
-     * @param speed the speed of the ship
      * @param minSpeed the minimum speed the ship can reach
      * @param maxSpeed the maximum speed the ship can reach
      * @param freeTurns the amount of free turns
-     * @param freeAcceleration the remaining free accelerations
      * @param usedPoints the available movement points
      * @param turnCoal the maximum amount of coal to use for turns
-     * @param accelerationCoal the maximum amount of coal to use for acceleration
      * @return all possible moves for the current ship.
      */
     private Set<Move> getMoves(@NonNull Ship ship,
@@ -311,14 +305,11 @@ public class Board {
                               @NonNull Ship enemyShip,
                               @NonNull Vector3 enemyPosition,
                               Direction excludeDirection,
-                              int speed,
                               int minSpeed,
                               int maxSpeed,
                               int freeTurns,
-                              int freeAcceleration,
                               int usedPoints,
-                              int turnCoal,
-                              int accelerationCoal) {
+                              int turnCoal) {
         final Set<Move> moves = new HashSet<>();
 
         this.getDirectionCosts(shipDirection, position, freeTurns + turnCoal).forEach((turnDirection, turnCost) -> {
@@ -334,8 +325,7 @@ public class Board {
                     move.turn(turnDirection);
 
                 final AdvanceInfo advanceInfo = this.getAdvanceLimit(ship, position, turnDirection, enemyPosition, minSpeed, usedPoints, currentPoints);
-
-                this.appendForwardMove(
+                final AdvanceInfo.Result result = this.appendForwardMove(
                         advanceInfo.getEndPosition(position, turnDirection),
                         turnDirection,
                         enemyShip,
@@ -352,32 +342,28 @@ public class Board {
                         this.getSegmentColumn(endPosition)
                 );
 
-                if (cost < currentPoints
-                        // prevent infinite loop
-                        && currentPoints > 1
-                        && advanceInfo.getResult() != AdvanceInfo.Result.PASSENGER
-                        && advanceInfo.getResult() != AdvanceInfo.Result.GOAL) {
-                    final int accelerationCost = Math.abs(cost - speed);
+                if(move.getDistance() == 0)
+                    continue;
 
+                if (cost < currentPoints
+                        && result != AdvanceInfo.Result.PASSENGER
+                        && result != AdvanceInfo.Result.GOAL) {
                     getMoves(
                             ship,
                             endPosition,
                             turnDirection,
                             enemyShip,
                             move.getEnemyEndPosition(),
-                            turnDirection,
-                            move.getTotalCost(),
+                            result.equals(AdvanceInfo.Result.SHIP) ? null : turnDirection,
                             minSpeed,
                             maxSpeed,
                             Math.max(0, freeTurns - turnCost),
-                            Math.max(0, freeAcceleration - accelerationCost),
                             usedPoints + cost,
-                            turnCoal - Math.max(0, turnCost - freeTurns),
-                            accelerationCoal - Math.max(0, accelerationCost - freeAcceleration)
+                            turnCoal - Math.max(0, turnCost - freeTurns)
                     ).forEach(currentMove -> moves.add(move.copy().append(currentMove)));
                 }
 
-                if (move.getTotalCost() >= minMovementPoints && move.getDistance() > 0)
+                if (move.getTotalCost() >= minMovementPoints)
                     moves.add(move);
             }
         });
@@ -394,19 +380,21 @@ public class Board {
      * @param move the move to append the actions to
      * @param advanceInfo the information about the advance
      * @param availableMovementPoints the available movement points
+     * @return the actual result of the advance
      */
-    public void appendForwardMove(@NonNull Vector3 endPosition,
+    public AdvanceInfo.Result appendForwardMove(@NonNull Vector3 endPosition,
                                  @NonNull Direction direction,
                                  @NonNull Ship enemyShip,
                                  @NonNull Move move,
                                  @NonNull AdvanceInfo advanceInfo,
                                  int availableMovementPoints) {
-        final AdvanceInfo.Result result = advanceInfo.getResult();
+        AdvanceInfo.Result result = advanceInfo.getResult();
 
         if (result == AdvanceInfo.Result.SHIP) {
             final boolean wasCounterCurrent = this.isCounterCurrent(endPosition);
             final boolean isCounterCurrent = this.isCounterCurrent(endPosition.copy().add(direction.toVector3()));
-            final int moveCost = (!wasCounterCurrent || advanceInfo.getDistance() == 0) && isCounterCurrent ? 2 : 1;
+            final boolean payCounterCurrentCost = (!wasCounterCurrent || advanceInfo.getDistance() == 0) && isCounterCurrent;
+            final int moveCost = payCounterCurrentCost ? 2 : 1;
 
             if(moveCost + 1 /* push cost */ + advanceInfo.getCost() <= availableMovementPoints) {
                 final Direction pushDirection = this.getBestPushDirection(direction, enemyShip, move.getEnemyEndPosition());
@@ -414,9 +402,12 @@ public class Board {
                 if (pushDirection != null) {
                     move.forward(advanceInfo.getDistance() + 1, advanceInfo.getCost() + moveCost);
                     move.push(pushDirection);
-                    return;
+
+                    return result;
                 }
             }
+
+            result = payCounterCurrentCost ? AdvanceInfo.Result.COUNTER_CURRENT : AdvanceInfo.Result.NORMAL;
         } else if (result == AdvanceInfo.Result.PASSENGER)
             move.passenger();
         else if (result == AdvanceInfo.Result.GOAL)
@@ -424,6 +415,8 @@ public class Board {
 
         if(advanceInfo.getDistance() > 0)
             move.forward(advanceInfo.getDistance(), advanceInfo.getCost());
+
+        return result;
     }
 
     /**
