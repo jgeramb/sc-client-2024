@@ -30,6 +30,8 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class XMLTcpClient {
 
+    private static long lastGarbageCollection = 0;
+
     @Setter
     private Socket socket = new Socket();
     private final Queue<XMLProtocolPacket> requestQueue = new LinkedBlockingQueue<>();
@@ -160,9 +162,11 @@ public class XMLTcpClient {
                                 errorListener.accept("Failed to serialize XMLProtocolPacket: " + ex.getMessage());
                         }
 
-                        if(packet instanceof MovePacket) {
+                        if(packet instanceof MovePacket && System.currentTimeMillis() - lastGarbageCollection > 1_000L) {
                             // collect garbage to reduce probability of lags
                             System.gc();
+
+                            lastGarbageCollection = System.currentTimeMillis();
                         }
                     }
                 }
