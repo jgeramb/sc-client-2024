@@ -67,7 +67,7 @@ public abstract class BaseGameHandler implements GameHandler {
         try {
             if(this.nextActions == null || this.nextActions.isEmpty())
                 throw new IllegalStateException("No actions available");
-
+            
             return this.nextActions;
         } finally {
             final int turn = gameState.getTurn();

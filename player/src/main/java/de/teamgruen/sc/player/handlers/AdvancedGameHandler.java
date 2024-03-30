@@ -40,7 +40,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
                     final Ship playerShip = gameState.getPlayerShip();
                     final int minSpeed = Math.max(1, playerShip.getSpeed() - 1 - Math.min(playerShip.getCoal(), 2));
                     final Direction playerDirection = playerShip.getDirection();
-                    final HashMap<LinkedList<Vector3>, Integer> costs = new HashMap<>();
+                    final HashMap<List<Vector3>, Integer> costs = new HashMap<>();
 
                     getPaths(gameState).forEach(path -> {
                         Direction direction = playerDirection;
@@ -64,7 +64,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
                         costs.put(path, turns);
                     });
 
-                    final LinkedList<Vector3> shortestPath = costs.entrySet()
+                    final List<Vector3> shortestPath = costs.entrySet()
                             .stream()
                             .min(Comparator.comparingInt(Map.Entry::getValue))
                             .map(Map.Entry::getKey)
@@ -76,11 +76,11 @@ public class AdvancedGameHandler extends BaseGameHandler {
         );
     }
 
-    private List<LinkedList<Vector3>> getPaths(GameState gameState) {
+    private Set<List<Vector3>> getPaths(GameState gameState) {
         final Board board = gameState.getBoard();
         final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
         final Vector3 shipPosition = playerShip.getPosition();
-        final List<LinkedList<Vector3>> paths = new ArrayList<>();
+        final Set<List<Vector3>> paths = new HashSet<>();
 
         // check if the enemy ship is at least 2 segments ahead
         if(MoveUtil.isEnemyAhead(board, shipPosition, playerShip.getDirection(), enemyShip.getPosition()))

@@ -343,7 +343,7 @@ public class MoveUtil {
      * @param path the path to reach
      * @return the next move to reach the given path
      */
-    public static Optional<Move> moveFromPath(@NonNull GameState gameState, LinkedList<Vector3> path) {
+    public static Optional<Move> moveFromPath(@NonNull GameState gameState, List<Vector3> path) {
         if(path == null || path.isEmpty())
             return Optional.empty();
 
@@ -408,6 +408,9 @@ public class MoveUtil {
 
                 if(pushCost > 0 && bestPushDirection == null)
                     break;
+
+                if(!wasCounterCurrent)
+                    wasCounterCurrent = distance == 0 && pushCost > 0;
 
                 final boolean isCounterCurrent = board.isCounterCurrent(nextPosition);
                 final int moveCost = isCounterCurrent && !wasCounterCurrent ? 2 : 1 + pushCost;

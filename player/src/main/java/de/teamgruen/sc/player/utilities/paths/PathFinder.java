@@ -28,7 +28,7 @@ public class PathFinder {
      * @return the shortest path from start to end (start and end included)
      *         or null if no path was found
      */
-    public static LinkedList<Vector3> findPath(Ship ship, @NonNull Vector3 start, @NonNull Vector3 end) {
+    public static List<Vector3> findPath(Ship ship, @NonNull Vector3 start, @NonNull Vector3 end) {
         PathNode currentNode = getOrCreateNode(start);
 
         final Map<Vector3, Integer> turnsSoFar = new HashMap<>(Map.of(start, 0));
@@ -85,8 +85,8 @@ public class PathFinder {
      * @param destination the destination
      * @return the reconstructed path
      */
-    static LinkedList<Vector3> reconstructPath(Map<Vector3, Vector3> cameFrom, Vector3 destination) {
-        final LinkedList<Vector3> path = new LinkedList<>();
+    static List<Vector3> reconstructPath(Map<Vector3, Vector3> cameFrom, Vector3 destination) {
+        final List<Vector3> path = new ArrayList<>();
         Vector3 current = destination;
 
         do {
