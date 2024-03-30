@@ -4,8 +4,8 @@
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="MAIN_CLASS_NAME" value="de.teamgruen.sc.player.SoftwareChallengePlayer" />
     <module name="player" />
-    <option name="PROGRAM_PARAMETERS" value="--tests 50 --password &quot;examplepassword&quot;" />
-    <option name="VM_PARAMETERS" value="-XX:+UseZGC" />
+    <option name="PROGRAM_PARAMETERS" value="--tests 250 --password &quot;examplepassword&quot;" />
+    <option name="VM_PARAMETERS" value="-XX:+UseZGC -Xmx4G -Xms1G" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
