@@ -38,6 +38,7 @@ import de.teamgruen.sc.sdk.protocol.room.messages.WelcomeMessage;
 import lombok.NonNull;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -481,14 +482,33 @@ public class ClientPacketHandlerTest {
     public void testHandlePacket_Left() {
         final AtomicBoolean called = new AtomicBoolean(false);
 
-        new ClientPacketHandler(null, new GameHandler() {
+        new ClientPacketHandler(new SoftwareChallengeClient("", 0, null) {
+            @Override
+            public void stop() {
+                called.set(true);
+            }
+        }, null).handlePacket(new LeftPacket());
+
+        assertTrue(called.get());
+    }
+
+    @Test
+    public void testHandlePacket_Left_DisconnectError() {
+        final AtomicBoolean sentError = new AtomicBoolean(false);
+
+        new ClientPacketHandler(new SoftwareChallengeClient("", 0, null) {
+            @Override
+            public void stop() throws IOException {
+                throw new IOException("Test exception");
+            }
+        }, new GameHandler() {
             @Override
             public void onError(String message) {
-                called.set(true);
+                sentError.set(true);
             }
         }).handlePacket(new LeftPacket());
 
-        assertFalse(called.get());
+        assertTrue(sentError.get());
     }
 
     @Test

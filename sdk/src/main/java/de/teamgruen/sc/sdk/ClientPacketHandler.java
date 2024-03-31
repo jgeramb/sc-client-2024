@@ -30,6 +30,7 @@ import de.teamgruen.sc.sdk.protocol.room.messages.*;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -121,7 +122,13 @@ public class ClientPacketHandler {
                             this.gameHandler.onResults(scores, result);
                         });
             }
-        } else if(!(xmlProtocolPacket instanceof LeftPacket))
+        } else if(xmlProtocolPacket instanceof LeftPacket) {
+            try {
+                this.client.stop();
+            } catch (IOException ex) {
+                this.gameHandler.onError("Failed to stop client: " + ex.getMessage());
+            }
+        } else
             this.gameHandler.onError("Unhandled packet: " + xmlProtocolPacket.getClass().getSimpleName());
     }
 
