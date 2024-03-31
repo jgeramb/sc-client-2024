@@ -527,7 +527,7 @@ public class MoveUtil {
         final double segmentDistance = board.getSegmentDistance(playerPosition, enemyPosition);
         final int requiredTurns = getSegmentDirectionCost(board, playerPosition, playerDirection);
 
-        return segmentDistance >= (2 - requiredTurns * 0.25);
+        return segmentDistance >= (2 - requiredTurns * 0.125);
     }
 
 }
