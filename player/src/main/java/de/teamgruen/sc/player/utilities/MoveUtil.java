@@ -77,17 +77,11 @@ public class MoveUtil {
 
                     // subtract the minimum amount of coal required for the next move from the score
 
-                    final int minNextCoalCost = currentNextMoves.keySet()
+                    currentNextMoves
+                            .entrySet()
                             .stream()
-                            .mapToInt(nextMove -> {
-                                final int coalCost = nextMove.getCoalCost(move.getEndDirection(), move.getTotalCost(), 1);
-
-                                return Math.max(0, coalCost - nextMove.getPushes());
-                            })
-                            .min()
-                            .orElse(0);
-
-                    entry.setValue(entry.getValue() - minNextCoalCost);
+                            .min(Comparator.comparingDouble(Map.Entry::getValue))
+                            .ifPresent(bestNextMove -> entry.setValue(entry.getValue() + bestNextMove.getValue()));
 
                     nextMoves.put(move, currentNextMoves);
 
@@ -276,7 +270,7 @@ public class MoveUtil {
                     if (bestNextMove == null)
                         return true;
 
-                    final int extraPoints = (bestNextMove.isGoal() ? 10 : 0) + bestNextMove.getPassengers() * 5;
+                    final int extraPoints = (bestNextMove.isGoal() ? 25 : 0) + bestNextMove.getPassengers() * 5;
                     final double nextMinCoalCost = nextMoves.keySet()
                             .stream()
                             .mapToInt(next -> next.getCoalCost(move.getEndDirection(), move.getTotalCost(), 1))

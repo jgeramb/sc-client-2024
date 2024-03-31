@@ -82,12 +82,9 @@ public class AdvancedGameHandler extends BaseGameHandler {
         final Vector3 shipPosition = playerShip.getPosition();
         final Set<List<Vector3>> paths = new HashSet<>();
 
-        // check if the enemy ship is at least 2 segments ahead
         if(MoveUtil.isEnemyAhead(board, shipPosition, playerShip.getDirection(), enemyShip.getPosition()))
             paths.add(PathFinder.findPath(playerShip, shipPosition, enemyShip.getPosition()));
-        // collect passengers and move towards goal after reaching the 4th segment
-        else if(board.getSegmentIndex(playerShip.getPosition()) >= 3) {
-            final boolean hasEnoughPassengers = playerShip.hasEnoughPassengers();
+        else if(playerShip.getPassengers() < 3) {
             final boolean canEnemyMove = !enemyShip.isStuck();
 
             // passengers
@@ -100,7 +97,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
                 final Vector3 collectPosition = position.copy().add(passenger.getDirection().toVector3());
                 final double segmentDistance = board.getSegmentDistance(shipPosition, collectPosition);
 
-                if(segmentDistance < -1.5 && (hasEnoughPassengers || canEnemyMove))
+                if(segmentDistance < -1.25 && canEnemyMove)
                     return;
 
                 // skip passengers that are too far away
