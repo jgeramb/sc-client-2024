@@ -403,17 +403,18 @@ public class MoveUtil {
                 if(!nextPosition.copy().subtract(lastPosition).equals(direction.toVector3()))
                     break;
 
-                final int pushCost = nextPosition.equals(enemyPosition) ? 1 : 0;
-                final Direction bestPushDirection = board.getBestPushDirection(direction, enemyShip, enemyPosition, false);
-
-                if(pushCost > 0 && bestPushDirection == null)
-                    break;
-
-                if(!wasCounterCurrent)
-                    wasCounterCurrent = distance == 0 && pushCost > 0;
-
                 final boolean isCounterCurrent = board.isCounterCurrent(nextPosition);
-                final int moveCost = isCounterCurrent && !wasCounterCurrent ? 2 : 1 + pushCost;
+                int moveCost = !wasCounterCurrent && isCounterCurrent ? 2 : 1;
+                Direction bestPushDirection = null;
+
+                if(nextPosition.equals(enemyPosition)) {
+                    bestPushDirection = board.getBestPushDirection(direction, enemyShip, enemyPosition, false);
+
+                    if(bestPushDirection == null)
+                        break;
+
+                    moveCost++;
+                }
 
                 if(forwardCost + moveCost > availablePoints)
                     break;
@@ -432,7 +433,7 @@ public class MoveUtil {
                         break;
                 }
 
-                if(pushCost > 0)
+                if(bestPushDirection != null)
                     enemyPosition.add(bestPushDirection.toVector3());
 
                 distance++;
