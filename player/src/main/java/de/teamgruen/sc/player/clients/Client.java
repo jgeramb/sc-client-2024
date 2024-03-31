@@ -19,10 +19,12 @@ public class Client {
     protected final String host;
     protected final int port;
     protected SoftwareChallengeClient client;
+    private boolean connected = false;
 
     protected void connect(@NonNull GameHandler gameHandler) throws TcpConnectException {
         this.client = new SoftwareChallengeClient(host, port, gameHandler);
         this.client.start();
+        this.connected = true;
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
@@ -33,7 +35,10 @@ public class Client {
     }
 
     public void disconnect() throws IOException {
+        if(!connected) return;
+
         this.client.stop();
+        this.connected = false;
     }
 
 }
