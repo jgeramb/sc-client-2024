@@ -20,6 +20,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -128,6 +129,9 @@ public class AdminClient extends Client {
                                 controlledRoom.endGame();
                             }
                         });
+
+                        controlledRoom.clients.add(playerClient);
+
                         playerClient.connect();
                         playerClient.joinPreparedRoom(reservations.get(i));
                     } catch (TcpConnectException ex) {
@@ -200,6 +204,15 @@ public class AdminClient extends Client {
                         } catch (InterruptedException ignore) {
                         }
                     }
+
+                    // disconnect the clients
+
+                    controlledRoom.clients.forEach(playerClient -> {
+                        try {
+                            playerClient.disconnect();
+                        } catch (IOException ignore) {
+                        }
+                    });
                 } finally {
                     latch.countDown();
                 }
@@ -257,6 +270,7 @@ public class AdminClient extends Client {
 
         private final Object endLock = new Object();
         private final AtomicInteger endedClients = new AtomicInteger();
+        private final List<PlayerClient> clients = new ArrayList<>();
 
         public void endGame() {
             if (this.endedClients.incrementAndGet() == 2) {
