@@ -115,16 +115,11 @@ public class AdminClient extends Client {
 
                             @Override
                             public void onError(String message) {
-                                // count stuck as loss
-                                if(message.endsWith(" kann sich nicht mehr bewegen."))
-                                    playerStats[playerId][1]++;
-                                else {
-                                    final String playerName = gameHandler instanceof SimpleGameHandler ? "Simple" : "Advanced";
+                                final String playerName = gameHandler instanceof SimpleGameHandler ? "Simple" : "Advanced";
 
-                                    print(Level.ERROR, "Game " + RED + gameId + RESET + " - " + RED + playerName + RESET + ": " + WHITE + message + RESET);
+                                print(Level.ERROR, "Game " + RED + gameId + RESET + " - " + RED + playerName + RESET + ": " + WHITE + message + RESET);
 
-                                    playerStats[playerId][3]++;
-                                }
+                                playerStats[playerId][3]++;
 
                                 controlledRoom.endGame();
                             }
