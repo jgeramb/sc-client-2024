@@ -328,7 +328,7 @@ public class BoardTest {
     public void testGetBestPushDirection_NoPassengers() {
         final Ship enemyShip = this.gameState.getEnemyShip();
         enemyShip.setDirection(Direction.DOWN_RIGHT);
-        enemyShip.setSpeed(2);
+        enemyShip.setSpeed(1);
 
         assertEquals(Direction.DOWN_RIGHT, this.board.getBestPushDirection(
                 Direction.DOWN_RIGHT,
@@ -700,6 +700,8 @@ public class BoardTest {
                 List.of(ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
                 List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(2)),
                 List.of(ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1)),
