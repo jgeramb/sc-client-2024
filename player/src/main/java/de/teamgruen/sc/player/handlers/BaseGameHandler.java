@@ -26,7 +26,7 @@ public abstract class BaseGameHandler implements GameHandler {
 
     protected final Logger logger;
     protected List<Action> nextActions;
-    private long moveStartMillis;
+    private long lastActionTime;
 
     protected BaseGameHandler(Logger logger) {
         this.logger = logger;
@@ -46,7 +46,7 @@ public abstract class BaseGameHandler implements GameHandler {
         if(!gameState.getPlayerTeam().equals(gameState.getCurrentTeam()))
             return;
 
-        this.moveStartMillis = System.currentTimeMillis();
+        this.lastActionTime = System.currentTimeMillis();
 
         final Move move = moveSupplier.get();
 
@@ -60,6 +60,14 @@ public abstract class BaseGameHandler implements GameHandler {
 
             this.nextActions = actions;
         }
+
+        final int turn = gameState.getTurn();
+
+        this.logger.debug(
+                "Turn " + WHITE + "#" + GREEN + " ".repeat(turn < 10 ? 1 : 0) + turn + RESET + " calculated in " +
+                        PURPLE + String.format("%,d", System.currentTimeMillis() - this.lastActionTime) + WHITE + "ms" +
+                        RESET
+        );
     }
 
     @Override
@@ -74,7 +82,7 @@ public abstract class BaseGameHandler implements GameHandler {
 
             this.logger.debug(
                     "Turn " + WHITE + "#" + GREEN + " ".repeat(turn < 10 ? 1 : 0) + turn + RESET + " took " +
-                    PURPLE + String.format("%,d", System.currentTimeMillis() - this.moveStartMillis) + WHITE + "ms" +
+                    PURPLE + String.format("%,d", System.currentTimeMillis() - this.lastActionTime) + WHITE + "ms" +
                     RESET
             );
         }
