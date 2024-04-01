@@ -307,7 +307,7 @@ public class Board {
      * @param shipDirection the direction of the ship
      * @param enemyShip the enemy ship
      * @param enemyPosition the position of the enemy ship
-     * @param excludeDirection the direction to exclude, may be null
+     * @param excludedDirection the direction to exclude, may be null
      * @param minSpeed the minimum speed the ship can reach
      * @param maxSpeed the maximum speed the ship can reach
      * @param freeTurns the amount of free turns
@@ -321,7 +321,7 @@ public class Board {
                                @NonNull Direction shipDirection,
                                @NonNull Ship enemyShip,
                                @NonNull Vector3 enemyPosition,
-                               Direction excludeDirection,
+                               Direction excludedDirection,
                                int minSpeed,
                                int maxSpeed,
                                int freeTurns,
@@ -331,7 +331,7 @@ public class Board {
         final Set<Move> moves = new HashSet<>();
 
         this.getDirectionCosts(shipDirection, position, freeTurns + turnCoal).forEach((turnDirection, turnCost) -> {
-            if(Objects.equals(turnDirection, excludeDirection))
+            if(Objects.equals(turnDirection, excludedDirection))
                 return;
 
             final int minMovementPoints = Math.max(1, minSpeed - usedPoints);
@@ -356,17 +356,16 @@ public class Board {
                 final Vector3 endPosition = move.getEndPosition();
                 final int cost = move.getTotalCost();
 
-                move.segment(
-                        this.getSegmentIndex(endPosition),
-                        this.getSegmentColumn(endPosition)
-                );
-
-                if(move.getDistance() == 0)
+                if (move.getDistance() == 0)
                     continue;
 
-                if (cost < currentPoints
-                        && result != AdvanceInfo.Result.PASSENGER
-                        && result != AdvanceInfo.Result.GOAL) {
+                if (cost >= minMovementPoints) {
+                    move.segment(this.getSegmentIndex(endPosition), this.getSegmentColumn(endPosition));
+
+                    moves.add(move);
+                }
+
+                if (cost <= currentPoints && cost + usedPoints < maxSpeed && !move.isGoal() && move.getPassengers() == 0) {
                     getMoves(
                             ship,
                             endPosition,
@@ -382,9 +381,6 @@ public class Board {
                             forceMultiplePushes
                     ).forEach(currentMove -> moves.add(move.copy().append(currentMove)));
                 }
-
-                if (move.getTotalCost() >= minMovementPoints)
-                    moves.add(move);
             }
         });
 
