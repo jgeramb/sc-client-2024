@@ -37,16 +37,17 @@ public class MoveUtil {
         final boolean isEnemyAhead = isEnemyAhead(board, playerShip.getPosition(), playerShip.getDirection(), enemyShip.getPosition());
         final Vector3 playerPosition = playerShip.getPosition(), enemyPosition = enemyShip.getPosition();
         final Direction direction = playerShip.getDirection();
+        final int passengers = playerShip.getPassengers();
         final int speed = playerShip.getSpeed();
         final int freeTurns = playerShip.getFreeTurns();
         final int coal = playerShip.getCoal();
 
         final Map<Move, Double> moves = getPossibleMoves(gameState, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition,
-                speed, freeTurns, coal, isEnemyAhead ? 1 : 0, false);
+                passengers, speed, freeTurns, coal, isEnemyAhead ? 1 : 0, false);
 
         if(moves.isEmpty()) {
             final Map<Move, Double> forcedMoves = getPossibleMoves(gameState, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition,
-                    speed, freeTurns, coal, Math.max(0, coal - 1), true);
+                    passengers, speed, freeTurns, coal, Math.max(0, coal - 1), true);
 
             if (forcedMoves.isEmpty())
                 return Optional.empty();
@@ -81,7 +82,16 @@ public class MoveUtil {
                             .entrySet()
                             .stream()
                             .min(Comparator.comparingDouble(Map.Entry::getValue))
-                            .ifPresent(bestNextMove -> entry.setValue(entry.getValue() + bestNextMove.getValue()));
+                            .ifPresent(bestNextMove -> {
+                                final int minNextCoalCost = currentNextMoves
+                                        .keySet()
+                                        .stream()
+                                        .mapToInt(nextMoveEntry -> nextMoveEntry.getCoalCost(move.getEndDirection(), move.getTotalCost(), 1))
+                                        .min()
+                                        .orElse(0);
+
+                                entry.setValue(entry.getValue() - minNextCoalCost + bestNextMove.getValue() * 0.175);
+                            });
 
                     nextMoves.put(move, currentNextMoves);
 
@@ -147,30 +157,30 @@ public class MoveUtil {
      *     <li>the turns required to reach the direction of the next segment</li>
      * </ul>
      *
-     * @param board the game board
+     * @param gameState the current game state
      * @param ship the player's ship
      * @param isEnemyAhead whether the enemy is ahead of the player
-     * @param availableCoal the amount of coal available after the move
+     * @param passengers the amount of passengers before the move
+     * @param coalBefore the amount of coal before the move
+     * @param coalAfter the amount of coal after the move
      * @param move the move to evaluate
      * @return the score of the move
      */
-    public static double evaluateMove(@NonNull Board board,
+    public static double evaluateMove(@NonNull GameState gameState,
                                       int turn,
-                                      @NonNull Ship ship, boolean isEnemyAhead, int availableCoal,
+                                      @NonNull Ship ship, boolean isEnemyAhead,
+                                      int passengers, int coalBefore, int coalAfter,
                                       @NonNull Move move) {
-        final Vector3 position = move.getEndPosition();
-        final Direction direction = move.getEndDirection();
-        final Vector3 nextPosition = position.copy().add(direction.toVector3());
+        final Board board = gameState.getBoard();
         final double segmentDistance = getMoveSegmentDistance(board, ship, move);
-        final int coalCost = Math.max(0, ship.getCoal() - availableCoal - (turn < 2 ? 1 : 0));
+        final int coalCost = Math.max(0, coalBefore - coalAfter - (turn < 2 ? 1 : 0));
 
         return (move.isGoal() ? 100 : 0)
-                + (isEnemyAhead && segmentDistance >= 0 ? 50 : 0)
-                + move.getPassengers() * Math.max(0, 15 - coalCost * 5)
-                + segmentDistance
-                - coalCost * 1.5
-                + (board.getNextFieldsPositions().contains(nextPosition) ? 5 : 0)
-                - getSegmentDirectionCost(board, position, direction) * 0.5;
+                + move.getPassengers() * (Math.max(0, 3 - passengers) * Math.max(0, 7.5 - coalCost * 2.5))
+                + segmentDistance * (isEnemyAhead ? 2.5 : 1.25)
+                - coalCost * 1.25
+                + (doesNotEndAtLastSegmentBorder(board, move, coalAfter) ? 5 : 0)
+                - getSegmentDirectionCost(board, move.getEndPosition(), move.getEndDirection()) * 0.5;
     }
 
     /**
@@ -180,6 +190,7 @@ public class MoveUtil {
      * @param position the player's position
      * @param enemyShip the enemy's ship
      * @param enemyPosition the enemy's position
+     * @param passengers the player's passengers
      * @param speed the player's speed
      * @param freeTurns the player's free turns
      * @param coal the available coal
@@ -190,7 +201,7 @@ public class MoveUtil {
     public static Map<Move, Double> getPossibleMoves(@NonNull GameState gameState, int turn,
                                                      @NonNull Ship ship, @NonNull Vector3 position, @NonNull Direction direction,
                                                      @NonNull Ship enemyShip, @NonNull Vector3 enemyPosition,
-                                                     int speed, int freeTurns, int coal,
+                                                     int passengers, int speed, int freeTurns, int coal,
                                                      int extraCoal,
                                                      boolean forceMultiplePushes) {
         final Board board = gameState.getBoard();
@@ -202,17 +213,19 @@ public class MoveUtil {
         // if no moves are possible, try moves that require more coal
         if(moves.isEmpty() && extraCoal < coal - 1) {
             return getPossibleMoves(gameState, turn, ship, position, direction, enemyShip, enemyPosition,
-                    speed, freeTurns, coal, extraCoal + 1, forceMultiplePushes);
+                    passengers, speed, freeTurns, coal, extraCoal + 1, forceMultiplePushes);
         }
 
         moves.forEach(move -> addAcceleration(speed, move));
 
         return moves.stream().collect(HashMap::new, (map, move) -> map.put(move, evaluateMove(
-                board,
+                gameState,
                 turn,
                 ship,
                 isEnemyAhead(board, position, direction, enemyPosition),
-                coal - move.getCoalCost(direction, speed, 1),
+                passengers,
+                coal,
+                coal - move.getCoalCost(direction, speed, freeTurns),
                 move
         )), HashMap::putAll);
     }
@@ -247,6 +260,7 @@ public class MoveUtil {
                 move.getEndDirection(),
                 enemyShip,
                 move.getEnemyEndPosition(),
+                ship.getPassengers() + (hasPreviousMove ? previousMove.getPassengers() : 0) + move.getPassengers(),
                 move.getTotalCost(),
                 1,
                 remainingCoal,
@@ -260,24 +274,19 @@ public class MoveUtil {
 
                 if (doesNotEndAtLastSegmentBorder(gameState.getBoard(), nextMove, remainingCoal)) {
                     final Map<Move, Double> nextMoves = getNextPossibleMoves(gameState, turn, ship, enemyShip, move, remainingCoal, nextMove);
-                    final Move bestNextMove = nextMoves
-                            .entrySet()
-                            .stream()
-                            .max(Comparator.comparingDouble(Map.Entry::getValue))
-                            .map(Map.Entry::getKey)
-                            .orElse(null);
 
-                    if (bestNextMove == null)
+                    if (nextMoves.isEmpty())
                         return true;
 
-                    final int extraPoints = (bestNextMove.isGoal() ? 25 : 0) + bestNextMove.getPassengers() * 5;
-                    final double nextMinCoalCost = nextMoves.keySet()
+                    final int nextMinCoalCost = nextMoves
+                            .keySet()
                             .stream()
-                            .mapToInt(next -> next.getCoalCost(move.getEndDirection(), move.getTotalCost(), 1))
+                            .mapToInt(nextMoveEntry -> nextMoveEntry.getCoalCost(nextMove.getEndDirection(), nextMove.getTotalCost(), 1))
                             .min()
                             .orElse(0);
+                    final boolean canEnd = nextMoves.keySet().stream().anyMatch(Move::isGoal);
 
-                    entry.setValue(entry.getValue() - nextMinCoalCost + extraPoints);
+                    entry.setValue(entry.getValue() - nextMinCoalCost + (canEnd ? 25 : 0));
                 }
 
                 return false;
@@ -503,9 +512,10 @@ public class MoveUtil {
     public static int getSegmentDirectionCost(@NonNull Board board, @NonNull Vector3 position, @NonNull Direction direction) {
         final int segmentIndex = board.getSegmentIndex(position);
 
-        return segmentIndex < board.getSegments().size() - 1
-                ? board.getSegments().get(segmentIndex + 1).direction().costTo(direction)
-                : 0;
+        if(segmentIndex < board.getSegments().size() - 1)
+            return direction.costTo(board.getSegments().get(segmentIndex + 1).direction());
+
+        return 0;
     }
 
     /**

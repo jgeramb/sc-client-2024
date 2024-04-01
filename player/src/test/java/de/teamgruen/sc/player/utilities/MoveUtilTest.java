@@ -200,9 +200,10 @@ public class MoveUtilTest {
                 playerShip.getDirection(),
                 enemyShip,
                 enemyShip.getPosition(),
-                playerShip.getSpeed(),
-                playerShip.getFreeTurns(),
-                playerShip.getCoal(),
+                0,
+                1,
+                1,
+                6,
                 0,
                 false
         ).keySet().stream().map(Move::getActions).toList();
@@ -239,6 +240,7 @@ public class MoveUtilTest {
                 Direction.DOWN_LEFT,
                 enemyShip,
                 enemyShip.getPosition(),
+                0,
                 1,
                 playerShip.getFreeTurns(),
                 2,
