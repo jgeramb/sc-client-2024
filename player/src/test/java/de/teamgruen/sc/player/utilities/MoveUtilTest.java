@@ -67,8 +67,8 @@ public class MoveUtilTest {
 
         final Move move = actualMove.get();
 
-        assertTrue(move.isGoal());
         assertEquals(expectedActions, move.getActions());
+        assertTrue(move.isGoal());
     }
 
     @Test
@@ -89,8 +89,8 @@ public class MoveUtilTest {
 
         final Move move = actualMove.get();
 
-        assertTrue(move.getPassengers() > 0);
         assertEquals(expectedActions, move.getActions());
+        assertTrue(move.getPassengers() > 0);
     }
 
     @Test
@@ -108,18 +108,16 @@ public class MoveUtilTest {
         );
 
         assertTrue(actualMove.isPresent());
-
-        final Move move = actualMove.get();
-
-        assertEquals(expectedActions, move.getActions());
+        assertEquals(expectedActions, actualMove.get().getActions());
     }
 
     @Test
     public void testGetMostEfficientMove_TurnToBestNext_CurrentDirection() {
         final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(-2, 1, 1));
-        playerShip.setDirection(Direction.DOWN_RIGHT);
-        playerShip.setSpeed(1);
+        playerShip.setPosition(new Vector3(-3, 7, -4));
+        playerShip.setDirection(Direction.DOWN_LEFT);
+        playerShip.setPassengers(2);
+        playerShip.setSpeed(2);
         playerShip.setCoal(0);
 
         final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, 500);
@@ -129,10 +127,7 @@ public class MoveUtilTest {
         );
 
         assertTrue(actualMove.isPresent());
-
-        final Move move = actualMove.get();
-
-        assertEquals(expectedActions, move.getActions());
+        assertEquals(expectedActions, actualMove.get().getActions());
     }
 
     @Test
@@ -151,10 +146,7 @@ public class MoveUtilTest {
         );
 
         assertTrue(actualMove.isPresent());
-
-        final Move move = actualMove.get();
-
-        assertEquals(expectedActions, move.getActions());
+        assertEquals(expectedActions, actualMove.get().getActions());
     }
 
     @Test
@@ -172,10 +164,7 @@ public class MoveUtilTest {
         );
 
         assertTrue(actualMove.isPresent());
-
-        final Move move = actualMove.get();
-
-        assertEquals(expectedActions, move.getActions());
+        assertEquals(expectedActions, actualMove.get().getActions());
     }
 
     @Test
