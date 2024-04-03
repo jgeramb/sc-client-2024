@@ -5,5 +5,5 @@ java \
   -jar teamgruen-player.jar \
   --debug \
   --batch-mode \
-  --play-style advanced \
+  --play-style simple \
   "$@"
