@@ -336,7 +336,7 @@ public class Board {
 
             final int minMovementPoints = Math.max(1, minSpeed - usedPoints);
 
-            for (int currentPoints = minMovementPoints; currentPoints <= maxSpeed - usedPoints; currentPoints++) {
+            for (int currentPoints = 1; currentPoints <= maxSpeed - usedPoints; currentPoints++) {
                 final Move move = new Move(position, enemyPosition, turnDirection);
 
                 if (shipDirection != turnDirection)

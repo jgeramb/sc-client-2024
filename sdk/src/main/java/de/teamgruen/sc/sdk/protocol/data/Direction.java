@@ -60,6 +60,15 @@ public enum Direction {
         return Math.abs(this.delta(direction));
     }
 
+    public int toFieldColumn() {
+        return switch (this) {
+            case LEFT -> 0;
+            case UP_LEFT, DOWN_LEFT -> 1;
+            case UP_RIGHT, DOWN_RIGHT -> 2;
+            case RIGHT -> 3;
+        };
+    }
+
     public static Direction fromVector3(@NonNull Vector3 vector) {
         for (Direction direction : values()) {
             if (direction.toVector3().equals(vector))
