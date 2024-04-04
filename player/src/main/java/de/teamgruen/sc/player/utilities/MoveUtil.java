@@ -75,6 +75,10 @@ public class MoveUtil {
                         return true;
 
                     final Move move = entry.getKey();
+
+                    if(move.isGoal())
+                        return true;
+
                     int turnCost = 0;
                     Direction current = direction;
 

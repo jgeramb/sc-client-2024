@@ -47,7 +47,7 @@ public class MoveUtilTest {
         assertEquals(expectedActions, actualMove.get().getActions());
     }
 
-    /*@Test
+    @Test
     public void testGetMostEfficientMove_Goal() {
         final Ship playerShip = this.gameState.getPlayerShip();
         playerShip.setPosition(new Vector3(-5, 9, -4));
@@ -69,7 +69,7 @@ public class MoveUtilTest {
 
         assertEquals(expectedActions, move.getActions());
         assertTrue(move.isGoal());
-    }*/
+    }
 
     @Test
     public void testGetMostEfficientMove_Passenger() {
