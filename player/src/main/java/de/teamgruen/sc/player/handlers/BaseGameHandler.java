@@ -34,7 +34,7 @@ public abstract class BaseGameHandler implements GameHandler {
 
     @Override
     public void onGameStart(@NonNull GameState gameState) {
-        this.logger.info("Game started");
+        this.logger.info("Game started (Team " + PURPLE + gameState.getPlayerTeam() + RESET + ")");
     }
 
     @Override
@@ -68,6 +68,7 @@ public abstract class BaseGameHandler implements GameHandler {
                         PURPLE + String.format("%,d", System.currentTimeMillis() - this.lastActionTime) + WHITE + "ms" +
                         RESET
         );
+        this.logger.debug("Next actions: " + WHITE + this.nextActions + RESET);
     }
 
     @Override
