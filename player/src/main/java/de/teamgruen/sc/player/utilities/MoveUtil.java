@@ -375,7 +375,7 @@ public class MoveUtil {
                                           int coal) {
         final boolean isEnemyAhead = isEnemyAhead(board, position, direction, enemyPosition);
 
-        return Math.min(coal, (isEnemyAhead || turn < 2) ? 2 : 1);
+        return Math.min(coal, (isEnemyAhead || turn < 2) ? 1 : 0);
     }
 
     /**

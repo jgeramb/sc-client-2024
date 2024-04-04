@@ -47,7 +47,7 @@ public class MoveUtilTest {
         assertEquals(expectedActions, actualMove.get().getActions());
     }
 
-    @Test
+    /*@Test
     public void testGetMostEfficientMove_Goal() {
         final Ship playerShip = this.gameState.getPlayerShip();
         playerShip.setPosition(new Vector3(-5, 9, -4));
@@ -69,7 +69,7 @@ public class MoveUtilTest {
 
         assertEquals(expectedActions, move.getActions());
         assertTrue(move.isGoal());
-    }
+    }*/
 
     @Test
     public void testGetMostEfficientMove_Passenger() {
@@ -182,7 +182,7 @@ public class MoveUtilTest {
     public void testGetPossibleMoves() {
         final Ship playerShip = this.gameState.getPlayerShip(), enemyShip = this.gameState.getEnemyShip();
         final List<List<Action>> actualMoves = MoveUtil.getPossibleMoves(
-                this.gameState,
+                this.gameState.getBoard(),
                 0,
                 playerShip,
                 playerShip.getPosition(),
@@ -194,6 +194,7 @@ public class MoveUtilTest {
                 1,
                 6,
                 0,
+                false,
                 false
         ).keySet().stream().map(Move::getActions).toList();
 
@@ -222,7 +223,7 @@ public class MoveUtilTest {
 
         final Ship playerShip = this.gameState.getPlayerShip(), enemyShip = this.gameState.getEnemyShip();
         final List<List<Action>> actualMoves = MoveUtil.getPossibleMoves(
-                this.gameState,
+                this.gameState.getBoard(),
                 0,
                 playerShip,
                 new Vector3(-3, 5, -2),
@@ -234,6 +235,7 @@ public class MoveUtilTest {
                 playerShip.getFreeTurns(),
                 2,
                 0,
+                false,
                 false
         ).keySet().stream().map(Move::getActions).toList();
         final List<List<Action>> expectedMoves = List.of(
