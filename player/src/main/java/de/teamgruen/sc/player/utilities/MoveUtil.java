@@ -184,10 +184,12 @@ public class MoveUtil {
      *     <li>whether the move ends in front of a field that will be revealed in the next round</li>
      *     <li>the turns required to reach the direction of the next segment</li>
      *     <li>whether the ship decelerates when approaching the goal fields</li>
+     *     <li>how many turns the enemy ship needs to move when it was pushed</li>
      * </ul>
      *
      * @param board the current game board
      * @param ship the player's ship
+     * @param enemyShip the enemy's ship
      * @param isEnemyAhead whether the enemy is ahead of the player
      * @param passengers the amount of passengers before the move
      * @param coalBefore the amount of coal before the move
@@ -196,7 +198,7 @@ public class MoveUtil {
      * @return the score of the move
      */
     public static double evaluateMove(@NonNull Board board, int turn,
-                                      @NonNull Ship ship, boolean isEnemyAhead,
+                                      @NonNull Ship ship, Ship enemyShip, boolean isEnemyAhead,
                                       int passengers, int coalBefore, int coalAfter,
                                       @NonNull Move move) {
         final double segmentDistance = getMoveSegmentDistance(board, ship, move);
@@ -208,7 +210,8 @@ public class MoveUtil {
                 - coalCost * 1.25
                 + (endsAtLastSegmentBorder(board, move, coalAfter) ? 5 : 0)
                 - getSegmentDirectionCost(board, move.getEndPosition(), move.getEndDirection()) * 0.5
-                - move.getTotalCost() * Math.max(0, move.getSegmentIndex() - 4) * 0.25;
+                - move.getTotalCost() * Math.max(0, move.getSegmentIndex() - 4) * 0.25
+                + (move.getPushes() > 0 ? board.getMinTurns(enemyShip.getDirection(), move.getEnemyEndPosition()) : 0);
     }
 
     /**
@@ -252,6 +255,7 @@ public class MoveUtil {
                 board,
                 turn,
                 ship,
+                enemyShip,
                 isEnemyAhead(board, position, direction, enemyPosition),
                 passengers,
                 coal,
