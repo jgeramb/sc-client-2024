@@ -71,7 +71,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
                             .orElse(null);
                     final Optional<Move> move = MoveUtil.moveFromPath(gameState, shortestPath);
 
-                    return move.orElseGet(() -> MoveUtil.getMostEfficientMove(gameState, 250).orElse(null));
+                    return move.orElseGet(() -> MoveUtil.getMostEfficientMove(gameState, 500).orElse(null));
                 }
         );
     }

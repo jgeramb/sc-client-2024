@@ -18,7 +18,7 @@ public class SimpleGameHandler extends BaseGameHandler {
 
     @Override
     public void onBoardUpdate(@NonNull GameState gameState) {
-        this.setNextMove(gameState, () -> MoveUtil.getMostEfficientMove(gameState, 500).orElse(null));
+        this.setNextMove(gameState, () -> MoveUtil.getMostEfficientMove(gameState, 750).orElse(null));
     }
 
 }
