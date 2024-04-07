@@ -12,7 +12,8 @@ permissions:
 
 jobs:
   main:
-    runs-on: ubuntu-22.04
+    if: ${{ !env.ACT }}
+    runs-on: ubuntu-latest
     steps:
       - id: release
         uses: google-github-actions/release-please-action@v4
@@ -20,10 +21,9 @@ jobs:
           token: "${{ secrets.GITHUB_TOKEN }}"
           release-type: "maven"
   build:
-    needs: main
-    if: ( env.ACT || steps.release.outputs.release_created )
+    if: ${{ env.ACT || steps.release.outputs.release_created }}
     name: Build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -50,7 +50,7 @@ jobs:
           zip -r -j artifacts/teamgruen-player.zip artifacts/player
           rm -rf artifacts/*/
       - name: Upload artifact
-        if: ( !env.ACT )
+        if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v4
         with:
           name: archives
@@ -59,7 +59,7 @@ jobs:
     if: ${{ steps.release.outputs.release_created }}
     needs: build
     name: Upload Release Artifacts
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -74,7 +74,7 @@ jobs:
     if: ${{ steps.release.outputs.release_created }}
     needs: build
     name: Deploy
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     environment: production
     steps:
       - name: Download artifacts
