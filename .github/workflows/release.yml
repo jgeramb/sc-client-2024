@@ -12,13 +12,14 @@ permissions:
 
 jobs:
   create-release:
-    if: ( !env.ACT )
+    name: Create Release
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - id: release
+        if: ( !env.ACT )
         uses: google-github-actions/release-please-action@v4
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
@@ -26,12 +27,12 @@ jobs:
   build:
     needs: create-release
     name: Build
-    if: ( env.ACT || needs.create-release.outputs.release_created )
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout code
+        if: ( env.ACT || needs.create-release.outputs.release_created )
         uses: actions/checkout@v4
       - name: Set version
         id: version
@@ -77,7 +78,7 @@ jobs:
   deploy:
     needs: [create-release, build]
     name: Deploy
-    if: ( needs.create-release.outputs.release_created )
+    if: ( needs.create-release.outputs.release_created && needs.build.outputs.version )
     runs-on: ubuntu-latest
     environment: production
     steps:
