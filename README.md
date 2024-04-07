@@ -6,7 +6,7 @@
 
 # Java Client for the Software-Challenge Germany 2024
 
-![maven](https://github.com/jgeramb/software-challenge-client/actions/workflows/maven.yml/badge.svg)
+![maven](https://github.com/jgeramb/software-challenge-client/actions/workflows/release.yml/badge.svg)
 
 ## Starting the client
 
