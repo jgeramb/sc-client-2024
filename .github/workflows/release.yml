@@ -15,6 +15,7 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     outputs:
+      testing: ${{ steps.testing.outputs.testing }}
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
@@ -24,15 +25,18 @@ jobs:
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
           release-type: "maven"
+      - id: testing
+        if: ( env.ACT )
+        run: echo "testing=true" >> $GITHUB_OUTPUT
   build:
     needs: create-release
     name: Build
+    if: ( needs.create-release.outputs.testing || needs.create-release.outputs.release_created )
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout code
-        if: ( env.ACT || needs.create-release.outputs.release_created )
         uses: actions/checkout@v4
       - name: Set version
         id: version
