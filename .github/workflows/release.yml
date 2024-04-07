@@ -1,16 +1,27 @@
-name: Maven
+name: Release
+
 on:
   workflow_dispatch:
   push:
-    paths:
-      - /version
+    branches:
+      - main
 permissions:
   contents: write
   pull-requests: write
+
 jobs:
+  main:
+    runs-on: ubuntu-22.04
+    steps:
+      - id: release
+        uses: google-github-actions/release-please-action@v4
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          release-type: "maven"
   build:
+    if: ${{ env.ACT || steps.release.outputs.release_created }}
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -42,31 +53,26 @@ jobs:
         with:
           name: archives
           path: artifacts/*
-  create-release:
+  upload-release-artifacts:
+    if: ${{ steps.release.outputs.release_created }}
     needs: build
-    name: Create Release
-    runs-on: ubuntu-latest
+    name: Upload Release Artifacts
+    runs-on: ubuntu-22.04
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: archives
           path: artifacts
-      - name: Create Release
-        id: create_release
-        uses: google-github-actions/release-please-action@v4
-        with:
-          token: "${{ secrets.GITHUB_TOKEN }}"
-          release-type: "maven"
       - name: Upload Release Artifact
-        if: ${{ steps.release.outputs.release_created }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload ${{ steps.release.outputs.tag_name }} artifacts/*
   deploy:
+    if: ${{ steps.release.outputs.release_created }}
     needs: build
     name: Deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     environment: production
     steps:
       - name: Download artifacts
