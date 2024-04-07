@@ -3,7 +3,10 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - .github/.version
+      - /version
+permissions:
+  contents: write
+  pull-requests: write
 jobs:
   build:
     name: Build
@@ -15,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Set version
         id: version
-        run: echo "version=$(cat .github/.version)" >> $GITHUB_OUTPUT
+        run: echo "version=$(cat version)" >> $GITHUB_OUTPUT
       - name: Set up JDK 18 (Corretto)
         uses: actions/setup-java@v3
         with:
@@ -34,6 +37,7 @@ jobs:
           zip -r -j artifacts/teamgruen-player.zip artifacts/player
           rm -rf artifacts/*/
       - name: Upload artifact
+        if: ( !env.ACT )
         uses: actions/upload-artifact@v4
         with:
           name: archives
@@ -50,14 +54,15 @@ jobs:
           path: artifacts
       - name: Create Release
         id: create_release
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: google-github-actions/release-please-action@v4
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: v${{ needs.build.outputs.version }}
-          title: v${{ needs.build.outputs.version }}
-          draft: false
-          prerelease: false
-          files: artifacts/*
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          release-type: "maven"
+      - name: Upload Release Artifact
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ steps.release.outputs.tag_name }} artifacts/*
   deploy:
     needs: build
     name: Deploy
