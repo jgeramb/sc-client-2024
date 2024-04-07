@@ -194,16 +194,17 @@ public class MoveUtil {
                                       @NonNull Ship ship, Ship enemyShip, boolean isEnemyAhead,
                                       int passengers, int coalBefore, int coalAfter,
                                       @NonNull Move move) {
+        final boolean canEnemyWinByDistance = isEnemyAhead && move.getSegmentIndex() < 5;
         final double segmentDistance = getMoveSegmentDistance(board, ship, move);
         final int coalCost = Math.max(0, coalBefore - coalAfter - (turn < 2 ? 1 : 0));
 
         return (move.isGoal() ? 100 : 0)
-                + move.getPassengers() * Math.max(0, 3 - passengers) * (isEnemyAhead ? 0.25 : 5) * (move.getSegmentIndex() < 5 ? 0.5 : 1)
-                + segmentDistance * (isEnemyAhead ? 2.5 : 1.25) * (turn > 45 ? 2 : 1)
+                + move.getPassengers() * Math.max(0, 3 - passengers) * (canEnemyWinByDistance ? 0 : 7.5) * (move.getSegmentIndex() < 5 ? 0.5 : 1)
+                + segmentDistance * (canEnemyWinByDistance ? 2.5 : 1.25) * (turn > 45 ? 2 : 1)
                 - coalCost * 1.25
                 + (endsAtLastSegmentBorder(board, move, coalAfter) ? 5 : 0)
                 - getSegmentDirectionCost(board, move.getEndPosition(), move.getEndDirection()) * 0.5
-                - move.getTotalCost() * Math.max(0, move.getSegmentIndex() - 4) * 0.25
+                - move.getTotalCost() * Math.max(0, move.getSegmentIndex() - 5) * 0.25
                 + (move.getPushes() > 0 ? board.getMinTurns(enemyShip.getDirection(), move.getEnemyEndPosition()) : 0);
     }
 
