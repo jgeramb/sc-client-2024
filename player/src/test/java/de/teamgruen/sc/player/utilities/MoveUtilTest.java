@@ -271,29 +271,28 @@ public class MoveUtilTest {
     }
 
     @Test
-    public void testGetAccelerationCoal_UseMoreCoal() {
-        final Ship playerShip = this.gameState.getPlayerShip();
-
+    public void testGetAccelerationCoal_FirstMove() {
         assertEquals(1, MoveUtil.getAccelerationCoal(
-                this.gameState.getBoard(),
                 0,
-                playerShip.getPosition(),
-                playerShip.getDirection(),
-                this.gameState.getEnemyShip().getPosition(),
+                false,
+                6
+        ));
+    }
+
+    @Test
+    public void testGetAccelerationCoal_EnemyAhead() {
+        assertEquals(1, MoveUtil.getAccelerationCoal(
+                5,
+                true,
                 6
         ));
     }
 
     @Test
     public void testGetAccelerationCoal_NoCoalAvailable() {
-        final Ship playerShip = this.gameState.getPlayerShip();
-
         assertEquals(0, MoveUtil.getAccelerationCoal(
-                this.gameState.getBoard(),
                 0,
-                playerShip.getPosition(),
-                playerShip.getDirection(),
-                this.gameState.getEnemyShip().getPosition(),
+                false,
                 0
         ));
     }
