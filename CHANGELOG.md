@@ -1,0 +1,105 @@
+# Changelog
+
+## [1.2.1](https://github.com/jgeramb/software-challenge-client/compare/v1.2.0...v1.2.1) (2024-04-07)
+
+
+### Bug Fixes
+
+* **ci:** fix automatic deployment ([bd9ad5b](https://github.com/jgeramb/software-challenge-client/commit/bd9ad5b8c403c7b22695327b76abab2d970f1d5f))
+
+## [1.2.0](https://github.com/jgeramb/software-challenge-client/compare/v1.1.0...v1.2.0) (2024-04-07)
+
+
+### Features
+
+* **player/admin:** add average passengers statistic ([2b52f4e](https://github.com/jgeramb/software-challenge-client/commit/2b52f4ee7753b7ffd412125e798aa550c3012071))
+* **player/admin:** adds dynamic thread count + logs an error if no actions are available ([4eee05b](https://github.com/jgeramb/software-challenge-client/commit/4eee05b6b27081e76e165f330efa493dd961af15))
+* **player/admin:** automatically disconnect clients to free up memory ([9cb7186](https://github.com/jgeramb/software-challenge-client/commit/9cb7186c06ee3e71a4cad7d99ef1ac537435e041))
+* **player/advanced:** add debug messages to keep track of used algorithms ([01489a6](https://github.com/jgeramb/software-challenge-client/commit/01489a6d40fef9666cf486f125cd674ba4d738b5))
+* **player/advanced:** added turn cost & counter current cost to pathfinding ([7f2aaa8](https://github.com/jgeramb/software-challenge-client/commit/7f2aaa8f0b18e83c8046c249efe8ee80afc0d0e6))
+* **player/advanced:** cleans up code + prevents dead ends + removes pathfinder timeout ([f6c0913](https://github.com/jgeramb/software-challenge-client/commit/f6c09130aeb5970b1fab7d31b6ee225f8e418acd))
+* **player/advanced:** enhance pathfinding + add pathfinding unit tests + make strategic changes ([13d3074](https://github.com/jgeramb/software-challenge-client/commit/13d307493f8939a92bf09faa8e0cb002a39a1c93))
+* **player/advanced:** make strategic changes ([e8c3164](https://github.com/jgeramb/software-challenge-client/commit/e8c31640e4b5031147f5687946000602ed4c531c))
+* **player/advanced:** optimize pathfinding + move generation + add unit tests ([edee44a](https://github.com/jgeramb/software-challenge-client/commit/edee44ab92ef5672d8a3569434d58602689e9a21))
+* **player/advanced:** refactors code + fixes a rule violation ([c9d2780](https://github.com/jgeramb/software-challenge-client/commit/c9d278051536d7d0d3a322f5eebca096e2b8477b))
+* **player/network:** limit garbage collection to 1 Hz ([415696d](https://github.com/jgeramb/software-challenge-client/commit/415696d6c9474a4fabd58ca9ef5eefd24522b01c))
+* **player/simple:** add bonus points if the enemy ship needs to turn after being pushed ([b45ef7a](https://github.com/jgeramb/software-challenge-client/commit/b45ef7addd6be6295605fa344271b05d30055477))
+* **player/simple:** enhance move evaluation ([f661826](https://github.com/jgeramb/software-challenge-client/commit/f661826fa5b216b434628b16ff5c3446d2f6c7e0))
+* **player/simple:** improve move evaluation + refactor MoveUtil#getSegmentDirectionCost ([2fefd59](https://github.com/jgeramb/software-challenge-client/commit/2fefd5908a5a6682ddc0d8e071aa5ae6af7d3213))
+* **player/simple:** optimize move efficiency evaluation ([cd1ebef](https://github.com/jgeramb/software-challenge-client/commit/cd1ebefcd61bc98e5c8c428bcc27720625381339))
+* **player/simple:** remove evaluation criteria + recalibrate player + reduce code ([888b1cc](https://github.com/jgeramb/software-challenge-client/commit/888b1ccb98858e214db75b21ce8cf3a970e77769))
+* **player/simple:** strategic changes ([d74248c](https://github.com/jgeramb/software-challenge-client/commit/d74248cbb1ddd64f4973b8e203c3a7b9ea177e56))
+* **player:** add move calculation debug time ([b5a08f7](https://github.com/jgeramb/software-challenge-client/commit/b5a08f738634149c0701e4374d28ba11b60a0c6a))
+* **player:** add team and next actions debug messages ([79de36d](https://github.com/jgeramb/software-challenge-client/commit/79de36ddb0672a82b90ed5e19bce60616ab9ae12))
+* **player:** change play style to advanced ([16cd8d7](https://github.com/jgeramb/software-challenge-client/commit/16cd8d733186c555594f26c4953227d4051627bd))
+* **player:** change test games count to 50 and add garbage collector flag ([e261010](https://github.com/jgeramb/software-challenge-client/commit/e2610108a5b2d9e1155dc8ba3102c21542a4bb06))
+* **player:** change timeouts for move calculation ([fe8d73a](https://github.com/jgeramb/software-challenge-client/commit/fe8d73a766e9ecc637393adc871adece7a6c1697))
+* **player:** only close client connection once ([108e352](https://github.com/jgeramb/software-challenge-client/commit/108e3528499bda75f5701a11af581bfb793daa1f))
+* **sdk/game:** add segment position and distance functions to sdk ([9a15d40](https://github.com/jgeramb/software-challenge-client/commit/9a15d40de1d703e4239228004dedbe63ffaedac6))
+* **sdk/game:** switch to universal coal usage ([8298dea](https://github.com/jgeramb/software-challenge-client/commit/8298deac20384ede95789d3352a6e659386b492c))
+
+
+### Bug Fixes
+
+* **player/admin:** count stuck as error ([25cc69d](https://github.com/jgeramb/software-challenge-client/commit/25cc69d3bfa2159631841b7b8188ccf7c9976528))
+* **player/advanced:** fix out of memory error when running parallel games ([8525307](https://github.com/jgeramb/software-challenge-client/commit/8525307327f27873939fca67300143cd4e5d70d3))
+* **player/advanced:** refactor moveFromPath push code during movement point calculation ([8d75fa3](https://github.com/jgeramb/software-challenge-client/commit/8d75fa31498a4dfc1e1141db29c91f997adf7488))
+* **player/advanced:** removed multi threading since the contest server doesn't support it ([77ba602](https://github.com/jgeramb/software-challenge-client/commit/77ba60205960874e8e5cde8edb96f5cf4c731bb9))
+* **player/simple:** fix empty possible moves after pushing the enemy ship ([343104e](https://github.com/jgeramb/software-challenge-client/commit/343104e03efd5d7d4e9bb0c0d6ce92b4b0615126))
+* **player/simple:** fix empty possible moves if pushing the enemy to a goal field is required ([bbd2cb7](https://github.com/jgeramb/software-challenge-client/commit/bbd2cb78dd412d9c579b7fc44056f3a1b23aa6d8))
+* **player/simple:** fix goal unit test ([2cc7891](https://github.com/jgeramb/software-challenge-client/commit/2cc789130ec58421c45d539fb0a58121084547a9))
+* **player/simple:** fix unit tests ([48021af](https://github.com/jgeramb/software-challenge-client/commit/48021af21d8dd44858f82b5a8f3b174653ffb3b8))
+* **player:** decrease turn cost in isEnemyAhead evaluation ([19987cd](https://github.com/jgeramb/software-challenge-client/commit/19987cd18e09399d77cb0b1919752b2284d794d5))
+* **player:** unset debug flag in production ([44467f0](https://github.com/jgeramb/software-challenge-client/commit/44467f0b525fb9815493d8027ea4cde71fd977a7))
+* **sdk/game:** correct speed in push to collect passenger test ([aa027e6](https://github.com/jgeramb/software-challenge-client/commit/aa027e682d158209f97b52401a54aab12b2f8686))
+* **sdk/game:** make recursive algorithm find all possible combinations ([f9b96c6](https://github.com/jgeramb/software-challenge-client/commit/f9b96c6688f794c30485116e45b2ace6f0eec3bd))
+* **sdk/network:** lets the server close the connection ([d570d5c](https://github.com/jgeramb/software-challenge-client/commit/d570d5c8fb802a71a1f8d21d60b2ee2f69f63b0a))
+* **sdk/network:** remove manual garbage collection because it causes bulk tests to freeze and it is mostly redundant ([3a12131](https://github.com/jgeramb/software-challenge-client/commit/3a12131b46f0b431c1ab187f98d5c31f4a2be286))
+* **sdk:** changed timing of manual garbage collection ([2db44f3](https://github.com/jgeramb/software-challenge-client/commit/2db44f395c16e9de77a5100fbf904c07a71c7f13))
+
+
+### Documentation
+
+* add start arguments to the readme and improve the overall style of the document ([60187f8](https://github.com/jgeramb/software-challenge-client/commit/60187f8134063cb8d54794e9d164f2e7aa958dc3))
+* fix workflow badge ([0b4f7db](https://github.com/jgeramb/software-challenge-client/commit/0b4f7dbfc176640eed4d2756a645af8000b7d06c))
+* **scopes:** added initial scopes ([64d34ad](https://github.com/jgeramb/software-challenge-client/commit/64d34ad6876514c6bd728897e6d4fb3fbe27f6a0))
+
+## [1.1.0](https://github.com/jgeramb/software-challenge-client/compare/v1.0.7...v1.1.0) (2024-04-07)
+
+
+### Features
+
+* **player/admin:** add average passengers statistic ([2b52f4e](https://github.com/jgeramb/software-challenge-client/commit/2b52f4ee7753b7ffd412125e798aa550c3012071))
+* **player/advanced:** add debug messages to keep track of used algorithms ([01489a6](https://github.com/jgeramb/software-challenge-client/commit/01489a6d40fef9666cf486f125cd674ba4d738b5))
+* **player/simple:** remove evaluation criteria + recalibrate player + reduce code ([888b1cc](https://github.com/jgeramb/software-challenge-client/commit/888b1ccb98858e214db75b21ce8cf3a970e77769))
+
+
+### Bug Fixes
+
+* **player:** unset debug flag in production ([44467f0](https://github.com/jgeramb/software-challenge-client/commit/44467f0b525fb9815493d8027ea4cde71fd977a7))
+
+
+### Documentation
+
+* add start arguments to the readme and improve the overall style of the document ([60187f8](https://github.com/jgeramb/software-challenge-client/commit/60187f8134063cb8d54794e9d164f2e7aa958dc3))
+* fix workflow badge ([0b4f7db](https://github.com/jgeramb/software-challenge-client/commit/0b4f7dbfc176640eed4d2756a645af8000b7d06c))
+
+## [1.1.0](https://github.com/jgeramb/software-challenge-client/compare/v1.0.7...v1.1.0) (2024-04-07)
+
+
+### Features
+
+* **player/admin:** add average passengers statistic ([2b52f4e](https://github.com/jgeramb/software-challenge-client/commit/2b52f4ee7753b7ffd412125e798aa550c3012071))
+* **player/advanced:** add debug messages to keep track of used algorithms ([01489a6](https://github.com/jgeramb/software-challenge-client/commit/01489a6d40fef9666cf486f125cd674ba4d738b5))
+* **player/simple:** remove evaluation criteria + recalibrate player + reduce code ([888b1cc](https://github.com/jgeramb/software-challenge-client/commit/888b1ccb98858e214db75b21ce8cf3a970e77769))
+
+
+### Bug Fixes
+
+* **player:** unset debug flag in production ([44467f0](https://github.com/jgeramb/software-challenge-client/commit/44467f0b525fb9815493d8027ea4cde71fd977a7))
+
+
+### Documentation
+
+* add start arguments to the readme and improve the overall style of the document ([60187f8](https://github.com/jgeramb/software-challenge-client/commit/60187f8134063cb8d54794e9d164f2e7aa958dc3))
+* fix workflow badge ([0b4f7db](https://github.com/jgeramb/software-challenge-client/commit/0b4f7dbfc176640eed4d2756a645af8000b7d06c))
