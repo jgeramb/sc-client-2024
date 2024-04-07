@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/jgeramb/software-challenge-client/compare/v1.2.0...v1.2.1) (2024-04-07)
+
+
+### Bug Fixes
+
+* **ci:** fix automatic deployment ([bd9ad5b](https://github.com/jgeramb/software-challenge-client/commit/bd9ad5b8c403c7b22695327b76abab2d970f1d5f))
+
 ## [1.2.0](https://github.com/jgeramb/software-challenge-client/compare/v1.1.0...v1.2.0) (2024-04-07)
 
 
