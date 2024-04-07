@@ -94,6 +94,36 @@ public class DirectionTest {
     }
 
     @Test
+    public void testToFieldColumn_Left() {
+        assertEquals(0, Direction.LEFT.toFieldColumn());
+    }
+
+    @Test
+    public void testToFieldColumn_UpLeft() {
+        assertEquals(1, Direction.UP_LEFT.toFieldColumn());
+    }
+
+    @Test
+    public void testToFieldColumn_DownLeft() {
+        assertEquals(1, Direction.DOWN_LEFT.toFieldColumn());
+    }
+
+    @Test
+    public void testToFieldColumn_UpRight() {
+        assertEquals(2, Direction.UP_RIGHT.toFieldColumn());
+    }
+
+    @Test
+    public void testToFieldColumn_DownRight() {
+        assertEquals(2, Direction.DOWN_RIGHT.toFieldColumn());
+    }
+
+    @Test
+    public void testToFieldColumn_Right() {
+        assertEquals(3, Direction.RIGHT.toFieldColumn());
+    }
+
+    @Test
     public void testFromVector3() {
         assertEquals(Direction.RIGHT, Direction.fromVector3(new Vector3(1, 0, -1)));
     }

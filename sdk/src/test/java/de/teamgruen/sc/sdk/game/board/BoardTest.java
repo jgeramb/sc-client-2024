@@ -729,20 +729,17 @@ public class BoardTest {
 
         final List<List<Action>> actualMoves = this.board.getMoves(
                 playerShip,
-                new Vector3(-5, 9, -4),
-                Direction.DOWN_LEFT,
+                new Vector3(-4, 7, -3),
+                Direction.LEFT,
                 enemyShip,
-                new Vector3(-6, 10, -4),
-                4,
+                new Vector3(-5, 8, -3),
+                5,
                 1,
-                1,
+                0,
                 true
         ).stream().map(Move::getActions).toList();
         final List<List<Action>> expectedMoves = List.of(
-                List.of(ActionFactory.forward(1), ActionFactory.push(Direction.RIGHT)),
-                List.of(ActionFactory.forward(1), ActionFactory.push(Direction.RIGHT), ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1)),
-                List.of(ActionFactory.forward(1), ActionFactory.push(Direction.RIGHT), ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(2)),
-                List.of(ActionFactory.forward(1), ActionFactory.push(Direction.RIGHT), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(1), ActionFactory.push(Direction.RIGHT))
+                List.of(ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1), ActionFactory.push(Direction.DOWN_LEFT), ActionFactory.forward(1), ActionFactory.push(Direction.DOWN_RIGHT))
         );
 
         assertEquals(expectedMoves.size(), actualMoves.size());
