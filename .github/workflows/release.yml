@@ -5,31 +5,37 @@ on:
   push:
     branches:
       - main
+
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  main:
-    runs-on: ubuntu-22.04
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      testing: ${{ steps.testing.outputs.testing }}
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - id: release
+        if: ${{ !env.ACT }}
         uses: google-github-actions/release-please-action@v4
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
           release-type: "maven"
+      - id: testing
+        if: ${{ env.ACT }}
+        run: echo "testing=true" >> $GITHUB_OUTPUT
   build:
-    if: ${{ env.ACT || steps.release.outputs.release_created }}
+    needs: create-release
     name: Build
-    runs-on: ubuntu-22.04
-    outputs:
-      version: ${{ steps.version.outputs.version }}
+    if: ( needs.create-release.outputs.testing || needs.create-release.outputs.release_created )
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set version
-        id: version
-        run: echo "version=$(cat version)" >> $GITHUB_OUTPUT
       - name: Set up JDK 18 (Corretto)
         uses: actions/setup-java@v3
         with:
@@ -47,32 +53,22 @@ jobs:
           mv player/assets/* artifacts/player/
           zip -r -j artifacts/teamgruen-player.zip artifacts/player
           rm -rf artifacts/*/
+      - name: Add artifacts to release
+        if: ${{ needs.create-release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ needs.create-release.outputs.tag_name }} artifacts/*
       - name: Upload artifact
-        if: ( !env.ACT )
+        if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v4
         with:
           name: archives
           path: artifacts/*
-  upload-release-artifacts:
-    if: ${{ steps.release.outputs.release_created }}
-    needs: build
-    name: Upload Release Artifacts
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: archives
-          path: artifacts
-      - name: Upload Release Artifact
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload ${{ steps.release.outputs.tag_name }} artifacts/*
   deploy:
-    if: ${{ steps.release.outputs.release_created }}
-    needs: build
+    needs: [create-release, build]
     name: Deploy
-    runs-on: ubuntu-22.04
+    if: ${{ needs.create-release.outputs.release_created }}
+    runs-on: ubuntu-latest
     environment: production
     steps:
       - name: Download artifacts
@@ -84,7 +80,7 @@ jobs:
       - name: Upload client
         uses: fjogeleit/http-request-action@v1
         with:
-          url: 'https://sc-upload.justix.dev/api/v1/upload/v${{ needs.build.outputs.version }}?fileName=teamgruen-player.zip'
+          url: 'https://sc-upload.justix.dev/api/v1/upload/${{ needs.create-release.outputs.tag_name }}?fileName=teamgruen-player.zip'
           method: 'POST'
           timeout: 5000
           customHeaders: |

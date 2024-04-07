@@ -12,6 +12,7 @@ import de.teamgruen.sc.sdk.game.Move;
 import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.game.board.Board;
 import de.teamgruen.sc.sdk.game.board.Ship;
+import de.teamgruen.sc.sdk.logging.AnsiColor;
 import de.teamgruen.sc.sdk.logging.Logger;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
@@ -71,7 +72,11 @@ public class AdvancedGameHandler extends BaseGameHandler {
                             .orElse(null);
                     final Optional<Move> move = MoveUtil.moveFromPath(gameState, shortestPath);
 
-                    return move.orElseGet(() -> MoveUtil.getMostEfficientMove(gameState, 500).orElse(null));
+                    return move.orElseGet(() -> {
+                        this.logger.debug(AnsiColor.WHITE + "Falling back to " + AnsiColor.PURPLE + "Simple" + AnsiColor.WHITE + " player" + AnsiColor.RESET);
+
+                        return MoveUtil.getMostEfficientMove(gameState, 500).orElse(null);
+                    });
                 }
         );
     }
