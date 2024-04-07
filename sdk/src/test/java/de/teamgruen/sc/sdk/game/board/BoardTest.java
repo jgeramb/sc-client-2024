@@ -691,18 +691,21 @@ public class BoardTest {
                 new Vector3(-2, 1, 1),
                 2,
                 1,
-                1,
                 2,
-                0,
                 false
         ).stream().map(Move::getActions).toList();
         final List<List<Action>> expectedMoves = List.of(
                 List.of(ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(2), ActionFactory.push(Direction.DOWN_LEFT)),
                 List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
                 List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(2)),
                 List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1)),
+                List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(2)),
                 List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(2)),
+                List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(3)),
+                List.of(ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(4)),
                 List.of(ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1), ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1)),
@@ -733,8 +736,6 @@ public class BoardTest {
                 4,
                 1,
                 1,
-                1,
-                0,
                 true
         ).stream().map(Move::getActions).toList();
         final List<List<Action>> expectedMoves = List.of(

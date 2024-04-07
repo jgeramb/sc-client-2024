@@ -45,21 +45,14 @@ public class MoveUtil {
         final int coal = playerShip.getCoal();
 
         final Map<Move, Double> moves = getPossibleMoves(board, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition,
-                passengers, speed, freeTurns, coal, isEnemyAhead ? 1 : 0, false, false);
+                passengers, speed, freeTurns, coal, isEnemyAhead ? 1 : 0, false);
 
         if(moves.isEmpty()) {
             Map<Move, Double> forcedMoves = getPossibleMoves(board, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition,
-                    passengers, speed, freeTurns, coal, Math.max(0, coal - 1), false, true);
+                    passengers, speed, freeTurns, coal, Math.max(0, coal - 1), true);
 
-            if (forcedMoves.isEmpty()) {
-                if(coal > 0) {
-                    forcedMoves = getPossibleMoves(board, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition,
-                            passengers, speed, freeTurns, coal, Math.max(0, coal - 1), true, true);
-                }
-
-                if(forcedMoves.isEmpty())
-                    return Optional.empty();
-            }
+            if(forcedMoves.isEmpty())
+                return Optional.empty();
 
             moves.putAll(forcedMoves);
         }
@@ -226,7 +219,6 @@ public class MoveUtil {
      * @param freeTurns the player's free turns
      * @param coal the available coal
      * @param extraCoal the extra coal to use
-     * @param forceCoalAcceleration whether to force coal acceleration
      * @param forceMultiplePushes whether to force multiple pushes if possible
      * @return all possible moves for the current game state
      */
@@ -234,19 +226,15 @@ public class MoveUtil {
                                                      @NonNull Ship ship, @NonNull Vector3 position, @NonNull Direction direction,
                                                      @NonNull Ship enemyShip, @NonNull Vector3 enemyPosition,
                                                      int passengers, int speed, int freeTurns, int coal,
-                                                     int extraCoal,
-                                                     boolean forceCoalAcceleration, boolean forceMultiplePushes) {
-        final int turnCoal = Math.min(coal, (forceCoalAcceleration ? 0 : 1) + extraCoal);
-        final int accelerationCoal = forceCoalAcceleration
-                ? coal - turnCoal
-                : getAccelerationCoal(board, turn, position, direction, enemyPosition, coal - turnCoal);
+                                                     int extraCoal, boolean forceMultiplePushes) {
+        final int accelerationCoal = getAccelerationCoal(board, turn, position, direction, enemyPosition, coal - extraCoal);
         final Set<Move> moves = board.getMoves(ship, position, direction, enemyShip, enemyPosition,
-                speed, freeTurns, 1, turnCoal, accelerationCoal, forceMultiplePushes);
+                speed, freeTurns, Math.min(coal, 1 + accelerationCoal + extraCoal), forceMultiplePushes);
 
         // if no moves are possible, try moves that require more coal
         if(moves.isEmpty() && extraCoal < coal - 1) {
             return getPossibleMoves(board, turn, ship, position, direction, enemyShip, enemyPosition,
-                    passengers, speed, freeTurns, coal, extraCoal + 1, forceCoalAcceleration, forceMultiplePushes);
+                    passengers, speed, freeTurns, coal, extraCoal + 1, forceMultiplePushes);
         }
 
         moves.forEach(move -> addAcceleration(speed, move));
@@ -292,7 +280,7 @@ public class MoveUtil {
                 board, newTurn,
                 ship, move.getEndPosition(), move.getEndDirection(), enemyShip, move.getEnemyEndPosition(),
                 passengers, move.getTotalCost(), 1, remainingCoal, 0,
-                false, false
+                false
         );
 
         if(moves.isEmpty()) {
@@ -300,22 +288,11 @@ public class MoveUtil {
                     board, newTurn,
                     ship, move.getEndPosition(), move.getEndDirection(), enemyShip, move.getEnemyEndPosition(),
                     passengers, move.getTotalCost(), 1, remainingCoal, 0,
-                    false, true
+                     true
             );
 
-            if(moves.isEmpty()) {
-                if(remainingCoal > 0) {
-                    moves = getPossibleMoves(
-                            board, newTurn,
-                            ship, move.getEndPosition(), move.getEndDirection(), enemyShip, move.getEnemyEndPosition(),
-                            passengers, move.getTotalCost(), 1, remainingCoal, 0,
-                            true, true
-                    );
-                }
-
-                if(moves.isEmpty())
-                    return null;
-            }
+            if(moves.isEmpty())
+                return null;
         }
 
         if(!hasPreviousMove) {

@@ -194,23 +194,26 @@ public class MoveUtilTest {
                 1,
                 6,
                 0,
-                false,
                 false
         ).keySet().stream().map(Move::getActions).toList();
 
         final List<List<Action>> expectedMoves = List.of(
                 List.of(ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(2), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.changeVelocity(3), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(2)),
                 List.of(ActionFactory.changeVelocity(2), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1)),
+                List.of(ActionFactory.changeVelocity(1), ActionFactory.forward(1), ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(1), ActionFactory.forward(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1)),
-                List.of(ActionFactory.changeVelocity(2), ActionFactory.forward(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(1), ActionFactory.forward(1), ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(1), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(2), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(2)),
+                List.of(ActionFactory.changeVelocity(3), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(3)),
                 List.of(ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(1)),
-                List.of(ActionFactory.changeVelocity(2), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(2))
+                List.of(ActionFactory.changeVelocity(2), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(2)),
+                List.of(ActionFactory.changeVelocity(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
+                List.of(ActionFactory.changeVelocity(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1))
         );
 
         assertEquals(expectedMoves.size(), actualMoves.size());
@@ -235,7 +238,6 @@ public class MoveUtilTest {
                 playerShip.getFreeTurns(),
                 2,
                 0,
-                false,
                 false
         ).keySet().stream().map(Move::getActions).toList();
         final List<List<Action>> expectedMoves = List.of(
