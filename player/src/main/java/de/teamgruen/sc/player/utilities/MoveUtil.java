@@ -131,10 +131,8 @@ public class MoveUtil {
                         // update the score of the move if it ends at the last segment border
                         entry.setValue(entry.getValue() + 2.5);
 
-                        final Direction nextSegmentDirection = getNextSegmentDirection(board, move.getEndPosition());
-
-                        if(nextSegmentDirection != null)
-                            bestNextDirections.put(move, current.rotateTo(nextSegmentDirection, leftFreeTurns));
+                        if(move.getSegmentIndex() < 7)
+                            bestNextDirections.put(move, current.rotateTo(board.getNextSegmentDirection(), leftFreeTurns));
                     } else {
                         // update the score of the move based on the next move
                         entry.setValue(entry.getValue() + bestNextScore * 0.25);
@@ -472,7 +470,7 @@ public class MoveUtil {
                 board.appendForwardMove(
                         advanceInfo.getEndPosition(position, direction),
                         direction,
-                        gameState.getEnemyShip(),
+                        enemyShip,
                         move,
                         advanceInfo,
                         availablePoints,
