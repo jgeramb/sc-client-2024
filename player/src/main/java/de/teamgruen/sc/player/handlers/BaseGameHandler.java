@@ -48,6 +48,11 @@ public abstract class BaseGameHandler implements GameHandler {
 
         this.lastActionTime = System.currentTimeMillis();
 
+        final int turn = gameState.getTurn();
+        final String formattedTurn = WHITE + "#" + GREEN + " ".repeat(turn < 10 ? 1 : 0) + turn + RESET;
+
+        this.logger.debug("Calculating turn " + formattedTurn);
+
         final Move move = moveSupplier.get();
 
         if(move == null)
@@ -61,10 +66,8 @@ public abstract class BaseGameHandler implements GameHandler {
             this.nextActions = actions;
         }
 
-        final int turn = gameState.getTurn();
-
         this.logger.debug(
-                "Turn " + WHITE + "#" + GREEN + " ".repeat(turn < 10 ? 1 : 0) + turn + RESET + " calculated in " +
+                "Turn " + formattedTurn + " calculated in " +
                         PURPLE + String.format("%,d", System.currentTimeMillis() - this.lastActionTime) + WHITE + "ms" +
                         RESET
         );
