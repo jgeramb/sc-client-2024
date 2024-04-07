@@ -35,7 +35,7 @@ public class AdminClient extends Client {
 
     private final Object roomCreateLock = new Object();
     private final List<ControlledRoom> controlledRooms = new ArrayList<>();
-    private final int[][] playerStats = new int[2][4];
+    private final int[][] playerStats = new int[2][5];
     private final AtomicBoolean replaceRequired = new AtomicBoolean(false);
     private final Logger logger;
     private final String playStyle;
@@ -96,6 +96,14 @@ public class AdminClient extends Client {
                             public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
                                 gameHandler.onResults(scores, result);
 
+                                scores.forEach((scoreFragment, score) -> {
+                                    if(!scoreFragment.getName().equals("Passagiere")) return;
+
+                                    synchronized (playerStats) {
+                                        playerStats[playerId][3] += score;
+                                    }
+                                });
+
                                 synchronized (playerStats) {
                                     switch (result) {
                                         case WIN:
@@ -119,7 +127,7 @@ public class AdminClient extends Client {
 
                                 print(Level.ERROR, "Game " + RED + gameId + RESET + " - " + RED + playerName + RESET + ": " + WHITE + message + RESET);
 
-                                playerStats[playerId][3]++;
+                                playerStats[playerId][4]++;
 
                                 controlledRoom.endGame();
                             }
@@ -158,7 +166,7 @@ public class AdminClient extends Client {
 
         // initialize the player stats
         for (int i = 0; i < playerStats.length; i++)
-            playerStats[i] = new int[4];
+            playerStats[i] = new int[5];
 
         final int threads = Math.max(1, Runtime.getRuntime().availableProcessors() / 4);
         final ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -241,7 +249,8 @@ public class AdminClient extends Client {
             this.logger.info(WHITE + "┣" + RESET + " Wins:   " + stats[0]);
             this.logger.info(WHITE + "┣" + RESET + " Losses: " + stats[1]);
             this.logger.info(WHITE + "┣" + RESET + " Draws:  " + stats[2]);
-            this.logger.info(WHITE + "┗" + RESET + " Errors:  " + stats[3]);
+            this.logger.info(WHITE + "┣" + RESET + " Passengers (ø):  " + String.format("%.1f", stats[3] / (double) count));
+            this.logger.info(WHITE + "┗" + RESET + " Errors:  " + stats[4]);
         }
 
         // shutdown the JVM
