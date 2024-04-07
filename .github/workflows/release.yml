@@ -11,9 +11,12 @@ permissions:
   pull-requests: write
 
 jobs:
-  main:
-    if: ${{ !env.ACT }}
+  create-release:
+    if: ( !env.ACT )
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - id: release
         uses: google-github-actions/release-please-action@v4
@@ -21,8 +24,9 @@ jobs:
           token: "${{ secrets.GITHUB_TOKEN }}"
           release-type: "maven"
   build:
-    if: ${{ env.ACT || steps.release.outputs.release_created }}
+    needs: create-release
     name: Build
+    if: ( env.ACT || needs.create-release.outputs.release_created )
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -50,15 +54,15 @@ jobs:
           zip -r -j artifacts/teamgruen-player.zip artifacts/player
           rm -rf artifacts/*/
       - name: Upload artifact
-        if: ${{ !env.ACT }}
+        if: ( !env.ACT )
         uses: actions/upload-artifact@v4
         with:
           name: archives
           path: artifacts/*
   upload-release-artifacts:
-    if: ${{ steps.release.outputs.release_created }}
-    needs: build
+    needs: [create-release, build]
     name: Upload Release Artifacts
+    if: ( needs.create-release.outputs.release_created )
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
@@ -69,11 +73,11 @@ jobs:
       - name: Upload Release Artifact
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload ${{ steps.release.outputs.tag_name }} artifacts/*
+        run: gh release upload ${{ needs.create-release.outputs.tag_name }} artifacts/*
   deploy:
-    if: ${{ steps.release.outputs.release_created }}
-    needs: build
+    needs: [create-release, build]
     name: Deploy
+    if: ( needs.create-release.outputs.release_created )
     runs-on: ubuntu-latest
     environment: production
     steps:
