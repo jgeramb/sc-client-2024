@@ -38,45 +38,55 @@ public class AdvancedGameHandler extends BaseGameHandler {
         this.setNextMove(
                 gameState,
                 () -> {
-                    final Ship playerShip = gameState.getPlayerShip();
+                    final Board board = gameState.getBoard();
+                    final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
                     final int minSpeed = Math.max(1, playerShip.getSpeed() - 1 - Math.min(playerShip.getCoal(), 2));
+                    final Vector3 shipPosition = playerShip.getPosition();
                     final Direction playerDirection = playerShip.getDirection();
-                    final HashMap<List<Vector3>, Integer> costs = new HashMap<>();
+                    final boolean isEnemyAhead = MoveUtil.isEnemyAhead(board, shipPosition, playerDirection, enemyShip, enemyShip.getPosition());
 
-                    getPaths(gameState).forEach(path -> {
-                        Direction direction = playerDirection;
-                        int turns = 0;
+                    if(!isEnemyAhead || board.getSegmentIndex(shipPosition) >= 5) {
+                        final HashMap<List<Vector3>, Integer> costs = new HashMap<>();
 
-                        for (int i = 1; i < path.size(); i++) {
-                            final Direction nextDirection = Direction.fromVector3(path.get(i).copy().subtract(path.get(i - 1)));
+                        getPaths(gameState).forEach(path -> {
+                            Direction direction = playerDirection;
+                            int turns = 0;
 
-                            turns += direction.costTo(nextDirection);
-                            direction = nextDirection;
+                            for (int i = 1; i < path.size(); i++) {
+                                final Direction nextDirection = Direction.fromVector3(path.get(i).copy().subtract(path.get(i - 1)));
+
+                                turns += direction.costTo(nextDirection);
+                                direction = nextDirection;
+                            }
+
+                            // skip impossible paths (start excluded from distance calculation)
+                            if (path.size() <= minSpeed)
+                                return;
+
+                            // skip paths that require two or more turns after reaching the destination
+                            if (gameState.getBoard().getMinTurns(direction, path.get(path.size() - 1)) >= 2)
+                                return;
+
+                            costs.put(path, turns);
+                        });
+
+                        final List<Vector3> shortestPath = costs.entrySet()
+                                .stream()
+                                .min(Comparator.comparingInt(Map.Entry::getValue))
+                                .map(Map.Entry::getKey)
+                                .orElse(null);
+
+                        if (shortestPath != null) {
+                            final Optional<Move> move = MoveUtil.moveFromPath(gameState, shortestPath);
+
+                            if (move.isPresent())
+                                return move.get();
                         }
+                    }
 
-                        // skip impossible paths (start excluded from distance calculation)
-                        if(path.size() <= minSpeed)
-                            return;
+                    this.logger.debug(AnsiColor.WHITE + "Falling back to " + AnsiColor.PURPLE + "Simple" + AnsiColor.WHITE + " player" + AnsiColor.RESET);
 
-                        // skip paths that require two or more turns after reaching the destination
-                        if(gameState.getBoard().getMinTurns(direction, path.get(path.size() - 1)) >= 2)
-                            return;
-
-                        costs.put(path, turns);
-                    });
-
-                    final List<Vector3> shortestPath = costs.entrySet()
-                            .stream()
-                            .min(Comparator.comparingInt(Map.Entry::getValue))
-                            .map(Map.Entry::getKey)
-                            .orElse(null);
-                    final Optional<Move> move = MoveUtil.moveFromPath(gameState, shortestPath);
-
-                    return move.orElseGet(() -> {
-                        this.logger.debug(AnsiColor.WHITE + "Falling back to " + AnsiColor.PURPLE + "Simple" + AnsiColor.WHITE + " player" + AnsiColor.RESET);
-
-                        return MoveUtil.getMostEfficientMove(gameState, 500).orElse(null);
-                    });
+                    return MoveUtil.getMostEfficientMove(gameState, 500).orElse(null);
                 }
         );
     }
@@ -86,11 +96,8 @@ public class AdvancedGameHandler extends BaseGameHandler {
         final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
         final Vector3 shipPosition = playerShip.getPosition();
         final Set<List<Vector3>> paths = new HashSet<>();
-        final boolean isEnemyAhead = MoveUtil.isEnemyAhead(board, shipPosition, playerShip.getDirection(), enemyShip, enemyShip.getPosition());
 
-        if(isEnemyAhead && board.getSegmentIndex(shipPosition) < 5)
-            paths.add(PathFinder.findPath(playerShip, shipPosition, enemyShip.getPosition()));
-        else if(playerShip.getPassengers() < 3) {
+        if(playerShip.getPassengers() < 3) {
             final boolean canEnemyMove = !enemyShip.isStuck();
 
             // passengers
@@ -110,12 +117,12 @@ public class AdvancedGameHandler extends BaseGameHandler {
                 if(segmentDistance > 2)
                     return;
 
-                paths.add(PathFinder.findPath(playerShip, shipPosition, collectPosition));
+                final List<Vector3> path = PathFinder.findPath(playerShip, shipPosition, collectPosition);
+
+                if(path != null)
+                    paths.add(path);
             });
         }
-
-        // remove invalid paths
-        paths.removeIf(path -> path == null || path.size() < 2);
 
         return paths;
     }
