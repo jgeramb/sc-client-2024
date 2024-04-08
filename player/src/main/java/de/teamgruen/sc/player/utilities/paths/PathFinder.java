@@ -28,7 +28,7 @@ public class PathFinder {
      * @return the shortest path from start to end (start and end included)
      *         or null if no path was found
      */
-    public static List<Vector3> findPath(Ship ship, @NonNull Vector3 start, @NonNull Vector3 end) {
+    public static List<Vector3> findPath(@NonNull Ship ship, @NonNull Vector3 start, @NonNull Vector3 end) {
         PathNode currentNode = getOrCreateNode(start);
 
         final Map<Vector3, Integer> turnsSoFar = new HashMap<>(Map.of(start, 0));
@@ -85,7 +85,7 @@ public class PathFinder {
      * @param destination the destination
      * @return the reconstructed path
      */
-    static List<Vector3> reconstructPath(Map<Vector3, Vector3> cameFrom, Vector3 destination) {
+    static List<Vector3> reconstructPath(@NonNull Map<Vector3, Vector3> cameFrom, @NonNull Vector3 destination) {
         final List<Vector3> path = new ArrayList<>();
         Vector3 current = destination;
 
@@ -104,7 +104,7 @@ public class PathFinder {
      * @param end the end position
      * @return the estimated path cost
      */
-    static int getEstimatedPathCost(Vector3 start, Vector3 end) {
+    static int getEstimatedPathCost(@NonNull Vector3 start, @NonNull Vector3 end) {
         return Math.max(
                 Math.abs(start.getQ() - end.getQ()),
                 Math.max(
@@ -118,7 +118,7 @@ public class PathFinder {
      * @param node the node to get the neighbours for
      * @return the neighbours of the given node
      */
-    static List<PathNode> getNeighbours(PathNode node) {
+    static List<PathNode> getNeighbours(@NonNull PathNode node) {
         final List<PathNode> neighbours = new ArrayList<>();
 
         for (Direction direction : Direction.values()) {
@@ -135,7 +135,7 @@ public class PathFinder {
      * @param position the position to get or create a node for
      * @return the node for the given position
      */
-    static synchronized PathNode getOrCreateNode(Vector3 position) {
+    static synchronized PathNode getOrCreateNode(@NonNull Vector3 position) {
         return CACHE.computeIfAbsent(position, PathNode::new);
     }
 
