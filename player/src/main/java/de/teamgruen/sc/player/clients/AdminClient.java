@@ -102,15 +102,12 @@ public class AdminClient extends Client {
                                     print(Level.DEBUG, "Lost game " + RED + gameId + RESET + " - " + RED + playerName + RESET + ": " + WHITE + reason + RESET);
                                 }
 
-                                scores.forEach((scoreFragment, score) -> {
-                                    if(!scoreFragment.getName().equals("Passagiere")) return;
-
-                                    synchronized (playerStats) {
-                                        playerStats[playerId][3] += score;
-                                    }
-                                });
-
                                 synchronized (playerStats) {
+                                    scores.forEach((scoreFragment, score) -> {
+                                        if(scoreFragment.getName().equals("Passagiere"))
+                                            playerStats[playerId][3] += score;
+                                    });
+
                                     switch (result) {
                                         case WIN:
                                             playerStats[playerId][0]++;
