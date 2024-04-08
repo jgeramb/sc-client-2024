@@ -519,21 +519,38 @@ public class BoardTest {
     }
 
     @Test
-    public void testAppendForwardMove_Ship_NotEnoughMovementPointsLeft() {
+    public void testGetAdvanceLimit_Normal_CounterCurrent() {
         final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(-1, 1, 0));
-        playerShip.setDirection(Direction.LEFT);
+        playerShip.setSpeed(1);
 
-        final Vector3 position = playerShip.getPosition();
-        final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, playerShip.getPosition(), direction);
+        final AdvanceInfo actualAdvanceLimit = this.board.getAdvanceLimit(
+                playerShip,
+                new Vector3(-1, 6, -5),
+                Direction.LEFT,
+                this.gameState.getEnemyShip().getPosition(),
+                1,
+                0,
+                2
+        );
+
+        assertEquals(AdvanceInfo.Result.NORMAL, actualAdvanceLimit.getResult());
+        assertEquals(1, actualAdvanceLimit.getDistance());
+        assertEquals(2, actualAdvanceLimit.getCost());
+    }
+
+    @Test
+    public void testAppendForwardMove_Ship_NotEnoughMovementPointsLeft() {
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        final Vector3 position = new Vector3(-1, 1, 0);
+        final Direction direction = Direction.LEFT;
+        final Move move = new Move(position, enemyShip.getPosition(), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setResult(AdvanceInfo.Result.SHIP);
 
         this.board.appendForwardMove(
                 advanceInfo.getEndPosition(position, direction),
                 direction,
-                this.gameState.getEnemyShip(),
+                enemyShip,
                 move,
                 advanceInfo,
                 1,
@@ -545,12 +562,8 @@ public class BoardTest {
 
     @Test
     public void testAppendForwardMove_Ship_NoPushDirection() {
-        final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(-2, 4, -2));
-        playerShip.setDirection(Direction.DOWN_LEFT);
-
-        final Vector3 position = playerShip.getPosition();
-        final Direction direction = playerShip.getDirection();
+        final Vector3 position = new Vector3(-2, 4, -2);
+        final Direction direction = Direction.DOWN_LEFT;
         final Move move = new Move(position, new Vector3(-3, 5, -2), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setResult(AdvanceInfo.Result.SHIP);
@@ -570,20 +583,17 @@ public class BoardTest {
 
     @Test
     public void testAppendForwardMove_Ship() {
-        final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(-1, 1, 0));
-        playerShip.setDirection(Direction.LEFT);
-
-        final Vector3 position = playerShip.getPosition();
-        final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, playerShip.getPosition(), direction);
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        final Vector3 position = new Vector3(-1, 1, 0);
+        final Direction direction = Direction.LEFT;
+        final Move move = new Move(position, enemyShip.getPosition(), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setResult(AdvanceInfo.Result.SHIP);
 
         this.board.appendForwardMove(
                 advanceInfo.getEndPosition(position, direction),
                 direction,
-                this.gameState.getEnemyShip(),
+                enemyShip,
                 move,
                 advanceInfo,
                 2,
@@ -591,18 +601,15 @@ public class BoardTest {
         );
 
         assertEquals(2, move.getTotalCost());
-        assertEquals(List.of(ActionFactory.forward(1), ActionFactory.push(Direction.UP_LEFT)), move.getActions());
+        assertEquals(List.of(ActionFactory.forward(1), ActionFactory.push(Direction.UP_RIGHT)), move.getActions());
     }
 
     @Test
     public void testAppendForwardMove_Passenger() {
-        final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(2, 1, -3));
-        playerShip.setDirection(Direction.DOWN_RIGHT);
-
-        final Vector3 position = playerShip.getPosition();
-        final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, playerShip.getPosition(), direction);
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        final Vector3 position = new Vector3(2, 1, -3);
+        final Direction direction = Direction.DOWN_RIGHT;
+        final Move move = new Move(position, enemyShip.getPosition(), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setDistance(1);
         advanceInfo.setCost(1);
@@ -611,7 +618,7 @@ public class BoardTest {
         this.board.appendForwardMove(
                 advanceInfo.getEndPosition(position, direction),
                 direction,
-                this.gameState.getEnemyShip(),
+                enemyShip,
                 move,
                 advanceInfo,
                 0,
@@ -625,13 +632,10 @@ public class BoardTest {
 
     @Test
     public void testAppendForwardMove_Goal() {
-        final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(-5, 8, -3));
-        playerShip.setDirection(Direction.DOWN_LEFT);
-
-        final Vector3 position = playerShip.getPosition();
-        final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, playerShip.getPosition(), direction);
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        final Vector3 position = new Vector3(-5, 8, -3);
+        final Direction direction = Direction.DOWN_LEFT;
+        final Move move = new Move(position, enemyShip.getPosition(), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setDistance(1);
         advanceInfo.setCost(2);
@@ -640,7 +644,7 @@ public class BoardTest {
         this.board.appendForwardMove(
                 advanceInfo.getEndPosition(position, direction),
                 direction,
-                this.gameState.getEnemyShip(),
+                enemyShip,
                 move,
                 advanceInfo,
                 0,
@@ -654,13 +658,10 @@ public class BoardTest {
 
     @Test
     public void testAppendForwardMove_Normal() {
-        final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(2, -2, 0));
-        playerShip.setDirection(Direction.DOWN_RIGHT);
-
-        final Vector3 position = playerShip.getPosition();
-        final Direction direction = playerShip.getDirection();
-        final Move move = new Move(position, playerShip.getPosition(), direction);
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        final Vector3 position = new Vector3(2, -2, 0);
+        final Direction direction = Direction.DOWN_RIGHT;
+        final Move move = new Move(position, enemyShip.getPosition(), direction);
         final AdvanceInfo advanceInfo = new AdvanceInfo();
         advanceInfo.setDistance(6);
         advanceInfo.setCost(6);
@@ -669,7 +670,7 @@ public class BoardTest {
         this.board.appendForwardMove(
                 advanceInfo.getEndPosition(position, direction),
                 direction,
-                this.gameState.getEnemyShip(),
+                enemyShip,
                 move,
                 advanceInfo,
                 0,
@@ -678,6 +679,31 @@ public class BoardTest {
 
         assertEquals(6, move.getTotalCost());
         assertEquals(List.of(ActionFactory.forward(6)), move.getActions());
+    }
+
+    @Test
+    public void testAppendForwardMove_Normal_CounterCurrent() {
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        final Vector3 position = new Vector3(-1, 6, -5);
+        final Direction direction = Direction.LEFT;
+        final Move move = new Move(position, enemyShip.getPosition(), direction);
+        final AdvanceInfo advanceInfo = new AdvanceInfo();
+        advanceInfo.setDistance(1);
+        advanceInfo.setCost(2);
+        advanceInfo.setResult(AdvanceInfo.Result.NORMAL);
+
+        this.board.appendForwardMove(
+                advanceInfo.getEndPosition(position, direction),
+                direction,
+                enemyShip,
+                move,
+                advanceInfo,
+                0,
+                false
+        );
+
+        assertEquals(2, move.getTotalCost());
+        assertEquals(List.of(ActionFactory.forward(1)), move.getActions());
     }
 
     @Test
