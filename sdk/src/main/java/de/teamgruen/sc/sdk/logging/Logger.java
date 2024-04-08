@@ -46,9 +46,16 @@ public class Logger {
             this.log(Level.DEBUG, message, false);
     }
 
-    public void log(@NonNull Level logLevel, String message, boolean replace) {
+    /**
+     * Logs a message with the given log level.
+     * @param logLevel the log level of the message
+     * @param message the message to log
+     * @param replace whether to replace the last line or not
+     * @return whether the message was logged or not
+     */
+    public boolean log(@NonNull Level logLevel, String message, boolean replace) {
         if(logLevel.equals(Level.DEBUG) && !this.debug)
-            return;
+            return false;
 
         final String time = DATE_FORMAT.format(new Date());
         final String levelName = logLevel.name();
@@ -56,9 +63,16 @@ public class Logger {
         final String threadName = CYAN + Thread.currentThread().getName() + RESET;
 
         this.print(OPEN_BRACKET + time + " " + level + CLOSE_BRACKET + " " + threadName + COLON + " " + message, replace);
+
+        return true;
     }
 
-    private void print(String message, boolean replace) {
+    /**
+     * Prints a message to the output stream.
+     * @param message the message to print
+     * @param replace whether to replace the last line or not
+     */
+    private void print(@NonNull String message, boolean replace) {
         try {
             if(replace)
                 this.out.write('\r');
