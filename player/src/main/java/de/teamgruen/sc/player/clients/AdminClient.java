@@ -96,6 +96,12 @@ public class AdminClient extends Client {
                             public void onResults(@NonNull LinkedHashMap<ScoreFragment, Integer> scores, @NonNull GameResult result, String reason) {
                                 gameHandler.onResults(scores, result, reason);
 
+                                if(reason != null && !reason.isEmpty() && result.equals(GameResult.LOOSE)) {
+                                    final String playerName = gameHandler instanceof SimpleGameHandler ? "Simple" : "Advanced";
+
+                                    print(Level.DEBUG, "Lost game " + RED + gameId + RESET + " - " + RED + playerName + RESET + ": " + WHITE + reason + RESET);
+                                }
+
                                 scores.forEach((scoreFragment, score) -> {
                                     if(!scoreFragment.getName().equals("Passagiere")) return;
 
