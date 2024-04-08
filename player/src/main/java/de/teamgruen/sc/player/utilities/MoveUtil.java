@@ -304,7 +304,7 @@ public class MoveUtil {
                     if (bestNextMove == null)
                         return true;
 
-                    entry.setValue(entry.getValue() + bestNextMove.getValue() * 0.25);
+                    entry.setValue(entry.getValue() + bestNextMove.getValue() * 0.375);
                 }
 
                 return false;
@@ -584,7 +584,7 @@ public class MoveUtil {
         final double segmentDistance = board.getSegmentDistance(playerPosition, enemyPosition);
         final int requiredTurns = getSegmentDirectionCost(board, playerPosition, playerDirection);
 
-        return segmentDistance >= (2.625 - requiredTurns * 0.125 - (enemyShip.getSpeed() / 4d));
+        return segmentDistance >= (2.75 - requiredTurns * 0.125 - (enemyShip.getSpeed() / 4d));
     }
 
 }
