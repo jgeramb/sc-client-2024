@@ -379,31 +379,34 @@ public class MoveUtil {
         boolean wasCounterCurrent = false;
 
         while(pathIndex <= maxIndex) {
+            final int accelerationCost = Math.max(0, move.getTotalCost() - playerShip.getSpeed());
             final int minReachableSpeed = Math.max(1, gameState.getMinMovementPoints(playerShip) - coal);
-            final int maxReachableSpeed = Math.min(6, gameState.getMaxMovementPoints(playerShip) + coal);
-
-            if(move.getTotalCost() == maxReachableSpeed)
-                break;
-
+            final int initialPathIndex = pathIndex;
             final Vector3 position = move.getEndPosition();
             final Direction currentDirection = move.getEndDirection();
             final Direction direction = Direction.fromVector3(path.get(pathIndex).copy().subtract(position));
 
             // turn if necessary
             if(direction != currentDirection) {
-                final Direction nearest = currentDirection.rotateTo(direction, freeTurns + coal);
+                final Direction nearest = currentDirection.rotateTo(direction, freeTurns + Math.max(0, coal - accelerationCost));
                 final int cost = currentDirection.costTo(nearest);
 
                 coal -= Math.max(0, cost - freeTurns);
                 freeTurns = Math.max(0, freeTurns - cost);
 
-                move.turn(nearest);
+                if(nearest != currentDirection)
+                    move.turn(nearest);
 
                 if(nearest != direction)
                     break;
 
                 wasCounterCurrent = false;
             }
+
+            final int maxReachableSpeed = Math.min(6, gameState.getMaxMovementPoints(playerShip) + coal);
+
+            if(move.getTotalCost() == maxReachableSpeed)
+                break;
 
             // move forward
             final int availablePoints = maxReachableSpeed - move.getTotalCost();
@@ -473,8 +476,10 @@ public class MoveUtil {
                     wasCounterCurrent = false;
 
                 pathIndex = path.subList(0, pathIndex).lastIndexOf(move.getEndPosition()) + 1;
-            } else
+            } else {
+                pathIndex = initialPathIndex;
                 break;
+            }
         }
 
         if(move.getTotalCost() < Math.max(1, gameState.getMinMovementPoints(playerShip) - coal))
@@ -482,8 +487,7 @@ public class MoveUtil {
 
         // turn to reach the next position if there are available free turns
         if(freeTurns > 0 && pathIndex <= maxIndex) {
-            final Vector3 position = path.get(pathIndex);
-            final Direction direction = Direction.fromVector3(position.copy().subtract(move.getEndPosition()));
+            final Direction direction = Direction.fromVector3(path.get(pathIndex).copy().subtract(move.getEndPosition()));
 
             if(direction != move.getEndDirection())
                 move.turn(move.getEndDirection().rotateTo(direction, freeTurns));
