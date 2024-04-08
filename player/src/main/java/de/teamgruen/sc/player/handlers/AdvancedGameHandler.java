@@ -59,8 +59,8 @@ public class AdvancedGameHandler extends BaseGameHandler {
                             direction = nextDirection;
                         }
 
-                        // skip paths that require more than two turns after reaching the destination
-                        if (gameState.getBoard().getMinTurns(direction, path.get(path.size() - 1)) > 2)
+                        // skip paths that require more turns than possible after reaching the destination
+                        if (gameState.getBoard().getMinTurns(direction, path.get(path.size() - 1)) > 1 + playerShip.getCoal())
                             return;
 
                         costs.put(path, turns);
