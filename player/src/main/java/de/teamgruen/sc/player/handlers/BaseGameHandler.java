@@ -42,7 +42,7 @@ public abstract class BaseGameHandler implements GameHandler {
         this.logger.info("Joined room " + PURPLE + roomId + RESET);
     }
 
-    public void setNextMove(GameState gameState, Supplier<Move> moveSupplier) {
+    public void setNextMove(@NonNull GameState gameState, @NonNull Supplier<Move> moveSupplier) {
         if(!gameState.getPlayerTeam().equals(gameState.getCurrentTeam()))
             return;
 
@@ -93,7 +93,7 @@ public abstract class BaseGameHandler implements GameHandler {
     }
 
     @Override
-    public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
+    public void onResults(@NonNull LinkedHashMap<ScoreFragment, Integer> scores, @NonNull GameResult result, String reason) {
         final int maxNameLength = scores.keySet()
                 .stream()
                 .mapToInt(scoreFragment -> scoreFragment.getName().length())
@@ -118,6 +118,9 @@ public abstract class BaseGameHandler implements GameHandler {
                         : WHITE + "/";
         final String resultSpacer = " ".repeat(maxNameLength - 8) + " ".repeat(maxValueLength.get() - 1);
         this.logger.info("Gewonnen: " + resultSpacer + resultSymbol + RESET);
+
+        if(reason != null && !reason.isEmpty())
+            this.logger.info("Grund: " + reason);
 
         scores.forEach((scoreFragment, score) -> {
             if(!scoreFragment.isRelevantForRanking())

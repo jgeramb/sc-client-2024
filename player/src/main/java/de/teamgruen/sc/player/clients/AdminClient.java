@@ -93,8 +93,8 @@ public class AdminClient extends Client {
                             }
 
                             @Override
-                            public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
-                                gameHandler.onResults(scores, result);
+                            public void onResults(@NonNull LinkedHashMap<ScoreFragment, Integer> scores, @NonNull GameResult result, String reason) {
+                                gameHandler.onResults(scores, result, reason);
 
                                 scores.forEach((scoreFragment, score) -> {
                                     if(!scoreFragment.getName().equals("Passagiere")) return;

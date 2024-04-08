@@ -9,6 +9,7 @@ import de.teamgruen.sc.sdk.game.GameResult;
 import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.scores.ScoreFragment;
+import lombok.NonNull;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,16 +22,16 @@ public interface GameHandler {
     }
 
     // game
-    default void onGameStart(GameState gameState) {
+    default void onGameStart(@NonNull GameState gameState) {
         throw new UnsupportedOperationException("Not implemented");
     }
-    default void onBoardUpdate(GameState gameState) {
+    default void onBoardUpdate(@NonNull GameState gameState) {
         throw new UnsupportedOperationException("Not implemented");
     }
-    default List<Action> getNextActions(GameState gameState) {
+    default List<Action> getNextActions(@NonNull GameState gameState) {
         throw new UnsupportedOperationException("Not implemented");
     }
-    default void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
+    default void onResults(@NonNull LinkedHashMap<ScoreFragment, Integer> scores, @NonNull GameResult result, String reason) {
         throw new UnsupportedOperationException("Not implemented");
     }
 

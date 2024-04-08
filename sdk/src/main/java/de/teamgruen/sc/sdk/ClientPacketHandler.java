@@ -119,7 +119,7 @@ public class ClientPacketHandler {
                                         ? GameResult.WIN
                                         : GameResult.LOOSE;
 
-                            this.gameHandler.onResults(scores, result);
+                            this.gameHandler.onResults(scores, result, winner == null ? null : winner.getReason());
                         });
             }
         } else if(xmlProtocolPacket instanceof LeftPacket) {
