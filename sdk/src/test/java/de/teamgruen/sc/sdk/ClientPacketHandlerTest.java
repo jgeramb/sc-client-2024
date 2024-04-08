@@ -278,7 +278,7 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
+            public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result, String reason) {
                 final List<ScoreFragment> expectedFragments = getSampleFragments();
                 final LinkedHashMap<ScoreFragment, Integer> expectedScoresMap = new LinkedHashMap<>();
                 expectedScoresMap.put(expectedFragments.get(0), 1);
@@ -288,6 +288,7 @@ public class ClientPacketHandlerTest {
 
                 assertEquals(expectedScoresMap, scores);
                 assertEquals(GameResult.WIN, result);
+                assertTrue(reason.isEmpty());
 
                 called.set(true);
             }
@@ -438,8 +439,9 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
+            public void onResults(@NonNull LinkedHashMap<ScoreFragment, Integer> scores, @NonNull GameResult result, String reason) {
                 assertEquals(GameResult.LOOSE, result);
+                assertNull(reason);
 
                 called.set(true);
             }
@@ -465,8 +467,9 @@ public class ClientPacketHandlerTest {
             }
 
             @Override
-            public void onResults(LinkedHashMap<ScoreFragment, Integer> scores, GameResult result) {
+            public void onResults(@NonNull LinkedHashMap<ScoreFragment, Integer> scores, @NonNull GameResult result, String reason) {
                 assertEquals(GameResult.DRAW, result);
+                assertNull(reason);
 
                 called.set(true);
             }
