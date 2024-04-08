@@ -116,19 +116,20 @@ public abstract class BaseGameHandler implements GameHandler {
                 : result.equals(GameResult.LOOSE)
                         ? RED + "✕"
                         : WHITE + "/";
-        final String resultSpacer = " ".repeat(maxNameLength - 8) + " ".repeat(maxValueLength.get() - 1);
+        final String resultSpacer = " ".repeat(maxNameLength - 8);
         this.logger.info("Gewonnen: " + resultSpacer + resultSymbol + RESET);
 
-        if(reason != null && !reason.isEmpty())
-            this.logger.info("Grund: " + reason);
+        if(reason != null && !reason.isEmpty()) {
+            final String reasonSpacer = " ".repeat(maxNameLength - 5);
+            this.logger.info("Grund: " + reasonSpacer + WHITE + reason + RESET);
+        }
 
         scores.forEach((scoreFragment, score) -> {
             if(!scoreFragment.isRelevantForRanking())
                 return;
 
             final String name = scoreFragment.getName();
-            final String spacer = " ".repeat(maxNameLength - name.length())
-                    + " ".repeat(maxValueLength.get() - String.valueOf(score).length());
+            final String spacer = " ".repeat(maxNameLength - name.length());
 
             this.logger.info(name + ": " + spacer + PURPLE + score + RESET);
         });
