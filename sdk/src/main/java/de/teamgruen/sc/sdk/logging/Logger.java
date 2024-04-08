@@ -47,6 +47,9 @@ public class Logger {
     }
 
     public void log(@NonNull Level logLevel, String message, boolean replace) {
+        if(logLevel.equals(Level.DEBUG) && !this.debug)
+            return;
+
         final String time = DATE_FORMAT.format(new Date());
         final String levelName = logLevel.name();
         final String level = logLevel.getColor() + levelName + RESET + " ".repeat(5 - levelName.length());
