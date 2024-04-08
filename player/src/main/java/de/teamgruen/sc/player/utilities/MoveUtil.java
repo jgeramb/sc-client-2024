@@ -363,6 +363,7 @@ public class MoveUtil {
 
         final Board board = gameState.getBoard();
         final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
+        final boolean isEnemyAhead = isEnemyAhead(board, playerShip.getPosition(), playerShip.getDirection(), enemyShip, enemyShip.getPosition());
         final Move move = new Move(path.get(0), enemyShip.getPosition(), playerShip.getDirection());
 
         final int maxIndex = path.size() - 1;
@@ -371,36 +372,35 @@ public class MoveUtil {
         final boolean mustReachSpeed = destinationField instanceof Goal || board.canPickUpPassenger(destination);
         final int destinationSpeed = board.isCounterCurrent(destination) ? 2 : 1;
         int currentSpeed = playerShip.getSpeed();
-        int fieldsToAccelerate = currentSpeed < destinationSpeed ? 1 : 0;
+        int fieldsToChangeVelocity = currentSpeed < destinationSpeed ? 1 : 0;
 
         while ((currentSpeed--) > destinationSpeed) {
-            fieldsToAccelerate += currentSpeed;
+            fieldsToChangeVelocity += currentSpeed;
         }
 
         int freeTurns = playerShip.getFreeTurns();
-        int turnCoal = Math.min(playerShip.getCoal(), 1);
-        int accelerationCoal = getAccelerationCoal(
-                gameState.getTurn(),
-                isEnemyAhead(board, playerShip.getPosition(), playerShip.getDirection(), enemyShip, enemyShip.getPosition()),
-                playerShip.getCoal() - turnCoal
-        );
+        int coal = Math.min(playerShip.getCoal(), getAccelerationCoal(gameState.getTurn(), isEnemyAhead, playerShip.getCoal()) + 1);
         int pathIndex = 1 /* skip start position */;
 
-        final int minReachableSpeed = Math.max(1, gameState.getMinMovementPoints(playerShip) - accelerationCoal);
-        final int maxReachableSpeed = Math.min(6, gameState.getMaxMovementPoints(playerShip) + accelerationCoal);
         boolean wasCounterCurrent = false;
 
-        while(move.getTotalCost() < maxReachableSpeed && pathIndex <= maxIndex) {
+        while(pathIndex <= maxIndex) {
+            final int minReachableSpeed = Math.max(1, gameState.getMinMovementPoints(playerShip) - coal);
+            final int maxReachableSpeed = Math.min(6, gameState.getMaxMovementPoints(playerShip) + coal);
+
+            if(move.getTotalCost() == maxReachableSpeed)
+                break;
+
             final Vector3 position = move.getEndPosition();
             final Direction currentDirection = move.getEndDirection();
             final Direction direction = Direction.fromVector3(path.get(pathIndex).copy().subtract(position));
 
             // turn if necessary
             if(direction != currentDirection) {
-                final Direction nearest = currentDirection.rotateTo(direction, freeTurns + turnCoal);
+                final Direction nearest = currentDirection.rotateTo(direction, freeTurns + coal);
                 final int cost = currentDirection.costTo(nearest);
 
-                turnCoal -= Math.max(0, cost - freeTurns);
+                coal -= Math.max(0, cost - freeTurns);
                 freeTurns = Math.max(0, freeTurns - cost);
 
                 move.turn(nearest);
@@ -442,7 +442,7 @@ public class MoveUtil {
                 if(mustReachSpeed) {
                     final int fieldsToDestination = maxIndex - pathIndex;
 
-                    if(fieldsToDestination <= fieldsToAccelerate) {
+                    if(fieldsToDestination <= fieldsToChangeVelocity) {
                         final int maxSpeed = destinationSpeed > playerShip.getSpeed()
                                 ? Math.max(destinationSpeed - fieldsToDestination, playerShip.getSpeed())
                                 : Math.min(fieldsToDestination - destinationSpeed, playerShip.getSpeed());
@@ -493,7 +493,7 @@ public class MoveUtil {
                 break;
         }
 
-        if(move.getTotalCost() < minReachableSpeed)
+        if(move.getTotalCost() < Math.max(1, gameState.getMinMovementPoints(playerShip) - coal))
             return Optional.empty();
 
         // turn to reach the next position if there are available free turns

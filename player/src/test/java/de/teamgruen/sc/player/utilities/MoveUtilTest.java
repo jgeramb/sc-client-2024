@@ -499,7 +499,7 @@ public class MoveUtilTest {
     @Test
     public void testMoveFromPath_ReachLowerSpeed() {
         final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(-6, 8, -2));
+        playerShip.setPosition(new Vector3(2, -2, 0));
         playerShip.setDirection(Direction.DOWN_RIGHT);
         playerShip.setSpeed(3);
         playerShip.setCoal(1);
