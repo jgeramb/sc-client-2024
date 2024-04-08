@@ -357,8 +357,8 @@ public class MoveUtil {
      * @param path the path to reach
      * @return the next move to reach the given path
      */
-    public static Optional<Move> moveFromPath(@NonNull GameState gameState, List<Vector3> path) {
-        if(path == null || path.isEmpty())
+    public static Optional<Move> moveFromPath(@NonNull GameState gameState, @NonNull List<Vector3> path) {
+        if(path.isEmpty())
             return Optional.empty();
 
         final Board board = gameState.getBoard();
