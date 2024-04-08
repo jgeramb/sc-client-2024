@@ -365,7 +365,8 @@ public class MoveUtil {
         final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
         final Move move = new Move(path.get(0), enemyShip.getPosition(), playerShip.getDirection());
 
-        final Vector3 destination = path.get(path.size() - 1);
+        final int maxIndex = path.size() - 1;
+        final Vector3 destination = path.get(maxIndex);
         final Field destinationField = board.getFieldAt(destination);
         final boolean mustReachSpeed = destinationField instanceof Goal || board.canPickUpPassenger(destination);
         final int destinationSpeed = board.isCounterCurrent(destination) ? 2 : 1;
@@ -389,7 +390,7 @@ public class MoveUtil {
         final int maxReachableSpeed = Math.min(6, gameState.getMaxMovementPoints(playerShip) + accelerationCoal);
         boolean wasCounterCurrent = false;
 
-        while(move.getTotalCost() < maxReachableSpeed && pathIndex < path.size()) {
+        while(move.getTotalCost() < maxReachableSpeed && pathIndex <= maxIndex) {
             final Vector3 position = move.getEndPosition();
             final Direction currentDirection = move.getEndDirection();
             final Direction direction = Direction.fromVector3(path.get(pathIndex).copy().subtract(position));
@@ -439,12 +440,12 @@ public class MoveUtil {
                     break;
 
                 if(mustReachSpeed) {
-                    final int fieldsToDestination = path.size() - pathIndex;
+                    final int fieldsToDestination = maxIndex - pathIndex;
 
                     if(fieldsToDestination <= fieldsToAccelerate) {
                         final int maxSpeed = destinationSpeed > playerShip.getSpeed()
-                                ? Math.max(destinationSpeed - (fieldsToDestination - 1), playerShip.getSpeed())
-                                : Math.min(fieldsToDestination- (destinationSpeed - 1), playerShip.getSpeed());
+                                ? Math.max(destinationSpeed - fieldsToDestination, playerShip.getSpeed())
+                                : Math.min(fieldsToDestination - destinationSpeed, playerShip.getSpeed());
 
                         if (move.getTotalCost() + forwardCost + moveCost > maxSpeed)
                             break;
@@ -496,7 +497,7 @@ public class MoveUtil {
             return Optional.empty();
 
         // turn to reach the next position if there are available free turns
-        if(freeTurns > 0 && pathIndex < path.size()) {
+        if(freeTurns > 0 && pathIndex <= maxIndex) {
             final Vector3 position = path.get(pathIndex);
             final Direction direction = Direction.fromVector3(position.copy().subtract(move.getEndPosition()));
 
