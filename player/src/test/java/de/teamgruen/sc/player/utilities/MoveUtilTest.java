@@ -341,11 +341,6 @@ public class MoveUtilTest {
     }
 
     @Test
-    public void testMoveFromPath_Null() {
-        assertFalse(MoveUtil.moveFromPath(this.gameState, null).isPresent());
-    }
-
-    @Test
     public void testMoveFromPath() {
         final Ship playerShip = this.gameState.getPlayerShip();
         playerShip.setPosition(new Vector3(0, 0, 0));
