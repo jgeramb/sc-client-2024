@@ -38,59 +38,53 @@ public class AdvancedGameHandler extends BaseGameHandler {
         this.setNextMove(
                 gameState,
                 () -> {
-                    final Board board = gameState.getBoard();
-                    final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
+                    final Ship playerShip = gameState.getPlayerShip();
                     final int minSpeed = Math.max(1, playerShip.getSpeed() - 1 - Math.min(playerShip.getCoal(), 2));
-                    final Vector3 shipPosition = playerShip.getPosition();
                     final Direction playerDirection = playerShip.getDirection();
-                    final boolean isEnemyAhead = MoveUtil.isEnemyAhead(board, shipPosition, playerDirection, enemyShip, enemyShip.getPosition());
 
-                    if(!isEnemyAhead || board.getSegmentIndex(shipPosition) >= 5) {
-                        final HashMap<List<Vector3>, Integer> costs = new HashMap<>();
+                    final HashMap<List<Vector3>, Integer> costs = new HashMap<>();
 
-                        getPaths(gameState).forEach(path -> {
-                            // skip impossible paths (start excluded from distance calculation)
-                            if (path.size() <= minSpeed)
-                                return;
+                    getPaths(gameState).forEach(path -> {
+                        // skip impossible paths (start excluded from distance calculation)
+                        if (path.size() <= minSpeed)
+                            return;
 
-                            // skip last move of path to optimize turns with the Simple player
-                            if(path.size() == 2)
-                                return;
+                        Direction direction = playerDirection;
+                        int turns = 0;
 
-                            Direction direction = playerDirection;
-                            int turns = 0;
+                        for (int i = 1; i < path.size(); i++) {
+                            final Direction nextDirection = Direction.fromVector3(path.get(i).copy().subtract(path.get(i - 1)));
 
-                            for (int i = 1; i < path.size(); i++) {
-                                final Direction nextDirection = Direction.fromVector3(path.get(i).copy().subtract(path.get(i - 1)));
-
-                                turns += direction.costTo(nextDirection);
-                                direction = nextDirection;
-                            }
-
-                            // skip paths that require more than two turns after reaching the destination
-                            if (gameState.getBoard().getMinTurns(direction, path.get(path.size() - 1)) > 2)
-                                return;
-
-                            costs.put(path, turns);
-                        });
-
-                        final List<Vector3> shortestPath = costs.entrySet()
-                                .stream()
-                                .min(Comparator.comparingInt(Map.Entry::getValue))
-                                .map(Map.Entry::getKey)
-                                .orElse(null);
-
-                        if (shortestPath != null) {
-                            final Optional<Move> move = MoveUtil.moveFromPath(gameState, shortestPath);
-
-                            if (move.isPresent())
-                                return move.get();
+                            turns += direction.costTo(nextDirection);
+                            direction = nextDirection;
                         }
+
+                        // skip paths that require more than two turns after reaching the destination
+                        if (gameState.getBoard().getMinTurns(direction, path.get(path.size() - 1)) > 2)
+                            return;
+
+                        costs.put(path, turns);
+                    });
+
+                    final List<Vector3> shortestPath = costs.entrySet()
+                            .stream()
+                            .min(Comparator.comparingInt(Map.Entry::getValue))
+                            .map(Map.Entry::getKey)
+                            .orElse(null);
+
+                    if (shortestPath != null && shortestPath.size() > 2) {
+                        final Optional<Move> move = MoveUtil.moveFromPath(gameState, shortestPath);
+
+                        if (move.isPresent())
+                            return move.get();
                     }
 
                     this.logger.debug(AnsiColor.WHITE + "Falling back to " + AnsiColor.PURPLE + "Simple" + AnsiColor.WHITE + " player" + AnsiColor.RESET);
 
-                    return MoveUtil.getMostEfficientMove(gameState, 500).orElse(null);
+                    // a negative timeout will disable move forecasting
+                    final int timeout = shortestPath != null && shortestPath.size() == 2 ? -1 : 500;
+
+                    return MoveUtil.getMostEfficientMove(gameState, timeout).orElse(null);
                 }
         );
     }
@@ -99,6 +93,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
         final Board board = gameState.getBoard();
         final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
         final Vector3 shipPosition = playerShip.getPosition();
+        final boolean isEnemyAhead = MoveUtil.isEnemyAhead(board, shipPosition, playerShip.getDirection(), enemyShip, enemyShip.getPosition());
         final Set<List<Vector3>> paths = new HashSet<>();
 
         if(playerShip.getPassengers() < 3) {
@@ -114,11 +109,10 @@ public class AdvancedGameHandler extends BaseGameHandler {
                 final Vector3 collectPosition = position.copy().add(passenger.getDirection().toVector3());
                 final double segmentDistance = board.getSegmentDistance(shipPosition, collectPosition);
 
-                if(segmentDistance < -1.25 && canEnemyMove)
+                if(segmentDistance < (playerShip.hasEnoughPassengers() ? 0 : -0.75) && canEnemyMove)
                     return;
 
-                // skip passengers that are too far away
-                if(segmentDistance > 2)
+                if(isEnemyAhead && board.getSegmentIndex(collectPosition) < 5)
                     return;
 
                 final List<Vector3> path = PathFinder.findPath(playerShip, shipPosition, collectPosition);
