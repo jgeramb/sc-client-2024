@@ -63,8 +63,8 @@ public class AdvancedGameHandler extends BaseGameHandler {
                             if (path.size() <= minSpeed)
                                 return;
 
-                            // skip paths that require two or more turns after reaching the destination
-                            if (gameState.getBoard().getMinTurns(direction, path.get(path.size() - 1)) >= 2)
+                            // skip paths that require more than two turns after reaching the destination
+                            if (gameState.getBoard().getMinTurns(direction, path.get(path.size() - 1)) > 2)
                                 return;
 
                             costs.put(path, turns);
