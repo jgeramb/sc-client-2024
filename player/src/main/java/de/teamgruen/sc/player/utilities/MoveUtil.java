@@ -223,7 +223,7 @@ public class MoveUtil {
                                                      @NonNull Ship enemyShip, @NonNull Vector3 enemyPosition,
                                                      int passengers, int speed, int freeTurns, int coal,
                                                      int extraCoal, boolean forceMultiplePushes) {
-        final boolean isEnemyAhead = isEnemyAhead(board, position, direction, enemyPosition);
+        final boolean isEnemyAhead = isEnemyAhead(board, position, direction, enemyShip, enemyPosition);
         final int accelerationCoal = getAccelerationCoal(turn, isEnemyAhead, coal - extraCoal);
         final Set<Move> moves = board.getMoves(ship, position, direction, enemyShip, enemyPosition,
                 speed, freeTurns, Math.min(coal, 1 + accelerationCoal + extraCoal), forceMultiplePushes);
@@ -241,7 +241,7 @@ public class MoveUtil {
                 turn,
                 ship,
                 enemyShip,
-                isEnemyAhead(board, position, direction, enemyPosition),
+                isEnemyAhead(board, position, direction, enemyShip, enemyPosition),
                 passengers,
                 coal,
                 coal - move.getCoalCost(direction, speed, freeTurns),
@@ -369,20 +369,27 @@ public class MoveUtil {
         final Field destinationField = board.getFieldAt(destination);
         final boolean mustReachSpeed = destinationField instanceof Goal || board.canPickUpPassenger(destination);
         final int destinationSpeed = board.isCounterCurrent(destination) ? 2 : 1;
+        int currentSpeed = playerShip.getSpeed();
+        int fieldsToAccelerate = currentSpeed < destinationSpeed ? 1 : 0;
+
+        while ((currentSpeed--) > destinationSpeed) {
+            fieldsToAccelerate += currentSpeed;
+        }
 
         int freeTurns = playerShip.getFreeTurns();
         int turnCoal = Math.min(playerShip.getCoal(), 1);
         int accelerationCoal = getAccelerationCoal(
                 gameState.getTurn(),
-                isEnemyAhead(board, playerShip.getPosition(), playerShip.getDirection(), enemyShip.getPosition()),
+                isEnemyAhead(board, playerShip.getPosition(), playerShip.getDirection(), enemyShip, enemyShip.getPosition()),
                 playerShip.getCoal() - turnCoal
         );
         int pathIndex = 1 /* skip start position */;
 
         final int minReachableSpeed = Math.max(1, gameState.getMinMovementPoints(playerShip) - accelerationCoal);
         final int maxReachableSpeed = Math.min(6, gameState.getMaxMovementPoints(playerShip) + accelerationCoal);
+        boolean wasCounterCurrent = false;
 
-        while(move.getTotalCost() < maxReachableSpeed && pathIndex <= path.size() - 1) {
+        while(move.getTotalCost() < maxReachableSpeed && pathIndex < path.size()) {
             final Vector3 position = move.getEndPosition();
             final Direction currentDirection = move.getEndDirection();
             final Direction direction = Direction.fromVector3(path.get(pathIndex).copy().subtract(position));
@@ -399,11 +406,12 @@ public class MoveUtil {
 
                 if(nearest != direction)
                     break;
+
+                wasCounterCurrent = false;
             }
 
             // move forward
             final int availablePoints = maxReachableSpeed - move.getTotalCost();
-            boolean wasCounterCurrent = false;
             Vector3 lastPosition = position, enemyPosition = move.getEnemyEndPosition().copy();
             int distance = 0, forwardCost = 0;
 
@@ -431,17 +439,16 @@ public class MoveUtil {
                     break;
 
                 if(mustReachSpeed) {
-                    final boolean accelerate = destinationSpeed > playerShip.getSpeed();
                     final int fieldsToDestination = path.size() - pathIndex;
-                    final int maxSpeed;
 
-                    if(accelerate)
-                        maxSpeed = Math.max(destinationSpeed - (fieldsToDestination - 1), playerShip.getSpeed());
-                    else
-                        maxSpeed = Math.min(fieldsToDestination - (destinationSpeed - 1), playerShip.getSpeed());
+                    if(fieldsToDestination <= fieldsToAccelerate) {
+                        final int maxSpeed = destinationSpeed > playerShip.getSpeed()
+                                ? Math.max(destinationSpeed - (fieldsToDestination - 1), playerShip.getSpeed())
+                                : Math.min(fieldsToDestination- (destinationSpeed - 1), playerShip.getSpeed());
 
-                    if (move.getTotalCost() + forwardCost + moveCost > maxSpeed)
-                        break;
+                        if (move.getTotalCost() + forwardCost + moveCost > maxSpeed)
+                            break;
+                    }
                 }
 
                 if(bestPushDirection != null)
@@ -467,7 +474,7 @@ public class MoveUtil {
                         forwardCost
                 );
 
-                board.appendForwardMove(
+                final AdvanceInfo.Result result = board.appendForwardMove(
                         advanceInfo.getEndPosition(position, direction),
                         direction,
                         enemyShip,
@@ -476,6 +483,9 @@ public class MoveUtil {
                         availablePoints,
                         false
                 );
+
+                if(!(result.equals(AdvanceInfo.Result.NORMAL) || result.equals(AdvanceInfo.Result.COUNTER_CURRENT)))
+                    wasCounterCurrent = false;
 
                 pathIndex = path.subList(0, pathIndex).lastIndexOf(move.getEndPosition()) + 1;
             } else
@@ -544,16 +554,17 @@ public class MoveUtil {
      * @param board the game board
      * @param playerPosition the player's position
      * @param playerDirection the player's direction
+     * @param enemyShip the enemy's ship
      * @param enemyPosition the enemy's position
      * @return whether the enemy is ahead of the player
      */
     public static boolean isEnemyAhead(@NonNull Board board,
                                        @NonNull Vector3 playerPosition, @NonNull Direction playerDirection,
-                                       @NonNull Vector3 enemyPosition) {
+                                       @NonNull Ship enemyShip, @NonNull Vector3 enemyPosition) {
         final double segmentDistance = board.getSegmentDistance(playerPosition, enemyPosition);
         final int requiredTurns = getSegmentDirectionCost(board, playerPosition, playerDirection);
 
-        return segmentDistance >= (2.5 - requiredTurns * 0.25);
+        return segmentDistance >= (3 - requiredTurns * 0.125 - (enemyShip.getSpeed() / 4d));
     }
 
 }
