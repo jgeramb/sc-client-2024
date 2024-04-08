@@ -96,7 +96,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
         final boolean isEnemyAhead = MoveUtil.isEnemyAhead(board, shipPosition, playerShip.getDirection(), enemyShip, enemyShip.getPosition());
         final Set<List<Vector3>> paths = new HashSet<>();
 
-        if(playerShip.getPassengers() < 3) {
+        if(playerShip.getPassengers() < 3 && !enemyShip.hasEnoughPassengers()) {
             final boolean canEnemyMove = !enemyShip.isStuck();
 
             // passengers
