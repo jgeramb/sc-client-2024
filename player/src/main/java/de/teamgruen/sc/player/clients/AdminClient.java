@@ -35,7 +35,7 @@ public class AdminClient extends Client {
 
     private final Object roomCreateLock = new Object();
     private final List<ControlledRoom> controlledRooms = new ArrayList<>();
-    private final int[][] playerStats = new int[2][5];
+    private final int[][] playerStats = new int[2][4];
     private final AtomicBoolean replaceRequired = new AtomicBoolean(false);
     private final Logger logger;
     private final String playStyle;
@@ -105,18 +105,15 @@ public class AdminClient extends Client {
                                 synchronized (playerStats) {
                                     scores.forEach((scoreFragment, score) -> {
                                         if(scoreFragment.getName().equals("Passagiere"))
-                                            playerStats[playerId][3] += score;
+                                            playerStats[playerId][2] += score;
                                     });
 
                                     switch (result) {
                                         case WIN:
                                             playerStats[playerId][0]++;
                                             break;
-                                        case LOOSE:
-                                            playerStats[playerId][1]++;
-                                            break;
                                         case DRAW:
-                                            playerStats[playerId][2]++;
+                                            playerStats[playerId][1]++;
                                             break;
                                     }
                                 }
@@ -130,7 +127,7 @@ public class AdminClient extends Client {
 
                                 print(Level.ERROR, "Game " + RED + gameId + RESET + " - " + RED + playerName + RESET + ": " + WHITE + message + RESET);
 
-                                playerStats[playerId][4]++;
+                                playerStats[playerId][3]++;
 
                                 controlledRoom.endGame();
                             }
@@ -169,7 +166,7 @@ public class AdminClient extends Client {
 
         // initialize the player stats
         for (int i = 0; i < playerStats.length; i++)
-            playerStats[i] = new int[5];
+            playerStats[i] = new int[4];
 
         final int threads = Math.max(1, Runtime.getRuntime().availableProcessors() / 4);
         final ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -250,10 +247,9 @@ public class AdminClient extends Client {
             this.logger.info("");
             this.logger.info(line + " " + PURPLE + playerDescription + " " + line + RESET);
             this.logger.info(WHITE + "┣" + RESET + " Wins:   " + stats[0]);
-            this.logger.info(WHITE + "┣" + RESET + " Losses: " + stats[1]);
-            this.logger.info(WHITE + "┣" + RESET + " Draws:  " + stats[2]);
-            this.logger.info(WHITE + "┣" + RESET + " Passengers (ø):  " + String.format("%.1f", stats[3] / (double) count));
-            this.logger.info(WHITE + "┗" + RESET + " Errors:  " + stats[4]);
+            this.logger.info(WHITE + "┣" + RESET + " Draws:  " + stats[1]);
+            this.logger.info(WHITE + "┣" + RESET + " Passengers (ø):  " + String.format("%.1f", stats[2] / (double) count));
+            this.logger.info(WHITE + "┗" + RESET + " Errors:  " + stats[3]);
         }
 
         // shutdown the JVM
