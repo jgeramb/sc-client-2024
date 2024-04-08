@@ -370,13 +370,7 @@ public class MoveUtil {
         final Vector3 destination = path.get(maxIndex);
         final Field destinationField = board.getFieldAt(destination);
         final boolean mustReachSpeed = destinationField instanceof Goal || board.canPickUpPassenger(destination);
-        final int destinationSpeed = board.isCounterCurrent(destination) ? 2 : 1;
-        int currentSpeed = playerShip.getSpeed();
-        int fieldsToChangeVelocity = currentSpeed < destinationSpeed ? 1 : 0;
-
-        while ((currentSpeed--) > destinationSpeed) {
-            fieldsToChangeVelocity += currentSpeed;
-        }
+        final int maxVelocity = getMaxVelocity(board, path);
 
         int freeTurns = playerShip.getFreeTurns();
         int coal = Math.min(playerShip.getCoal(), getAccelerationCoal(gameState.getTurn(), isEnemyAhead, playerShip.getCoal()) + 1);
@@ -439,18 +433,8 @@ public class MoveUtil {
                 if(forwardCost + moveCost > availablePoints)
                     break;
 
-                if(mustReachSpeed) {
-                    final int fieldsToDestination = maxIndex - pathIndex;
-
-                    if(fieldsToDestination <= fieldsToChangeVelocity) {
-                        final int maxSpeed = destinationSpeed > playerShip.getSpeed()
-                                ? Math.max(destinationSpeed - fieldsToDestination, playerShip.getSpeed())
-                                : Math.min(fieldsToDestination - destinationSpeed, playerShip.getSpeed());
-
-                        if (move.getTotalCost() + forwardCost + moveCost > maxSpeed)
-                            break;
-                    }
-                }
+                if(mustReachSpeed && move.getTotalCost() + forwardCost + moveCost > maxVelocity)
+                    break;
 
                 if(bestPushDirection != null)
                     enemyPosition.add(bestPushDirection.toVector3());
@@ -508,6 +492,37 @@ public class MoveUtil {
         addAcceleration(playerShip.getSpeed(), move);
 
         return Optional.of(move);
+    }
+
+    /**
+     * @param board the game board
+     * @param path the path to evaluate
+     * @return the maximum velocity to reach the given path
+     */
+    public static int getMaxVelocity(@NonNull Board board, @NonNull List<Vector3> path) {
+        int totalPathCost = 0;
+        boolean onCurrent = false;
+
+        for (int i = 1; i < path.size(); i++) {
+            boolean nextIsCurrent = board.isCounterCurrent(path.get(i));
+
+            totalPathCost += !onCurrent && nextIsCurrent ? 2 : 1;
+            onCurrent = nextIsCurrent;
+        }
+
+        int changeVelocityFields = 0;
+        int maxVelocity = 6;
+
+        for (int speed = 1; speed <= 6; speed++) {
+            changeVelocityFields += speed;
+
+            if(changeVelocityFields > totalPathCost) {
+                maxVelocity = speed - 1;
+                break;
+            }
+        }
+
+        return maxVelocity;
     }
 
     /**

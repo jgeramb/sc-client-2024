@@ -501,7 +501,7 @@ public class MoveUtilTest {
         final Ship playerShip = this.gameState.getPlayerShip();
         playerShip.setPosition(new Vector3(2, -2, 0));
         playerShip.setDirection(Direction.DOWN_RIGHT);
-        playerShip.setSpeed(3);
+        playerShip.setSpeed(4);
         playerShip.setCoal(1);
 
         final Optional<Move> actualMove = MoveUtil.moveFromPath(this.gameState, new LinkedList<>(List.of(
@@ -512,7 +512,7 @@ public class MoveUtilTest {
                 new Vector3(2, 2, -4)
         )));
         final List<Action> expectedActions = List.of(
-                ActionFactory.changeVelocity(-1),
+                ActionFactory.changeVelocity(-2),
                 ActionFactory.forward(2)
         );
 
