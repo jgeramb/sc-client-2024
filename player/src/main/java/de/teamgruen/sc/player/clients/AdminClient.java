@@ -265,7 +265,8 @@ public class AdminClient extends Client {
 
     private void print(Level level, String message) {
         synchronized (this.logger) {
-            this.logger.log(level, message, replaceRequired.get());
+            if(!this.logger.log(level, message, replaceRequired.get()))
+                return;
         }
 
         if(replaceRequired.get()) {
