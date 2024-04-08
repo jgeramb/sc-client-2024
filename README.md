@@ -10,7 +10,7 @@
 
 ## Starting the client
 
-The client can either be started using the provided run configurations for IntelliJ IDEA or by running the JAR file.
+The client can either be started using the provided run configurations for IntelliJ IDEA or by running a bundled JAR file.
 
 ### Bundling the client into a JAR file
 
@@ -20,14 +20,14 @@ To bundle the client into a JAR file, run the following command:
 mvn clean package
 ```
 
-This will create a JAR file in the `target` directory.
+This will create a JAR file in the `player/target` directory.
 
 ### Running the JAR file
 
 To run the JAR file, execute the following command:
 
 ```bash
-java -jar target/teamgruen-player.jar
+java -jar player/target/teamgruen-player.jar
 ```
 
 ### Start arguments
@@ -86,7 +86,7 @@ The client can be started with the following arguments:
         <tr>
             <td><code>--password</code></td>
             <td>The administrator password for the server.</td>
-            <td><code>password</code></td>
+            <td><code>examplepassword</code></td>
         </tr>
     </tbody>
 </table>
