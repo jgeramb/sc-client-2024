@@ -49,6 +49,14 @@ public class AdvancedGameHandler extends BaseGameHandler {
                         final HashMap<List<Vector3>, Integer> costs = new HashMap<>();
 
                         getPaths(gameState).forEach(path -> {
+                            // skip impossible paths (start excluded from distance calculation)
+                            if (path.size() <= minSpeed)
+                                return;
+
+                            // skip last move of path to optimize turns with the Simple player
+                            if(path.size() == 2)
+                                return;
+
                             Direction direction = playerDirection;
                             int turns = 0;
 
@@ -58,10 +66,6 @@ public class AdvancedGameHandler extends BaseGameHandler {
                                 turns += direction.costTo(nextDirection);
                                 direction = nextDirection;
                             }
-
-                            // skip impossible paths (start excluded from distance calculation)
-                            if (path.size() <= minSpeed)
-                                return;
 
                             // skip paths that require more than two turns after reaching the destination
                             if (gameState.getBoard().getMinTurns(direction, path.get(path.size() - 1)) > 2)
