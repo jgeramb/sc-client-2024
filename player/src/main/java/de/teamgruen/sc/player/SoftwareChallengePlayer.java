@@ -55,7 +55,7 @@ public class SoftwareChallengePlayer {
                 final AdminClient adminClient = new AdminClient(LOGGER, host, port, playStyle);
                 adminClient.connect();
 
-                final String password = (String) parser.getOptionValue(passwordOption, "admin");
+                final String password = (String) parser.getOptionValue(passwordOption, "examplepassword");
 
                 adminClient.runTests(password, tests);
             } else {
