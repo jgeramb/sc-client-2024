@@ -584,7 +584,7 @@ public class MoveUtil {
         final double segmentDistance = board.getSegmentDistance(playerPosition, enemyPosition);
         final int requiredTurns = getSegmentDirectionCost(board, playerPosition, playerDirection);
 
-        return segmentDistance >= (3 - requiredTurns * 0.125 - (enemyShip.getSpeed() / 4d));
+        return segmentDistance >= (2.625 - requiredTurns * 0.125 - (enemyShip.getSpeed() / 4d));
     }
 
 }
