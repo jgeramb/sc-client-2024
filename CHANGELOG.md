@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.5.0](https://github.com/jgeramb/software-challenge-client/compare/v1.4.0...v1.5.0) (2024-04-09)
+
+
+### Features
+
+* **player/advanced:** prefer passenger fields with the smallest distance ([41ca778](https://github.com/jgeramb/software-challenge-client/commit/41ca7788a8390cb319c62b14d04ec7c13ccf1d8e))
+* **player/advanced:** prevent collection of passengers that can be collected by the enemy ([10fc926](https://github.com/jgeramb/software-challenge-client/commit/10fc9262f0e3687c5c3243df63f4ca11b116e748))
+* **player/advanced:** rewrote path finding logic ([c2ebdef](https://github.com/jgeramb/software-challenge-client/commit/c2ebdef8c0eac5711b8186927631aba1dede36c3))
+* **player/simple:** optimize criteria weights ([72c95aa](https://github.com/jgeramb/software-challenge-client/commit/72c95aab76066cd121eb291e1c34e5ff317d457b))
+
+
+### Bug Fixes
+
+* **player/admin:** reduce parallel threads to lower cpu load ([4ca4e96](https://github.com/jgeramb/software-challenge-client/commit/4ca4e96d4523442a72a166d1dec7d790fbb5e777))
+* **player/advanced:** fix next direction calculation ([535a908](https://github.com/jgeramb/software-challenge-client/commit/535a908560b9d48fd8d0600055dbb7276b7131d5))
+* **player/simple:** decrease speed cost to get to the goal first ([1888196](https://github.com/jgeramb/software-challenge-client/commit/18881965b470a690755278cd6c9903e517764995))
+* **player/simple:** increase passenger criteria weight ([7c2f76b](https://github.com/jgeramb/software-challenge-client/commit/7c2f76b7ee1371fe169834172e8ef89a5b1347b2))
+
 ## [1.4.0](https://github.com/jgeramb/software-challenge-client/compare/v1.3.0...v1.4.0) (2024-04-09)
 
 
