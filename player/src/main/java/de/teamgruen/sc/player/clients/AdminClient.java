@@ -168,7 +168,7 @@ public class AdminClient extends Client {
         for (int i = 0; i < playerStats.length; i++)
             playerStats[i] = new int[4];
 
-        final int threads = Math.max(1, Runtime.getRuntime().availableProcessors() / 4);
+        final int threads = Math.max(1, Runtime.getRuntime().availableProcessors() / 8);
         final ExecutorService executor = Executors.newFixedThreadPool(threads);
         final CountDownLatch latch = new CountDownLatch(count);
 
