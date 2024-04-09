@@ -197,8 +197,8 @@ public class MoveUtil {
 
         return (move.isGoal() ? 100 : 0)
                 + move.getPassengers() * Math.max(0, 3 - passengers) * (canEnemyWinByDistance || shouldMoveTowardsGoal ? 0 : 5)
-                + segmentDistance * (canEnemyWinByDistance ? 5 : 1.25) * (turn > 45 ? 2 : 1)
-                - coalCost * 1.75
+                + segmentDistance * (canEnemyWinByDistance ? 5 : 1.25) * (turn > 45 ? 2.5 : 1)
+                - coalCost * 1.875
                 - getSegmentDirectionCost(board, move.getEndPosition(), move.getEndDirection()) * 0.5
                 - move.getTotalCost() * Math.max(0, move.getSegmentIndex() - 4) * 0.125
                 + (move.getPushes() > 0 ? board.getMinTurns(enemyShip.getDirection(), move.getEnemyEndPosition()) : 0);
