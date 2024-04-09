@@ -472,8 +472,10 @@ public class MoveUtil {
                         false
                 );
 
-                if(!(result.equals(AdvanceInfo.Result.NORMAL) || result.equals(AdvanceInfo.Result.COUNTER_CURRENT)))
+                if(result.equals(AdvanceInfo.Result.SHIP))
                     wasCounterCurrent = false;
+                else if(result.equals(AdvanceInfo.Result.PASSENGER) || result.equals(AdvanceInfo.Result.GOAL))
+                    break;
 
                 pathIndex = path.subList(0, pathIndex).lastIndexOf(move.getEndPosition()) + 1;
             } else {
