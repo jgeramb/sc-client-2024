@@ -472,12 +472,12 @@ public class MoveUtil {
                         false
                 );
 
+                pathIndex = path.subList(0, pathIndex).lastIndexOf(move.getEndPosition()) + 1;
+
                 if(result.equals(AdvanceInfo.Result.SHIP))
                     wasCounterCurrent = false;
                 else if(result.equals(AdvanceInfo.Result.PASSENGER) || result.equals(AdvanceInfo.Result.GOAL))
                     break;
-
-                pathIndex = path.subList(0, pathIndex).lastIndexOf(move.getEndPosition()) + 1;
             } else {
                 pathIndex = initialPathIndex;
                 break;
