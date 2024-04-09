@@ -115,7 +115,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
                 if(isEnemyAhead && board.getSegmentIndex(collectPosition) < 5)
                     return;
 
-                final List<Vector3> path = PathFinder.findPath(playerShip, shipPosition, collectPosition);
+                final List<Vector3> path = PathFinder.findPath(playerShip.getDirection(), shipPosition, collectPosition);
 
                 if(path != null)
                     paths.add(path);
