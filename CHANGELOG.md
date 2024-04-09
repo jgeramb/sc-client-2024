@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.4.0](https://github.com/jgeramb/software-challenge-client/compare/v1.3.0...v1.4.0) (2024-04-09)
+
+
+### Features
+
+* **player/admin:** stop collecting losses ([0de2d42](https://github.com/jgeramb/software-challenge-client/commit/0de2d420f60a38aff0f41a9f7f63e7d03b581c4b))
+* **player/simple:** increase weight of 2nd forecasted move ([5db03ce](https://github.com/jgeramb/software-challenge-client/commit/5db03ce1610a09a50135f3d28c6c1eb1ab545a4d))
+* **sdk:** return whether the message was logged ([89d3047](https://github.com/jgeramb/software-challenge-client/commit/89d3047011db1a7ff8ecf586e37be1d9ca492ec9))
+
+
+### Bug Fixes
+
+* **player/admin:** prevent line breaks from invisible debug messages ([08af93c](https://github.com/jgeramb/software-challenge-client/commit/08af93c9d8d87cae78d73c4ebadae6eb3da837ee))
+* **player/advanced:** fix incorrect max speed after turn ([ee03339](https://github.com/jgeramb/software-challenge-client/commit/ee03339f76d3cb4c88c3ff72d95950d12df2a40e))
+* **player/advanced:** fix rule violation ([dc3532d](https://github.com/jgeramb/software-challenge-client/commit/dc3532d84a516e55f8c0873870e0ba7f2962728c))
+* **player/advanced:** prevent dead ends ([5243632](https://github.com/jgeramb/software-challenge-client/commit/52436329967e90fe1fb0c089a034359fbec4e9c7))
+* **player/advanced:** prevent infinite loops in path reconstruction ([66ff295](https://github.com/jgeramb/software-challenge-client/commit/66ff29555b7b4dc857d92810152f3c842f006e09))
+* **player:** reduce the distance that the enemy needs to be seen as ahead ([a3833fc](https://github.com/jgeramb/software-challenge-client/commit/a3833fca9a21885b825e8475eb7b2d1501312b99))
+
 ## [1.3.0](https://github.com/jgeramb/software-challenge-client/compare/v1.2.0...v1.3.0) (2024-04-08)
 
 
