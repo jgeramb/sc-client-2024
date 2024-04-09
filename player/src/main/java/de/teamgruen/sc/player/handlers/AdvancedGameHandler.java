@@ -68,7 +68,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
 
                     final List<Vector3> shortestPath = costs.entrySet()
                             .stream()
-                            .min(Comparator.comparingInt(Map.Entry::getValue))
+                            .min(Comparator.comparingInt(entry -> entry.getKey().size() + entry.getValue()))
                             .map(Map.Entry::getKey)
                             .orElse(null);
 
