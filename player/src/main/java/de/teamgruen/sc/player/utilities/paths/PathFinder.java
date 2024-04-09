@@ -50,7 +50,7 @@ public class PathFinder {
 
             // early exit if the end position was reached
             if (currentPosition.equals(end))
-                return reconstructPath(cameFrom, currentPosition);
+                return reconstructPath(cameFrom, end);
 
             final boolean wasCounterCurrent = gameState.getBoard().isCounterCurrent(currentPosition);
             final int gCost = costSoFar.get(currentPosition);
@@ -90,6 +90,10 @@ public class PathFinder {
         Vector3 current = destination;
 
         do {
+            // prevent infinite loops
+            if(path.size() >= 2 && path.lastIndexOf(current) == path.size() - 2)
+                return null;
+
             path.add(current);
         } while((current = cameFrom.get(current)) != null);
 
