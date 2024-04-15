@@ -196,7 +196,7 @@ public class MoveUtil {
         final int coalCost = Math.max(0, coalBefore - coalAfter - (turn < 2 ? 1 : 0));
 
         return (move.isGoal() ? 100 : 0)
-                + move.getPassengers() * Math.max(0, 3 - passengers) * (canEnemyWinByDistance || shouldMoveTowardsGoal ? 0 : 5)
+                + move.getPassengers() * Math.max(0, 3 - passengers) * (canEnemyWinByDistance || shouldMoveTowardsGoal ? 0 : 5.5)
                 + segmentDistance * (canEnemyWinByDistance ? 5 : 1.25) * (turn > 45 ? 2.5 : 1)
                 - coalCost * 1.875
                 - getSegmentDirectionCost(board, move.getEndPosition(), move.getEndDirection()) * 0.5
