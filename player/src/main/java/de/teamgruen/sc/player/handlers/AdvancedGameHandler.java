@@ -110,33 +110,17 @@ public class AdvancedGameHandler extends BaseGameHandler {
                     return;
 
                 final Vector3 collectPosition = position.copy().add(passenger.getDirection().toVector3());
-                final double segmentDistance = board.getSegmentDistance(shipPosition, collectPosition);
 
                 // skip passengers that are too far behind
-                if(segmentDistance < -0.5)
+                if(board.getSegmentDistance(shipPosition, collectPosition) < -0.5)
                     return;
 
                 if(isEnemyAhead && board.getSegmentIndex(collectPosition) < board.getSegmentIndex(enemyPosition) - 2)
                     return;
 
                 // check if enemy can reach the passenger before the player
-                if(Math.abs(segmentDistance) > 0.25) {
-                    try {
-                        final Direction enemyDirection = Direction.fromVector3(enemyPosition.copy().subtract(collectPosition));
-                        final int turnCost = enemyShip.getDirection().costTo(enemyDirection);
-
-                        if (turnCost <= 1 + enemyShip.getCoal()) {
-                            final int remainingCoal = enemyShip.getCoal() - Math.max(0, turnCost - 1);
-                            final int minReachableSpeed = enemyShip.getSpeed() - 1 - remainingCoal;
-                            final int requiredSpeed = board.isCounterCurrent(collectPosition) ? 2 : 1;
-
-                            if (minReachableSpeed <= requiredSpeed)
-                                return;
-                        }
-                    } catch (IllegalArgumentException ignored) {
-                        // ignore invalid directions
-                    }
-                }
+                if(paths.size() > 2 && MoveUtil.canEnemyCollectPassenger(board, enemyShip, enemyPosition, collectPosition))
+                    return;
 
                 final List<Vector3> path = PathFinder.findPath(shipDirection, shipPosition, collectPosition);
 

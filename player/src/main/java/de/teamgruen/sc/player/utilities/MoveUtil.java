@@ -176,6 +176,7 @@ public class MoveUtil {
      *     <li>whether the ship decelerates when approaching the goal fields</li>
      *     <li>how many turns the enemy ship needs to move when it was pushed</li>
      *     <li>whether the player has enough passengers and has pushed the enemy ship</li>
+     *     <li>whether the enemy can collect the passenger before the player can reach it</li>
      * </ul>
      *
      * @param board the current game board
@@ -198,10 +199,16 @@ public class MoveUtil {
         final double segmentDistance = getMoveSegmentDistance(board, ship, move);
         final int coalCost = Math.max(0, coalBefore - coalAfter - (turn < 2 ? 1 : 0));
 
+        boolean canEnemyCollectPassengerBeforePlayer = move.getPassengers() > 0
+                && move.getDistance() > 1
+                && canEnemyCollectPassenger(board, enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
+
+        final int passengersToInclude = canEnemyCollectPassengerBeforePlayer ? 0 : move.getPassengers();
+
         return (move.isGoal() ? 100 : 0)
-                + move.getPassengers() * Math.max(0, 3 - passengers) * (shouldMoveTowardsGoal ? 0 : 4)
-                + segmentDistance * (shouldMoveTowardsGoal ? 5 : (hasEnoughPassengers ? 2.5 : 1)) * (turn > 45 ? 2.5 : 1)
-                - coalCost * (hasEnoughPassengers ? 0.75 : 1.5)
+                + passengersToInclude * Math.max(0, 3 - passengers) * (shouldMoveTowardsGoal ? 0 : 4)
+                + segmentDistance * (shouldMoveTowardsGoal ? 5 : (hasEnoughPassengers ? 2 : 1)) * (turn > 45 ? 2.5 : 1)
+                - coalCost * (hasEnoughPassengers ? 0.75 : 1.25)
                 - getSegmentDirectionCost(board, move.getEndPosition(), move.getEndDirection()) * 0.75
                 - board.getMinTurns(move.getEndDirection(), move.getEndPosition()) * 0.25
                 - move.getTotalCost() * Math.max(0, move.getSegmentIndex() - 4) * 0.25
@@ -594,6 +601,34 @@ public class MoveUtil {
         final int requiredTurns = getSegmentDirectionCost(board, playerPosition, playerDirection);
 
         return segmentDistance >= (2.6875 - requiredTurns * 0.125 - (enemyShip.getSpeed() / 4d));
+    }
+
+    /**
+     * @param board the game board
+     * @param enemyShip the enemy's ship
+     * @param enemyPosition the enemy's position
+     * @param collectPosition the position to collect the passenger
+     * @return whether the enemy can collect the passenger in the next round
+     */
+    public static boolean canEnemyCollectPassenger(Board board, Ship enemyShip, Vector3 enemyPosition, Vector3 collectPosition) {
+        try {
+            final Direction enemyDirection = Direction.fromVector3(enemyPosition.copy().subtract(collectPosition));
+            final int turnCost = enemyShip.getDirection().costTo(enemyDirection);
+            final int coal = Math.min(2, enemyShip.getCoal());
+
+            if (turnCost <= 1 + coal) {
+                final int remainingCoal = coal - Math.max(0, turnCost - 1);
+                final int minReachableSpeed = enemyShip.getSpeed() - 1 - remainingCoal;
+                final int requiredSpeed = board.isCounterCurrent(collectPosition) ? 2 : 1;
+
+                if (minReachableSpeed <= requiredSpeed)
+                    return true;
+            }
+        } catch (IllegalArgumentException ignored) {
+            // ignore invalid directions
+        }
+
+        return false;
     }
 
 }
