@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.6.0](https://github.com/jgeramb/software-challenge-client/compare/v1.5.2...v1.6.0) (2024-04-21)
+
+
+### Features
+
+* **player/simple:** optimize move evaluation ([bdebc6b](https://github.com/jgeramb/software-challenge-client/commit/bdebc6b2ae76b839b5ef956aaaeb32698170ec88))
+* **player:** optimize move/path evaluation ([90f84ae](https://github.com/jgeramb/software-challenge-client/commit/90f84aeb4d754e1072203b5b28d18fb1c441b727))
+
+
+### Bug Fixes
+
+* **sdk/game:** fix push direction evaluation for the late game ([63eab0a](https://github.com/jgeramb/software-challenge-client/commit/63eab0a8a69ed3a8df520a2cfcfe5ee94950ea27))
+
 ## [1.5.2](https://github.com/jgeramb/software-challenge-client/compare/v1.5.1...v1.5.2) (2024-04-21)
 
 
