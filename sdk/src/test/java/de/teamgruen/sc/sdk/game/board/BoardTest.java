@@ -765,7 +765,7 @@ public class BoardTest {
                 true
         ).stream().map(Move::getActions).toList();
         final List<List<Action>> expectedMoves = List.of(
-                List.of(ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1), ActionFactory.push(Direction.DOWN_LEFT), ActionFactory.forward(1), ActionFactory.push(Direction.DOWN_RIGHT))
+                List.of(ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1), ActionFactory.push(Direction.DOWN_LEFT), ActionFactory.forward(1), ActionFactory.push(Direction.RIGHT))
         );
 
         assertEquals(expectedMoves.size(), actualMoves.size());

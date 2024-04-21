@@ -567,9 +567,6 @@ public class Board {
         if(enemyShip.isStuck())
             return null;
 
-        final int enemySegmentIndex = this.getSegmentIndex(enemyPosition);
-        final int enemySegmentColumn = this.getSegmentColumn(enemyPosition);
-
         Direction bestDirection = null;
         double maxScore = Integer.MIN_VALUE;
 
@@ -584,19 +581,18 @@ public class Board {
                 continue;
 
             final int counterCurrentBonus = this.isCounterCurrent(pushPosition) ? 1 : 0;
+            final boolean hasEnoughPassengers = enemyShip.hasEnoughPassengers();
 
-            if(!allowGoalAndPassengerPickUp && enemyShip.getSpeed() == 1 + counterCurrentBonus) {
-                if(pushField instanceof Goal && enemyShip.hasEnoughPassengers())
+            if(!allowGoalAndPassengerPickUp && enemyShip.getSpeed() <= 2 + counterCurrentBonus + enemyShip.getCoal()) {
+                if(pushField instanceof Goal && hasEnoughPassengers)
                     continue;
 
                 if(this.canPickUpPassenger(pushPosition))
                     continue;
             }
 
-            final int segmentIndex = this.getSegmentIndex(pushPosition);
-            final int segmentColumn = this.getSegmentColumn(pushPosition);
-            final double deltaSegmentPosition = (segmentIndex - enemySegmentIndex) + (segmentColumn - enemySegmentColumn) / 4d;
-            final double score = this.getMinTurns(enemyShip.getDirection(), pushPosition) + counterCurrentBonus - deltaSegmentPosition;
+            final double positionBonus = this.getSegmentDistance(pushPosition, enemyPosition) * (hasEnoughPassengers ? 4 : 2);
+            final double score = this.getMinTurns(enemyShip.getDirection(), pushPosition) + counterCurrentBonus + positionBonus;
 
             if(score > maxScore) {
                 maxScore = score;
