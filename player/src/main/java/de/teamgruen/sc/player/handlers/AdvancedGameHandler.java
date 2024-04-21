@@ -72,19 +72,22 @@ public class AdvancedGameHandler extends BaseGameHandler {
                             .map(Map.Entry::getKey)
                             .orElse(null);
 
-                    if (shortestPath != null && shortestPath.size() > 2) {
-                        final Optional<Move> move = MoveUtil.moveFromPath(gameState, shortestPath);
+                    if (shortestPath != null && !shortestPath.isEmpty()) {
+                        final Vector3 endPosition = shortestPath.get(shortestPath.size() - 1);
+                        final double segmentDistance = gameState.getBoard().getSegmentDistance(playerShip.getPosition(), endPosition);
 
-                        if (move.isPresent())
-                            return move.get();
+                        // let simple player handle short paths
+                        if(segmentDistance > 0.75) {
+                            final Optional<Move> move = MoveUtil.moveFromPath(gameState, shortestPath);
+
+                            if (move.isPresent())
+                                return move.get();
+                        }
                     }
 
                     this.logger.debug(AnsiColor.WHITE + "Falling back to " + AnsiColor.PURPLE + "Simple" + AnsiColor.WHITE + " player" + AnsiColor.RESET);
 
-                    // a negative timeout will disable move forecasting
-                    final int timeout = shortestPath != null && shortestPath.size() == 2 ? -1 : 500;
-
-                    return MoveUtil.getMostEfficientMove(gameState, timeout).orElse(null);
+                    return MoveUtil.getMostEfficientMove(gameState, 500).orElse(null);
                 }
         );
     }
@@ -92,13 +95,13 @@ public class AdvancedGameHandler extends BaseGameHandler {
     private Set<List<Vector3>> getPaths(GameState gameState) {
         final Board board = gameState.getBoard();
         final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
+        final Direction shipDirection = playerShip.getDirection();
         final Vector3 shipPosition = playerShip.getPosition();
-        final boolean isEnemyAhead = MoveUtil.isEnemyAhead(board, shipPosition, playerShip.getDirection(), enemyShip, enemyShip.getPosition());
+        final Vector3 enemyPosition = enemyShip.getPosition();
+        final boolean isEnemyAhead = MoveUtil.isEnemyAhead(board, shipPosition, shipDirection, enemyShip, enemyPosition);
         final Set<List<Vector3>> paths = new HashSet<>();
 
         if(playerShip.getPassengers() < 3 && !enemyShip.hasEnoughPassengers()) {
-            final boolean canEnemyMove = !enemyShip.isStuck();
-
             // passengers
             board.getPassengerFields().forEach((position, field) -> {
                 final Passenger passenger = (Passenger) field;
@@ -107,33 +110,25 @@ public class AdvancedGameHandler extends BaseGameHandler {
                     return;
 
                 final Vector3 collectPosition = position.copy().add(passenger.getDirection().toVector3());
-                final double segmentDistance = board.getSegmentDistance(shipPosition, collectPosition);
 
-                if(segmentDistance < (playerShip.hasEnoughPassengers() ? 0 : -0.75) && canEnemyMove)
+                // skip passengers that are too far behind
+                if(board.getSegmentDistance(shipPosition, collectPosition) < -0.5)
                     return;
 
-                if(isEnemyAhead && board.getSegmentIndex(collectPosition) < 5)
+                if(isEnemyAhead && board.getSegmentIndex(collectPosition) < board.getSegmentIndex(enemyPosition) - 2)
                     return;
 
-                // check if enemy can reach the passenger before the player
-                if(Math.abs(segmentDistance) >= 0.25) {
-                    try {
-                        final Direction enemyDirection = Direction.fromVector3(enemyShip.getPosition().copy().subtract(collectPosition));
-                        final int turnCost = enemyShip.getDirection().costTo(enemyDirection);
+                final List<Vector3> path = PathFinder.findPath(shipDirection, shipPosition, collectPosition);
 
-                        if (turnCost <= 1 + enemyShip.getCoal()) {
-                            final int remainingCoal = enemyShip.getCoal() - Math.max(0, turnCost - 1);
-                            final int minReachableSpeed = enemyShip.getSpeed() - 1 - remainingCoal;
-                            final int requiredSpeed = board.isCounterCurrent(collectPosition) ? 2 : 1;
+                if(path != null)
+                    paths.add(path);
+            });
+        }
 
-                            if (minReachableSpeed <= requiredSpeed)
-                                return;
-                        }
-                    } catch (IllegalArgumentException ignore) {
-                    }
-                }
-
-                final List<Vector3> path = PathFinder.findPath(playerShip.getDirection(), shipPosition, collectPosition);
+        if(playerShip.hasEnoughPassengers()) {
+            // goals
+            board.getGoalFields().keySet().forEach(position -> {
+                final List<Vector3> path = PathFinder.findPath(shipDirection, shipPosition, position);
 
                 if(path != null)
                     paths.add(path);

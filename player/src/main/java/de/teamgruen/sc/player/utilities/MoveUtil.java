@@ -129,7 +129,7 @@ public class MoveUtil {
 
                     if(endsAtLastSegmentBorder(board, move, move.getCoalCost(direction, speed, freeTurns))) {
                         // update the score of the move if it ends at the last segment border
-                        entry.setValue(entry.getValue() + 1.5);
+                        entry.setValue(entry.getValue() + 0.75);
 
                         if(move.getSegmentIndex() < 7)
                             bestNextDirections.put(move, current.rotateTo(board.getNextSegmentDirection(), leftFreeTurns));
@@ -172,10 +172,10 @@ public class MoveUtil {
      *     <li>the distance between the ship and the end of the move</li>
      *     <li>the amount of coal used</li>
      *     <li>the turns required to reach the direction of the next segment</li>
-     *     <li>the amount of turns required after the move</li>
      *     <li>whether the ship decelerates when approaching the goal fields</li>
      *     <li>how many turns the enemy ship needs to move when it was pushed</li>
      *     <li>whether the player has enough passengers and has pushed the enemy ship</li>
+     *     <li>whether the enemy can collect the passenger before the player can reach it</li>
      * </ul>
      *
      * @param board the current game board
@@ -197,14 +197,25 @@ public class MoveUtil {
         final boolean shouldMoveTowardsGoal = canEnemyWinByDistance || (enemyShip.hasEnoughPassengers() && passengers >= 2);
         final double segmentDistance = getMoveSegmentDistance(board, ship, move);
         final int coalCost = Math.max(0, coalBefore - coalAfter - (turn < 2 ? 1 : 0));
+        boolean canEnemyCollectPassengerBeforePlayer = false;
+
+        if(move.getPassengers() > 0) {
+            try {
+                Direction.fromVector3(move.getEndPosition().copy().subtract(ship.getPosition()));
+            } catch (IllegalArgumentException ignored) {
+                // proceed if the direction is invalid, meaning the player needs at least 2 turns to reach the passenger
+                canEnemyCollectPassengerBeforePlayer = canEnemyCollectPassenger(board, enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
+            }
+        }
+
+        final int passengersToInclude = canEnemyCollectPassengerBeforePlayer ? 0 : move.getPassengers();
 
         return (move.isGoal() ? 100 : 0)
-                + move.getPassengers() * Math.max(0, 3 - passengers) * (shouldMoveTowardsGoal ? 0 : 4)
-                + segmentDistance * (shouldMoveTowardsGoal ? 5 : (hasEnoughPassengers ? 2.5 : 1)) * (turn > 45 ? 2.5 : 1)
-                - coalCost * (hasEnoughPassengers ? 0.75 : 1.5)
+                + passengersToInclude * Math.max(0, 3 - passengers) * (shouldMoveTowardsGoal ? 0 : 4)
+                + segmentDistance * (shouldMoveTowardsGoal ? 5 : (hasEnoughPassengers ? 2 : 1)) * (turn > 45 ? 2.5 : 1)
+                - coalCost * (hasEnoughPassengers ? 1 : 1.5)
                 - getSegmentDirectionCost(board, move.getEndPosition(), move.getEndDirection()) * 0.75
-                - board.getMinTurns(move.getEndDirection(), move.getEndPosition()) * 0.25
-                - move.getTotalCost() * Math.max(0, move.getSegmentIndex() - 4) * 0.25
+                - move.getTotalCost() * Math.max(0, move.getSegmentIndex() - 4) * 0.375
                 + board.getMinTurns(enemyShip.getDirection(), move.getEnemyEndPosition()) * (move.getPushes() > 0 ? 0.25 : 0)
                 + move.getPushes() * (hasEnoughPassengers ? 0.5 : 0);
     }
@@ -230,7 +241,9 @@ public class MoveUtil {
                                                      int passengers, int speed, int freeTurns, int coal,
                                                      int extraCoal, boolean forceMultiplePushes) {
         final boolean isEnemyAhead = isEnemyAhead(board, position, direction, enemyShip, enemyPosition);
-        final int accelerationCoal = getAccelerationCoal(turn, isEnemyAhead, coal - extraCoal);
+        final boolean hasEnemyMorePoints = enemyShip.getPassengers() >= ship.getPassengers()
+                && board.getSegmentDistance(ship.getPosition(), enemyShip.getPosition()) >= 1.25;
+        final int accelerationCoal = getAccelerationCoal(turn, isEnemyAhead || hasEnemyMorePoints, coal - extraCoal);
         final Set<Move> moves = board.getMoves(ship, position, direction, enemyShip, enemyPosition,
                 speed, freeTurns, Math.min(coal, 1 + accelerationCoal + extraCoal), forceMultiplePushes);
 
@@ -303,7 +316,7 @@ public class MoveUtil {
                 final Move nextMove = entry.getKey();
 
                 if (endsAtLastSegmentBorder(board, nextMove, remainingCoal))
-                    entry.setValue(entry.getValue() + 1.5);
+                    entry.setValue(entry.getValue() + 0.75);
                 else {
                     final Map.Entry<Move, Double> bestNextMove = getBestNextMove(board, newTurn, ship, enemyShip, move, remainingCoal, nextMove);
 
@@ -370,6 +383,8 @@ public class MoveUtil {
         final Board board = gameState.getBoard();
         final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
         final boolean isEnemyAhead = isEnemyAhead(board, playerShip.getPosition(), playerShip.getDirection(), enemyShip, enemyShip.getPosition());
+        final boolean hasEnemyMorePoints = enemyShip.getPassengers() >= playerShip.getPassengers()
+                && board.getSegmentDistance(playerShip.getPosition(), enemyShip.getPosition()) >= 1.25;
         final Move move = new Move(path.get(0), enemyShip.getPosition(), playerShip.getDirection());
 
         final int maxIndex = path.size() - 1;
@@ -379,7 +394,7 @@ public class MoveUtil {
         final int maxVelocity = getMaxVelocity(board, path);
 
         int freeTurns = playerShip.getFreeTurns();
-        int coal = Math.min(playerShip.getCoal(), getAccelerationCoal(gameState.getTurn(), isEnemyAhead, playerShip.getCoal()) + 1);
+        int coal = Math.min(playerShip.getCoal(), getAccelerationCoal(gameState.getTurn(), isEnemyAhead || hasEnemyMorePoints, playerShip.getCoal()) + 1);
         int pathIndex = 1 /* skip start position */;
 
         boolean wasCounterCurrent = false;
@@ -409,7 +424,8 @@ public class MoveUtil {
                 wasCounterCurrent = false;
             }
 
-            final int maxReachableSpeed = Math.min(6, gameState.getMaxMovementPoints(playerShip) + coal);
+            final double segmentSpeedWithdrawing = Math.max(0, move.getSegmentIndex() - 4) * 0.5;
+            final int maxReachableSpeed = (int) Math.min(Math.ceil(6 - segmentSpeedWithdrawing), gameState.getMaxMovementPoints(playerShip) + coal);
 
             if(move.getTotalCost() == maxReachableSpeed)
                 break;
@@ -593,6 +609,34 @@ public class MoveUtil {
         final int requiredTurns = getSegmentDirectionCost(board, playerPosition, playerDirection);
 
         return segmentDistance >= (2.6875 - requiredTurns * 0.125 - (enemyShip.getSpeed() / 4d));
+    }
+
+    /**
+     * @param board the game board
+     * @param enemyShip the enemy's ship
+     * @param enemyPosition the enemy's position
+     * @param collectPosition the position to collect the passenger
+     * @return whether the enemy can collect the passenger in the next round
+     */
+    public static boolean canEnemyCollectPassenger(Board board, Ship enemyShip, Vector3 enemyPosition, Vector3 collectPosition) {
+        try {
+            final Direction enemyDirection = Direction.fromVector3(enemyPosition.copy().subtract(collectPosition));
+            final int turnCost = enemyShip.getDirection().costTo(enemyDirection);
+            final int coal = Math.min(2, enemyShip.getCoal());
+
+            if (turnCost <= 1 + coal) {
+                final int remainingCoal = coal - Math.max(0, turnCost - 1);
+                final int minReachableSpeed = enemyShip.getSpeed() - 1 - remainingCoal;
+                final int requiredSpeed = board.isCounterCurrent(collectPosition) ? 2 : 1;
+
+                if (minReachableSpeed <= requiredSpeed)
+                    return true;
+            }
+        } catch (IllegalArgumentException ignored) {
+            // ignore invalid directions
+        }
+
+        return false;
     }
 
 }
