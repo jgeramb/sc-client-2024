@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/jgeramb/software-challenge-client/compare/v1.5.2...v1.6.0) (2024-04-21)
+
+
+### Features
+
+* **player/simple:** optimize move evaluation ([bdebc6b](https://github.com/jgeramb/software-challenge-client/commit/bdebc6b2ae76b839b5ef956aaaeb32698170ec88))
+
 ## [1.5.2](https://github.com/jgeramb/software-challenge-client/compare/v1.5.1...v1.5.2) (2024-04-21)
 
 
