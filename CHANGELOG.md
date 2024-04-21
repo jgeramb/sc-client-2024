@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.6.0](https://github.com/jgeramb/software-challenge-client/compare/v1.5.2...v1.6.0) (2024-04-21)
+
+
+### Features
+
+* **player/advanced:** decrease speed once the ship gets closer to a goal ([3807989](https://github.com/jgeramb/software-challenge-client/commit/380798964a40a9ce155973a4f8e0ebee784f8f73))
+* **player/advanced:** optimize move evaluation + add goal path finding ([d40a876](https://github.com/jgeramb/software-challenge-client/commit/d40a8766315841f60732e96f47e4c067909e7d0e))
+* **player/simple:** optimize move evaluation ([bdebc6b](https://github.com/jgeramb/software-challenge-client/commit/bdebc6b2ae76b839b5ef956aaaeb32698170ec88))
+* **player:** use more coal if ahead in points ([acf78ff](https://github.com/jgeramb/software-challenge-client/commit/acf78ffe1ebb9209f701a1aa7d36cb0d15c9570b))
+
+
+### Bug Fixes
+
+* **player:** optimize forecasting logic for enemy collection ([24bcfa6](https://github.com/jgeramb/software-challenge-client/commit/24bcfa6c46c3371fc111ca1d924c041af44ee77a))
+* **player:** prevent getting stuck due to excessive speed ([a43d1a0](https://github.com/jgeramb/software-challenge-client/commit/a43d1a04bdedef75465fe3129ca0bedfbefb797c))
+* **player:** prevent moving towards passengers that can be reached by the enemy in the next round ([4806120](https://github.com/jgeramb/software-challenge-client/commit/480612083db3d53f5325fdb3b5d088c7a34cbd3b))
+* **player:** reduce bonus points for segment borders + increase coal cost ([68d60d5](https://github.com/jgeramb/software-challenge-client/commit/68d60d538e8d5dae8e0c4d831277db47d1a57002))
+* **sdk/game:** fix push direction evaluation for the late game ([1e7d753](https://github.com/jgeramb/software-challenge-client/commit/1e7d753f5c98f765ebbd39e876745fb0c994990a))
+
 ## [1.5.2](https://github.com/jgeramb/software-challenge-client/compare/v1.5.1...v1.5.2) (2024-04-21)
 
 
