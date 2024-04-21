@@ -409,7 +409,8 @@ public class MoveUtil {
                 wasCounterCurrent = false;
             }
 
-            final int maxReachableSpeed = Math.min(6, gameState.getMaxMovementPoints(playerShip) + coal);
+            final double segmentSpeedWithdrawing = Math.max(0, move.getSegmentIndex() - 4) * 0.5;
+            final int maxReachableSpeed = (int) Math.min(Math.ceil(6 - segmentSpeedWithdrawing), gameState.getMaxMovementPoints(playerShip) + coal);
 
             if(move.getTotalCost() == maxReachableSpeed)
                 break;
