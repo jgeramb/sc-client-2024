@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/jgeramb/software-challenge-client/compare/v1.5.0...v1.5.1) (2024-04-15)
+
+
+### Bug Fixes
+
+* **player/simple:** slightly increase passenger weight to improve move evaluation ([242e956](https://github.com/jgeramb/software-challenge-client/commit/242e95662fb95f809abda9f829a5dea20535c99f))
+
 ## [1.5.0](https://github.com/jgeramb/software-challenge-client/compare/v1.4.0...v1.5.0) (2024-04-09)
 
 
