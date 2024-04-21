@@ -129,7 +129,7 @@ public class MoveUtil {
 
                     if(endsAtLastSegmentBorder(board, move, move.getCoalCost(direction, speed, freeTurns))) {
                         // update the score of the move if it ends at the last segment border
-                        entry.setValue(entry.getValue() + 1.5);
+                        entry.setValue(entry.getValue() + 0.75);
 
                         if(move.getSegmentIndex() < 7)
                             bestNextDirections.put(move, current.rotateTo(board.getNextSegmentDirection(), leftFreeTurns));
@@ -172,7 +172,6 @@ public class MoveUtil {
      *     <li>the distance between the ship and the end of the move</li>
      *     <li>the amount of coal used</li>
      *     <li>the turns required to reach the direction of the next segment</li>
-     *     <li>the amount of turns required after the move</li>
      *     <li>whether the ship decelerates when approaching the goal fields</li>
      *     <li>how many turns the enemy ship needs to move when it was pushed</li>
      *     <li>whether the player has enough passengers and has pushed the enemy ship</li>
@@ -214,9 +213,8 @@ public class MoveUtil {
         return (move.isGoal() ? 100 : 0)
                 + passengersToInclude * Math.max(0, 3 - passengers) * (shouldMoveTowardsGoal ? 0 : 4)
                 + segmentDistance * (shouldMoveTowardsGoal ? 5 : (hasEnoughPassengers ? 2 : 1)) * (turn > 45 ? 2.5 : 1)
-                - coalCost * (hasEnoughPassengers ? 0.75 : 1.25)
+                - coalCost * (hasEnoughPassengers ? 1 : 1.5)
                 - getSegmentDirectionCost(board, move.getEndPosition(), move.getEndDirection()) * 0.75
-                - board.getMinTurns(move.getEndDirection(), move.getEndPosition()) * 0.25
                 - move.getTotalCost() * Math.max(0, move.getSegmentIndex() - 4) * 0.25
                 + board.getMinTurns(enemyShip.getDirection(), move.getEnemyEndPosition()) * (move.getPushes() > 0 ? 0.25 : 0)
                 + move.getPushes() * (hasEnoughPassengers ? 0.5 : 0);
@@ -318,7 +316,7 @@ public class MoveUtil {
                 final Move nextMove = entry.getKey();
 
                 if (endsAtLastSegmentBorder(board, nextMove, remainingCoal))
-                    entry.setValue(entry.getValue() + 1.5);
+                    entry.setValue(entry.getValue() + 0.75);
                 else {
                     final Map.Entry<Move, Double> bestNextMove = getBestNextMove(board, newTurn, ship, enemyShip, move, remainingCoal, nextMove);
 
