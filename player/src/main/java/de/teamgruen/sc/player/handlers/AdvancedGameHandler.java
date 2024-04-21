@@ -118,10 +118,6 @@ public class AdvancedGameHandler extends BaseGameHandler {
                 if(isEnemyAhead && board.getSegmentIndex(collectPosition) < board.getSegmentIndex(enemyPosition) - 2)
                     return;
 
-                // check if enemy can reach the passenger before the player
-                if(paths.size() > 2 && MoveUtil.canEnemyCollectPassenger(board, enemyShip, enemyPosition, collectPosition))
-                    return;
-
                 final List<Vector3> path = PathFinder.findPath(shipDirection, shipPosition, collectPosition);
 
                 if(path != null)

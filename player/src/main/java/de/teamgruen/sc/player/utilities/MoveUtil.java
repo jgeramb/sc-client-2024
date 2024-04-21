@@ -198,10 +198,16 @@ public class MoveUtil {
         final boolean shouldMoveTowardsGoal = canEnemyWinByDistance || (enemyShip.hasEnoughPassengers() && passengers >= 2);
         final double segmentDistance = getMoveSegmentDistance(board, ship, move);
         final int coalCost = Math.max(0, coalBefore - coalAfter - (turn < 2 ? 1 : 0));
+        boolean canEnemyCollectPassengerBeforePlayer = false;
 
-        boolean canEnemyCollectPassengerBeforePlayer = move.getPassengers() > 0
-                && move.getDistance() > 1
-                && canEnemyCollectPassenger(board, enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
+        if(move.getPassengers() > 0) {
+            try {
+                Direction.fromVector3(move.getEndPosition().copy().subtract(ship.getPosition()));
+            } catch (IllegalArgumentException ignored) {
+                // proceed if the direction is invalid, meaning the player needs at least 2 turns to reach the passenger
+                canEnemyCollectPassengerBeforePlayer = canEnemyCollectPassenger(board, enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
+            }
+        }
 
         final int passengersToInclude = canEnemyCollectPassengerBeforePlayer ? 0 : move.getPassengers();
 
