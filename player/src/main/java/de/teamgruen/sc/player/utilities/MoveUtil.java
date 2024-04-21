@@ -237,7 +237,9 @@ public class MoveUtil {
                                                      int passengers, int speed, int freeTurns, int coal,
                                                      int extraCoal, boolean forceMultiplePushes) {
         final boolean isEnemyAhead = isEnemyAhead(board, position, direction, enemyShip, enemyPosition);
-        final int accelerationCoal = getAccelerationCoal(turn, isEnemyAhead, coal - extraCoal);
+        final boolean hasEnemyMorePoints = enemyShip.getPassengers() >= ship.getPassengers()
+                && board.getSegmentDistance(ship.getPosition(), enemyShip.getPosition()) >= 1.25;
+        final int accelerationCoal = getAccelerationCoal(turn, isEnemyAhead || hasEnemyMorePoints, coal - extraCoal);
         final Set<Move> moves = board.getMoves(ship, position, direction, enemyShip, enemyPosition,
                 speed, freeTurns, Math.min(coal, 1 + accelerationCoal + extraCoal), forceMultiplePushes);
 
@@ -377,6 +379,8 @@ public class MoveUtil {
         final Board board = gameState.getBoard();
         final Ship playerShip = gameState.getPlayerShip(), enemyShip = gameState.getEnemyShip();
         final boolean isEnemyAhead = isEnemyAhead(board, playerShip.getPosition(), playerShip.getDirection(), enemyShip, enemyShip.getPosition());
+        final boolean hasEnemyMorePoints = enemyShip.getPassengers() >= playerShip.getPassengers()
+                && board.getSegmentDistance(playerShip.getPosition(), enemyShip.getPosition()) >= 1.25;
         final Move move = new Move(path.get(0), enemyShip.getPosition(), playerShip.getDirection());
 
         final int maxIndex = path.size() - 1;
@@ -386,7 +390,7 @@ public class MoveUtil {
         final int maxVelocity = getMaxVelocity(board, path);
 
         int freeTurns = playerShip.getFreeTurns();
-        int coal = Math.min(playerShip.getCoal(), getAccelerationCoal(gameState.getTurn(), isEnemyAhead, playerShip.getCoal()) + 1);
+        int coal = Math.min(playerShip.getCoal(), getAccelerationCoal(gameState.getTurn(), isEnemyAhead || hasEnemyMorePoints, playerShip.getCoal()) + 1);
         int pathIndex = 1 /* skip start position */;
 
         boolean wasCounterCurrent = false;
