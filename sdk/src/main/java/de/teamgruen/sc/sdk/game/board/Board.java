@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 public class Board {
 
     private final Map<Vector3, Field> fields = new HashMap<>();
+    private final Map<Vector3, Integer> segmentIndices = new HashMap<>();
+    private final Map<Vector3, Integer> segmentColumns = new HashMap<>();
     private final List<Vector3> counterCurrent = new ArrayList<>();
     private final List<Vector3> nextFieldsPositions = new ArrayList<>();
     private final List<BoardSegment> segments = new ArrayList<>();
@@ -35,12 +37,17 @@ public class Board {
      * @throws IllegalArgumentException if the field is not part of any segment
      */
     public int getSegmentIndex(@NonNull Vector3 fieldPosition) {
-        for (int i = 0; i < this.segments.size(); i++) {
-            if(this.segments.get(i).fields().containsKey(fieldPosition))
-                return i;
-        }
+        this.segmentIndices.computeIfAbsent(fieldPosition, (position) -> {
+            for (int i = 0; i < this.segments.size(); i++) {
+                if(this.segments.get(i).fields().containsKey(fieldPosition))
+                    return i;
+            }
 
-        throw new IllegalArgumentException("Field is not part of any segment");
+            return null;
+        });
+
+        return Optional.ofNullable(this.segmentIndices.get(fieldPosition))
+                .orElseThrow(() -> new IllegalArgumentException("Field is not part of any segment"));
     }
 
     /**
@@ -49,14 +56,19 @@ public class Board {
      * @throws IllegalArgumentException if the field is not part of any segment
      */
     public int getSegmentColumn(@NonNull Vector3 fieldPosition) {
-        for (BoardSegment segment : this.segments) {
-            final int index = List.copyOf(segment.fields().keySet()).indexOf(fieldPosition);
+        this.segmentColumns.computeIfAbsent(fieldPosition, (position) -> {
+            for (BoardSegment segment : this.segments) {
+                final int index = List.copyOf(segment.fields().keySet()).indexOf(fieldPosition);
 
-            if(index != -1)
-                return index / 5 /* rows*/;
-        }
+                if(index != -1)
+                    return index / 5;
+            }
 
-        throw new IllegalArgumentException("Field is not part of any segment");
+            return null;
+        });
+
+        return Optional.ofNullable(this.segmentColumns.get(fieldPosition))
+                .orElseThrow(() -> new IllegalArgumentException("Field is not part of any segment"));
     }
 
     /**

@@ -74,14 +74,14 @@ public class MoveUtilTest {
     @Test
     public void testGetMostEfficientMove_Passenger() {
         final Ship playerShip = this.gameState.getPlayerShip();
-        playerShip.setPosition(new Vector3(1, 3, -4));
-        playerShip.setDirection(Direction.RIGHT);
+        playerShip.setPosition(new Vector3(0, 5, -5));
+        playerShip.setDirection(Direction.LEFT);
         playerShip.setSpeed(2);
 
         final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, 500);
         final List<Action> expectedActions = List.of(
                 ActionFactory.changeVelocity(-1),
-                ActionFactory.turn(Direction.UP_RIGHT),
+                ActionFactory.turn(Direction.DOWN_LEFT),
                 ActionFactory.forward(1)
         );
 
