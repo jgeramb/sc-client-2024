@@ -105,10 +105,6 @@ public class MaxPassengersGameHandler extends BaseGameHandler {
             // passengers
             board.getPassengerFields().forEach((position, field) -> {
                 final Passenger passenger = (Passenger) field;
-
-                if(passenger.getPassenger() < 1)
-                    return;
-
                 final Vector3 collectPosition = position.copy().add(passenger.getDirection().toVector3());
 
                 // skip passengers that are too far behind
