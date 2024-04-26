@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.1](https://github.com/jgeramb/software-challenge-client/compare/v1.7.0...v1.7.1) (2024-04-26)
+
+
+### Bug Fixes
+
+* **player/max-passengers:** remove obsolete check ([534521c](https://github.com/jgeramb/software-challenge-client/commit/534521cfbf313aa461b1180d61e4967f79286a5b))
+
+
+### Documentation
+
+* **sdk:** add function documentation ([747ace6](https://github.com/jgeramb/software-challenge-client/commit/747ace629917f988a4e073345ffdaefbac3f88f1))
+
 ## [1.7.0](https://github.com/jgeramb/software-challenge-client/compare/v1.6.0...v1.7.0) (2024-04-22)
 
 
