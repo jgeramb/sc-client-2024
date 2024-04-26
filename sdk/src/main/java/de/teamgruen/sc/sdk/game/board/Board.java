@@ -101,6 +101,10 @@ public class Board {
         return field == null || field.isObstacle();
     }
 
+    /**
+     * @param position the position to check
+     * @return the field at the given position or null if the field does not exist
+     */
     public Field getFieldAt(@NonNull Vector3 position) {
         return this.fields.get(position);
     }
@@ -118,6 +122,9 @@ public class Board {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    /**
+     * @return all passenger fields with passengers
+     */
     public Map<Vector3, Field> getPassengerFields() {
         return this.getAllFields(entry ->
                 entry.getValue() instanceof Passenger passenger
@@ -125,10 +132,17 @@ public class Board {
         );
     }
 
+    /**
+     * @return all goal fields
+     */
     public Map<Vector3, Field> getGoalFields() {
         return this.getAllFields(entry -> entry.getValue() instanceof Goal);
     }
 
+    /**
+     * @param position the position to check
+     * @return whether the position is part of the counter current
+     */
     public boolean isCounterCurrent(@NonNull Vector3 position) {
         return this.counterCurrent.contains(position);
     }
