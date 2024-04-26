@@ -7,8 +7,8 @@ package de.teamgruen.sc.player;
 
 import de.teamgruen.sc.player.clients.AdminClient;
 import de.teamgruen.sc.player.clients.PlayerClient;
-import de.teamgruen.sc.player.handlers.AdvancedGameHandler;
-import de.teamgruen.sc.player.handlers.SimpleGameHandler;
+import de.teamgruen.sc.player.handlers.MaxPassengersGameHandler;
+import de.teamgruen.sc.player.handlers.WeightedGameHandler;
 import de.teamgruen.sc.sdk.SoftwareChallengeClient;
 import de.teamgruen.sc.sdk.game.handlers.GameHandler;
 import de.teamgruen.sc.sdk.logging.AnsiColor;
@@ -59,14 +59,14 @@ public class SoftwareChallengePlayer {
 
                 adminClient.runTests(password, tests);
             } else {
-                final GameHandler gameHandler = switch (playStyle == null ? "simple" : playStyle) {
-                    case "simple" -> {
-                        LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Simple" + AnsiColor.RESET);
-                        yield new SimpleGameHandler(LOGGER);
+                final GameHandler gameHandler = switch (playStyle == null ? "weighted" : playStyle) {
+                    case "weighted" -> {
+                        LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Weighted" + AnsiColor.RESET);
+                        yield new WeightedGameHandler(LOGGER);
                     }
-                    case "advanced" -> {
-                        LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "Advanced" + AnsiColor.RESET);
-                        yield new AdvancedGameHandler(LOGGER);
+                    case "max-passengers" -> {
+                        LOGGER.info("Play-Style: " + AnsiColor.PURPLE + "MaxPassengers" + AnsiColor.RESET);
+                        yield new MaxPassengersGameHandler(LOGGER);
                     }
                     default -> throw new IllegalArgumentException("Illegal play style: " + playStyle);
                 };

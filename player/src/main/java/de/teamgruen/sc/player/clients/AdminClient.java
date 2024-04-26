@@ -5,8 +5,8 @@
 
 package de.teamgruen.sc.player.clients;
 
-import de.teamgruen.sc.player.handlers.AdvancedGameHandler;
-import de.teamgruen.sc.player.handlers.SimpleGameHandler;
+import de.teamgruen.sc.player.handlers.MaxPassengersGameHandler;
+import de.teamgruen.sc.player.handlers.WeightedGameHandler;
 import de.teamgruen.sc.sdk.game.GameResult;
 import de.teamgruen.sc.sdk.game.GameState;
 import de.teamgruen.sc.sdk.game.handlers.AdminGameHandler;
@@ -62,9 +62,9 @@ public class AdminClient extends Client {
 
                     try {
                         final Logger playerLogger = new Logger(new ByteArrayOutputStream());
-                        final GameHandler gameHandler = Objects.equals(playStyle, "simple") || (playerId == 0 && !Objects.equals(playStyle, "advanced"))
-                                ? new SimpleGameHandler(playerLogger)
-                                : new AdvancedGameHandler(playerLogger);
+                        final GameHandler gameHandler = Objects.equals(playStyle, "weighted") || (playerId == 0 && !Objects.equals(playStyle, "max-passengers"))
+                                ? new WeightedGameHandler(playerLogger)
+                                : new MaxPassengersGameHandler(playerLogger);
                         final PlayerClient playerClient = new PlayerClient(host, port, new GameHandler() {
                             @Override
                             public void onRoomJoin(String roomId) {
@@ -97,7 +97,7 @@ public class AdminClient extends Client {
                                 gameHandler.onResults(scores, result, reason);
 
                                 if(reason != null && !reason.isEmpty() && result.equals(GameResult.LOOSE)) {
-                                    final String playerName = gameHandler instanceof SimpleGameHandler ? "Simple" : "Advanced";
+                                    final String playerName = gameHandler instanceof WeightedGameHandler ? "Weighted" : "MaxPassengers";
 
                                     print(Level.DEBUG, "Lost game " + RED + gameId + RESET + " - " + RED + playerName + RESET + ": " + WHITE + reason + RESET);
                                 }
@@ -123,7 +123,7 @@ public class AdminClient extends Client {
 
                             @Override
                             public void onError(String message) {
-                                final String playerName = gameHandler instanceof SimpleGameHandler ? "Simple" : "Advanced";
+                                final String playerName = gameHandler instanceof WeightedGameHandler ? "Weighted" : "MaxPassengers";
 
                                 print(Level.ERROR, "Game " + RED + gameId + RESET + " - " + RED + playerName + RESET + ": " + WHITE + message + RESET);
 
@@ -239,9 +239,9 @@ public class AdminClient extends Client {
         for (int playerId = 0; playerId < this.playerStats.length; playerId++) {
             final int[] stats = this.playerStats[playerId];
             final String playerDescription = switch (playStyle == null ? "mixed" : playStyle) {
-                case "simple" -> "Simple #" + (playerId + 1);
-                case "advanced" -> "Advanced #" + (playerId + 1);
-                default -> playerId == 0 ? "Simple" : "Advanced";
+                case "weighted" -> "Weighted #" + (playerId + 1);
+                case "max-passengers" -> "MaxPassengers #" + (playerId + 1);
+                default -> playerId == 0 ? "Weighted" : "MaxPassengers";
             };
 
             this.logger.info("");

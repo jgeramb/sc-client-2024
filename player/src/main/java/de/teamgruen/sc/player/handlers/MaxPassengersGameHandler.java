@@ -20,9 +20,9 @@ import lombok.NonNull;
 
 import java.util.*;
 
-public class AdvancedGameHandler extends BaseGameHandler {
+public class MaxPassengersGameHandler extends BaseGameHandler {
 
-    public AdvancedGameHandler(Logger logger) {
+    public MaxPassengersGameHandler(Logger logger) {
         super(logger);
     }
 
@@ -76,7 +76,7 @@ public class AdvancedGameHandler extends BaseGameHandler {
                         final Vector3 endPosition = shortestPath.get(shortestPath.size() - 1);
                         final double segmentDistance = gameState.getBoard().getSegmentDistance(playerShip.getPosition(), endPosition);
 
-                        // let simple player handle short paths
+                        // let weighted player handle short paths
                         if(segmentDistance > 0.75) {
                             final Optional<Move> move = MoveUtil.moveFromPath(gameState, shortestPath);
 

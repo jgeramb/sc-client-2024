@@ -4,6 +4,6 @@ java \
   -XX:+UseZGC \
   -jar teamgruen-player.jar \
   --batch-mode \
-  --play-style simple \
+  --play-style weighted \
   --debug \
   "$@"

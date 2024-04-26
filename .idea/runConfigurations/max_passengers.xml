@@ -1,11 +1,11 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="test-games (simple)" type="Application" factoryName="Application">
+  <configuration default="false" name="max-passengers" type="Application" factoryName="Application">
     <option name="ALTERNATIVE_JRE_PATH" value="openjdk-21" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="MAIN_CLASS_NAME" value="de.teamgruen.sc.player.SoftwareChallengePlayer" />
     <module name="player" />
-    <option name="PROGRAM_PARAMETERS" value="--tests 250 --password &quot;examplepassword&quot; --play-style simple" />
-    <option name="VM_PARAMETERS" value="-XX:+UseZGC -Xmx4G -Xms1G" />
+    <option name="PROGRAM_PARAMETERS" value="--debug --play-style advanced" />
+    <option name="VM_PARAMETERS" value="-XX:+UseZGC" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

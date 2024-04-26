@@ -11,8 +11,8 @@ deploy
 # modules
 player
 - admin
-- simple
-- advanced
+- weighted
+- max-passengers
 
 sdk
 - game
