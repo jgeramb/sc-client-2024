@@ -55,7 +55,7 @@ The client can be started with the following arguments:
         </tr>
         <tr>
             <td><code>--play-style</code> or <code>-s</code></td>
-            <td>The play style of the client. Allowed values are <code>simple</code> and <code>advanced</code>. This argument must be set when the client is not run in administrator/mass-testing mode.</td>
+            <td>The play style of the client. Allowed values are <code>weighted</code> and <code>max-passengers</code>. This argument must be set when the client is not run in administrator/mass-testing mode.</td>
             <td>/</td>
         </tr>
         <tr>
