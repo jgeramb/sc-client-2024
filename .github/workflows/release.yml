@@ -76,7 +76,6 @@ jobs:
         with:
           name: archives
           path: artifacts
-          file: teamgruen-player.zip
       - name: Upload client
         uses: fjogeleit/http-request-action@v1
         with:
