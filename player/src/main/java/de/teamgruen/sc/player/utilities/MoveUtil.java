@@ -71,7 +71,7 @@ public class MoveUtil {
                     if(move.isGoal())
                         return true;
 
-                    if(entry.getValue() < -3.5)
+                    if(entry.getValue() < -3)
                         return false;
 
                     int turnCost = 0;

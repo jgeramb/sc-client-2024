@@ -59,7 +59,9 @@ public class XMLTcpClient {
         }
 
         // warm up CPU for faster deserialization
-        PacketSerializationUtil.deserializeXML("joined", "<joined roomId=\"warmUp\" />");
+        for (int i = 0; i < 50; i++) {
+            PacketSerializationUtil.deserializeXML("joined", "<joined roomId=\"warmUp\" />");
+        }
 
         // read packets
         (this.readThread = new Thread(() -> {
