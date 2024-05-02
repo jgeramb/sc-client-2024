@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.8.2](https://github.com/jgeramb/software-challenge-client/compare/v1.8.1...v1.8.2) (2024-05-02)
+
+
+### Bug Fixes
+
+* don't consider enemy position in further move forecasting ([d44caa9](https://github.com/jgeramb/software-challenge-client/commit/d44caa940dc3e7c9a0c98d55684632578e50785d))
+* rewrite prevention logic ([1cdb64f](https://github.com/jgeramb/software-challenge-client/commit/1cdb64ff3e62c59827350cb6c314f110bc3b4826))
+
+
+### Documentation
+
+* fix punctuation ([9b23e39](https://github.com/jgeramb/software-challenge-client/commit/9b23e397600c5d2197942a17b794401b79be6326))
+* remove redundant anchor tag attributes ([1ab0109](https://github.com/jgeramb/software-challenge-client/commit/1ab01090a0b128631cbe3988ff55d4d8ae9c9ff1))
+
 ## [1.8.1](https://github.com/jgeramb/software-challenge-client/compare/v1.8.0...v1.8.1) (2024-05-02)
 
 
