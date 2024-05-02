@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.1](https://github.com/jgeramb/software-challenge-client/compare/v1.8.0...v1.8.1) (2024-05-02)
+
+
+### Bug Fixes
+
+* enhance garbage collection performance ([541825e](https://github.com/jgeramb/software-challenge-client/commit/541825e5851d90862db8544ef252dfe8b72d1955))
+* optimize performance ([7547a4e](https://github.com/jgeramb/software-challenge-client/commit/7547a4eeba74b2db08acd8f2526d1e44be09a64f))
+
 ## [1.8.0](https://github.com/jgeramb/software-challenge-client/compare/v1.7.1...v1.8.0) (2024-05-02)
 
 
