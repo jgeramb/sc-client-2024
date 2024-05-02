@@ -225,7 +225,7 @@ public class MoveUtilTest {
     public void testGetPossibleMoves() {
         final Ship playerShip = this.gameState.getPlayerShip(), enemyShip = this.gameState.getEnemyShip();
         final List<List<Action>> actualMoves = MoveUtil.getPossibleMoves(
-                this.gameState.getBoard(),
+                this.gameState,
                 0,
                 playerShip,
                 playerShip.getPosition(),
@@ -262,7 +262,7 @@ public class MoveUtilTest {
 
         final Ship playerShip = this.gameState.getPlayerShip(), enemyShip = this.gameState.getEnemyShip();
         final List<List<Action>> actualMoves = MoveUtil.getPossibleMoves(
-                this.gameState.getBoard(),
+                this.gameState,
                 0,
                 playerShip,
                 new Vector3(-3, 5, -2),

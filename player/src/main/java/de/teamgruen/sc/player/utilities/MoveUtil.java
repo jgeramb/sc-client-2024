@@ -17,9 +17,12 @@ import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.actions.Turn;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Goal;
+import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.NonNull;
 
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class MoveUtil {
 
@@ -43,11 +46,11 @@ public class MoveUtil {
         final int freeTurns = playerShip.getFreeTurns();
         final int coal = playerShip.getCoal();
 
-        final Map<Move, Double> moves = getPossibleMoves(board, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition,
+        final Map<Move, Double> moves = getPossibleMoves(gameState, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition,
                 passengers, speed, freeTurns, coal, 0, false);
 
         if(moves.isEmpty()) {
-            Map<Move, Double> forcedMoves = getPossibleMoves(board, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition,
+            Map<Move, Double> forcedMoves = getPossibleMoves(gameState, turn, playerShip, playerPosition, direction, enemyShip, enemyPosition,
                     passengers, speed, freeTurns, coal, Math.max(0, coal - 1), true);
 
             if(forcedMoves.isEmpty())
@@ -102,7 +105,7 @@ public class MoveUtil {
                             expandedMove.turn(possibleDirection);
 
                         final Map.Entry<Move, Double> bestNextMoveEntry = getBestNextMove(
-                                board, turn + 1,
+                                gameState, turn + 1,
                                 playerShip, enemyShip,
                                 null, coal, expandedMove
                         );
@@ -182,7 +185,7 @@ public class MoveUtil {
      *     <li>whether the move prevents the enemy from picking up a passenger or ending the game</li>
      * </ul>
      *
-     * @param board the current game board
+     * @param gameState the current game state
      * @param ship the player's ship
      * @param enemyShip the enemy's ship
      * @param isEnemyAhead whether the enemy is ahead of the player
@@ -192,10 +195,11 @@ public class MoveUtil {
      * @param move the move to evaluate
      * @return the score of the move
      */
-    public static double evaluateMove(@NonNull Board board, int turn,
+    public static double evaluateMove(@NonNull GameState gameState, int turn,
                                       @NonNull Ship ship, Ship enemyShip, boolean isEnemyAhead,
                                       int passengers, int coalBefore, int coalAfter,
                                       @NonNull Move move) {
+        final Board board = gameState.getBoard();
         final boolean hasEnoughPassengers = ship.hasEnoughPassengers();
         final boolean canEnemyWinByDistance = isEnemyAhead && move.getSegmentIndex() < 5;
         final boolean shouldMoveTowardsGoal = canEnemyWinByDistance || (enemyShip.hasEnoughPassengers() && passengers >= 2);
@@ -204,20 +208,14 @@ public class MoveUtil {
 
         boolean preventsGoal = false, preventsPassenger = false;
 
-        if(move.getPushes() > 0) {
-            final Vector3 enemyEndPosition = move.getEnemyEndPosition();
+        if(move.getPushes() > 0 && turn == gameState.getTurn()) {
+            final boolean isEnemyFinishing = enemyShip.hasEnoughPassengers()
+                    && enemyShip.getSpeed() == (board.isCounterCurrent(enemyShip.getPosition()) ? 2 : 1)
+                    && board.getFieldAt(enemyShip.getPosition()) instanceof Goal;
 
-            if(board.canPickUpPassenger(enemyShip.getPosition()) && !board.canPickUpPassenger(enemyEndPosition))
-                preventsPassenger = true;
-
-            final int previousRequiredSpeed = board.isCounterCurrent(enemyShip.getPosition()) ? 2 : 1;
-
-            if(board.getGoalFields().containsKey(enemyShip.getPosition()) && enemyShip.getSpeed() == previousRequiredSpeed) {
-                final int requiredSpeed = board.isCounterCurrent(enemyEndPosition) ? 2 : 1;
-
-                if(!board.getGoalFields().containsKey(enemyEndPosition) || enemyShip.getSpeed() != requiredSpeed)
-                    preventsGoal = true;
-            }
+            preventsGoal = isEnemyFinishing || canFinishInNextRound(board, enemyShip, enemyShip.getPosition(), ship.getPosition());
+            preventsPassenger = canCollectPassengerInNextRound(board, enemyShip, enemyShip.getPosition(), ship.getPosition())
+                    && !canCollectPassengerInNextRound(board, enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
         }
 
         boolean canEnemyCollectPassengerBeforePlayer = false;
@@ -227,14 +225,14 @@ public class MoveUtil {
                 Direction.fromVector3(move.getEndPosition().copy().subtract(ship.getPosition()));
             } catch (IllegalArgumentException ignored) {
                 // proceed if the direction is invalid, meaning the player needs at least 2 turns to reach the passenger
-                canEnemyCollectPassengerBeforePlayer = canEnemyCollectPassenger(board, enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
+                canEnemyCollectPassengerBeforePlayer = canReachRequiredSpeed(board, enemyShip, move.getEnemyEndPosition(), ship.getPosition(), move.getEndPosition());
             }
         }
 
         final double passengersToInclude = shouldMoveTowardsGoal || canEnemyCollectPassengerBeforePlayer ? 0.25 : move.getPassengers();
 
         return (move.isGoal() || preventsGoal ? 100 : 0)
-                + (preventsPassenger ? 0.75 : 0)
+                + (preventsPassenger ? 1.25 : 0)
                 + passengersToInclude * Math.max(0, 3 - passengers) * 4
                 + segmentDistance * (shouldMoveTowardsGoal ? 5 : (hasEnoughPassengers ? 2 : 1)) * (turn > 45 ? 2.5 : 1)
                 - coalCost * (hasEnoughPassengers ? 1 : 1.5)
@@ -245,7 +243,7 @@ public class MoveUtil {
     }
 
     /**
-     * @param board the current game board
+     * @param gameState the current game state
      * @param turn the current turn
      * @param ship the player's ship
      * @param position the player's position
@@ -259,11 +257,12 @@ public class MoveUtil {
      * @param forceMultiplePushes whether to force multiple pushes if possible
      * @return all possible moves for the current game state
      */
-    public static Map<Move, Double> getPossibleMoves(@NonNull Board board, int turn,
+    public static Map<Move, Double> getPossibleMoves(@NonNull GameState gameState, int turn,
                                                      @NonNull Ship ship, @NonNull Vector3 position, @NonNull Direction direction,
                                                      @NonNull Ship enemyShip, @NonNull Vector3 enemyPosition,
                                                      int passengers, int speed, int freeTurns, int coal,
                                                      int extraCoal, boolean forceMultiplePushes) {
+        final Board board = gameState.getBoard();
         final boolean isEnemyAhead = isEnemyAhead(board, position, direction, enemyShip, enemyPosition);
         final boolean hasEnemyMorePoints = enemyShip.getPassengers() >= ship.getPassengers()
                 && board.getSegmentDistance(ship.getPosition(), enemyShip.getPosition()) >= 1.25;
@@ -274,14 +273,14 @@ public class MoveUtil {
 
         // if no moves are possible, try moves that require more coal
         if(moves.isEmpty() && extraCoal < coal - 1) {
-            return getPossibleMoves(board, turn, ship, position, direction, enemyShip, enemyPosition,
+            return getPossibleMoves(gameState, turn, ship, position, direction, enemyShip, enemyPosition,
                     passengers, speed, freeTurns, coal, extraCoal + 1, forceMultiplePushes);
         }
 
         moves.forEach(move -> addAcceleration(speed, move));
 
         return moves.stream().collect(HashMap::new, (map, move) -> map.put(move, evaluateMove(
-                board,
+                gameState,
                 turn,
                 ship,
                 enemyShip,
@@ -294,7 +293,7 @@ public class MoveUtil {
     }
 
     /**
-     * @param board the current game board
+     * @param gameState the current game state
      * @param turn the current turn
      * @param ship the player's ship
      * @param enemyShip the enemy's ship
@@ -303,7 +302,7 @@ public class MoveUtil {
      * @param move the current move
      * @return the best next move for the given move
      */
-    public static Map.Entry<Move, Double> getBestNextMove(@NonNull Board board, int turn,
+    public static Map.Entry<Move, Double> getBestNextMove(@NonNull GameState gameState, int turn,
                                                           @NonNull Ship ship, @NonNull Ship enemyShip,
                                                           Move previousMove, int coal,
                                                           @NonNull Move move) {
@@ -318,7 +317,7 @@ public class MoveUtil {
         final int passengers = ship.getPassengers() + (hasPreviousMove ? previousMove.getPassengers() : 0) + move.getPassengers();
 
         Map<Move, Double> moves = getPossibleMoves(
-                board, newTurn,
+                gameState, newTurn,
                 ship, move.getEndPosition(), move.getEndDirection(), enemyShip, move.getEnemyEndPosition(),
                 passengers, move.getTotalCost(), 1, remainingCoal, 0,
                 false
@@ -326,7 +325,7 @@ public class MoveUtil {
 
         if(moves.isEmpty()) {
             moves = getPossibleMoves(
-                    board, newTurn,
+                    gameState, newTurn,
                     ship, move.getEndPosition(), move.getEndDirection(), enemyShip, move.getEnemyEndPosition(),
                     passengers, move.getTotalCost(), 1, remainingCoal, 0,
                      true
@@ -343,10 +342,10 @@ public class MoveUtil {
 
                 final Move nextMove = entry.getKey();
 
-                if (endsAtLastSegmentBorder(board, nextMove, remainingCoal))
+                if (endsAtLastSegmentBorder(gameState.getBoard(), nextMove, remainingCoal))
                     entry.setValue(entry.getValue() + 1.0);
                 else {
-                    final Map.Entry<Move, Double> bestNextMove = getBestNextMove(board, newTurn, ship, enemyShip, move, remainingCoal, nextMove);
+                    final Map.Entry<Move, Double> bestNextMove = getBestNextMove(gameState, newTurn, ship, enemyShip, move, remainingCoal, nextMove);
 
                     if (bestNextMove == null)
                         return true;
@@ -646,19 +645,23 @@ public class MoveUtil {
      * @param board the game board
      * @param enemyShip the enemy's ship
      * @param enemyPosition the enemy's position
-     * @param collectPosition the position to collect the passenger
-     * @return whether the enemy can collect the passenger in the next round
+     * @param playerPosition the player's ship position
+     * @param destination the position to reach
+     * @return whether the enemy can reach the destination with the required speed in the next round
      */
-    public static boolean canEnemyCollectPassenger(Board board, Ship enemyShip, Vector3 enemyPosition, Vector3 collectPosition) {
+    public static boolean canReachRequiredSpeed(Board board, Ship enemyShip, Vector3 enemyPosition, Vector3 playerPosition, Vector3 destination) {
+        if(playerPosition.equals(destination))
+            return false;
+
         try {
-            final Direction enemyDirection = Direction.fromVector3(enemyPosition.copy().subtract(collectPosition));
+            final Direction enemyDirection = Direction.fromVector3(enemyPosition.copy().subtract(destination));
             final int turnCost = enemyShip.getDirection().costTo(enemyDirection);
             final int coal = Math.min(2, enemyShip.getCoal());
 
             if (turnCost <= 1 + coal) {
                 final int remainingCoal = coal - Math.max(0, turnCost - 1);
                 final int minReachableSpeed = enemyShip.getSpeed() - 1 - remainingCoal;
-                final int requiredSpeed = board.isCounterCurrent(collectPosition) ? 2 : 1;
+                final int requiredSpeed = board.isCounterCurrent(destination) ? 2 : 1;
 
                 if (minReachableSpeed <= requiredSpeed)
                     return true;
@@ -668,6 +671,57 @@ public class MoveUtil {
         }
 
         return false;
+    }
+
+    /**
+     * @param board the game board
+     * @param ship the ship
+     * @param position the ship's position
+     * @param enemyPosition the enemy's position
+     * @param actionPositions the positions of the action fields
+     * @return whether the ship can reach an action field in the next round
+     */
+    public static boolean canReachActionFieldInNextRound(Board board, Ship ship, Vector3 position, Vector3 enemyPosition, Set<Vector3> actionPositions) {
+        for (Direction direction : Direction.values()) {
+            final Vector3 neighbourPosition = position.copy().add(direction.toVector3());
+
+            if(actionPositions.contains(neighbourPosition) && canReachRequiredSpeed(board, ship, position, enemyPosition, neighbourPosition))
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param board the game board
+     * @param ship the ship
+     * @param position the ship's position
+     * @param enemyPosition the enemy's position
+     * @return whether the ship can collect a passenger in the next round
+     */
+    public static boolean canCollectPassengerInNextRound(Board board, Ship ship, Vector3 position, Vector3 enemyPosition) {
+        final Set<Vector3> collectPositions = board.getPassengerFields()
+                .entrySet()
+                .stream()
+                .map((entry) -> entry.getKey().copy().add(((Passenger) entry.getValue()).getDirection().toVector3()))
+                .filter(Predicate.not(board::isBlocked))
+                .collect(Collectors.toSet());
+
+        return canReachActionFieldInNextRound(board, ship, position, enemyPosition, collectPositions);
+    }
+
+    /**
+     * @param board the game board
+     * @param ship the ship
+     * @param position the ship's position
+     * @param enemyPosition the enemy's position
+     * @return whether the ship finish the game in the next round
+     */
+    public static boolean canFinishInNextRound(Board board, Ship ship, Vector3 position, Vector3 enemyPosition) {
+        if(!ship.hasEnoughPassengers())
+            return false;
+
+        return canReachActionFieldInNextRound(board, ship, position, enemyPosition, board.getGoalFields().keySet());
     }
 
 }
