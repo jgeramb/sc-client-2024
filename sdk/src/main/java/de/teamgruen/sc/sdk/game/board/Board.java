@@ -300,7 +300,7 @@ public class Board {
                               @NonNull Vector3 position,
                               @NonNull Direction shipDirection,
                               @NonNull Ship enemyShip,
-                              @NonNull Vector3 enemyPosition,
+                              Vector3 enemyPosition,
                               int speed,
                               int freeTurns,
                               int coal,
@@ -338,7 +338,7 @@ public class Board {
                                @NonNull Vector3 position,
                                @NonNull Direction shipDirection,
                                @NonNull Ship enemyShip,
-                               @NonNull Vector3 enemyPosition,
+                               Vector3 enemyPosition,
                                Direction excludedDirection,
                                int speed,
                                int freeTurns,
@@ -477,7 +477,7 @@ public class Board {
     public AdvanceInfo getAdvanceLimit(@NonNull Ship playerShip,
                                        @NonNull Vector3 start,
                                        @NonNull Direction direction,
-                                       @NonNull Vector3 enemyPosition,
+                                       Vector3 enemyPosition,
                                        int minReachableSpeed,
                                        int usedMovementPoints,
                                        int movementPoints) {
@@ -496,7 +496,7 @@ public class Board {
                 break;
             }
 
-            if(position.equals(enemyPosition)) {
+            if(Objects.equals(position, enemyPosition)) {
                 advanceInfo.setResult(AdvanceInfo.Result.SHIP);
                 break;
             }

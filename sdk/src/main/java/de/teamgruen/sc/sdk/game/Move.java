@@ -34,7 +34,7 @@ public class Move {
 
     public Move(Vector3 endPosition, Vector3 enemyEndPosition, Direction endDirection) {
         this.endPosition = endPosition.copy();
-        this.enemyEndPosition = enemyEndPosition.copy();
+        this.enemyEndPosition = enemyEndPosition != null ? enemyEndPosition.copy() : null;
         this.endDirection = endDirection;
     }
 
@@ -67,7 +67,9 @@ public class Move {
     }
 
     public void push(@NonNull Direction direction) {
-        this.enemyEndPosition.add(direction.toVector3());
+        if(this.enemyEndPosition != null)
+            this.enemyEndPosition.add(direction.toVector3());
+
         this.actions.add(ActionFactory.push(direction));
         this.totalCost++;
         this.pushes++;
