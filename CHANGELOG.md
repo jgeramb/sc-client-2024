@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.8.0](https://github.com/jgeramb/software-challenge-client/compare/v1.7.1...v1.8.0) (2024-05-02)
+
+
+### Features
+
+* allow more coal usage to make 180° turns possible ([7108b9b](https://github.com/jgeramb/software-challenge-client/commit/7108b9bc6992f9109a8c83202dbb493cd9e02253))
+
+
+### Bug Fixes
+
+* update play styles in run configurations ([9520657](https://github.com/jgeramb/software-challenge-client/commit/95206579b0b1160f99b913e3d3489369e357a551))
+
+
+### Documentation
+
+* update play style documentation ([8354492](https://github.com/jgeramb/software-challenge-client/commit/83544920ec34eeed26489af75bc583d0c72b8e5c))
+
 ## [1.7.1](https://github.com/jgeramb/software-challenge-client/compare/v1.7.0...v1.7.1) (2024-04-26)
 
 
