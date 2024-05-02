@@ -243,20 +243,13 @@ public class MoveUtilTest {
         final List<List<Action>> expectedMoves = List.of(
                 List.of(ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(2), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
-                List.of(ActionFactory.changeVelocity(3), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(2)),
-                List.of(ActionFactory.changeVelocity(2), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_LEFT), ActionFactory.forward(1)),
-                List.of(ActionFactory.changeVelocity(1), ActionFactory.forward(1), ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(1), ActionFactory.forward(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(1), ActionFactory.forward(1), ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(1), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
                 List.of(ActionFactory.changeVelocity(2), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(2)),
-                List.of(ActionFactory.changeVelocity(3), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(3)),
                 List.of(ActionFactory.turn(Direction.UP_LEFT), ActionFactory.forward(1)),
                 List.of(ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1)),
-                List.of(ActionFactory.changeVelocity(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(1)),
-                List.of(ActionFactory.changeVelocity(2), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(2)),
-                List.of(ActionFactory.changeVelocity(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.DOWN_RIGHT), ActionFactory.forward(1)),
-                List.of(ActionFactory.changeVelocity(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.LEFT), ActionFactory.forward(1))
+                List.of(ActionFactory.changeVelocity(1), ActionFactory.turn(Direction.UP_RIGHT), ActionFactory.forward(1), ActionFactory.turn(Direction.RIGHT), ActionFactory.forward(1))
         );
 
         assertEquals(expectedMoves.size(), actualMoves.size());
@@ -314,9 +307,9 @@ public class MoveUtilTest {
     }
 
     @Test
-    public void testGetAccelerationCoal_FirstMove() {
+    public void testGetAccelerationCoal_SegmentCost() {
         assertEquals(1, MoveUtil.getAccelerationCoal(
-                0,
+                3,
                 false,
                 6
         ));
@@ -325,7 +318,7 @@ public class MoveUtilTest {
     @Test
     public void testGetAccelerationCoal_EnemyAhead() {
         assertEquals(1, MoveUtil.getAccelerationCoal(
-                5,
+                0,
                 true,
                 6
         ));
@@ -334,8 +327,8 @@ public class MoveUtilTest {
     @Test
     public void testGetAccelerationCoal_NoCoalAvailable() {
         assertEquals(0, MoveUtil.getAccelerationCoal(
-                0,
-                false,
+                3,
+                true,
                 0
         ));
     }
