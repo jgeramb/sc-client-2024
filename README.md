@@ -45,7 +45,7 @@ The client can be started with the following arguments:
     <tbody>
         <tr>
             <td><code>--batch-mode</code> or <code>-b</code></td>
-            <td>Whether to run the client in batch (console) mode, reducing the logs to non-colored text</td>
+            <td>Whether to run the client in batch (console) mode, reducing the logs to non-colored text.</td>
             <td><code>false</code></td>
         </tr>
         <tr>
