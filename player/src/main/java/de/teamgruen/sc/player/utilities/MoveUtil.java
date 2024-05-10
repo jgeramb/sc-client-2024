@@ -235,9 +235,9 @@ public class MoveUtil {
                 + (preventsPassenger ? 1.25 : 0)
                 + passengersToInclude * Math.max(0, 3 - passengers) * 4
                 + segmentDistance * (shouldMoveTowardsGoal ? 5 : (hasEnoughPassengers ? 2 : 1)) * (turn > 45 ? 2.5 : 1)
-                - coalCost * (hasEnoughPassengers ? 1 : 1.5)
+                - coalCost * (hasEnoughPassengers ? 1 : 1.75)
                 - getSegmentDirectionCost(board, move.getEndPosition(), move.getEndDirection()) * 0.75
-                - Math.max(0, move.getTotalCost() - 2) * Math.max(0, move.getSegmentIndex() - 5) * 0.375
+                - Math.max(0, move.getTotalCost() - 2) * Math.max(0, move.getSegmentIndex() - 4) * 0.25
                 + (move.getEnemyEndPosition() != null ? board.getMinTurns(enemyShip.getDirection(), move.getEnemyEndPosition()) : 0) * (move.getPushes() > 0 ? 0.25 : 0)
                 + move.getPushes() * (hasEnoughPassengers ? 0.5 : 0);
     }
