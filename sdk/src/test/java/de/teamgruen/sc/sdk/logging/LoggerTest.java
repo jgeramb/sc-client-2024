@@ -95,4 +95,11 @@ public class LoggerTest {
         assertThrows(RuntimeException.class, () -> logger.info("Test"));
     }
 
+    @Test
+    public void testLog_NoDebugEnabled() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        assertFalse(new Logger(out).log(Level.DEBUG, "Test", false));
+    }
+
 }
