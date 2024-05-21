@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.0](https://github.com/jgeramb/software-challenge-client/compare/v1.8.2...v1.9.0) (2024-05-21)
+
+
+### Features
+
+* optimize weights ([4de6249](https://github.com/jgeramb/software-challenge-client/commit/4de62499d764ba8aac6f1d65eee8c738012b74b5))
+
+
+### Bug Fixes
+
+* adjust coal + speed weights ([c8f1c87](https://github.com/jgeramb/software-challenge-client/commit/c8f1c87960963b54e61c1bac3d9e67d85c2dfc31))
+
 ## [1.8.2](https://github.com/jgeramb/software-challenge-client/compare/v1.8.1...v1.8.2) (2024-05-02)
 
 
