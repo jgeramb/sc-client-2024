@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1](https://github.com/jgeramb/software-challenge-client/compare/v1.9.0...v1.9.1) (2024-05-22)
+
+
+### Bug Fixes
+
+* **player/weighted:** fix passenger score calculation ([e6a3979](https://github.com/jgeramb/software-challenge-client/commit/e6a3979f891590fd00488e8fe32b4efa161f5502))
+
 ## [1.9.0](https://github.com/jgeramb/software-challenge-client/compare/v1.8.2...v1.9.0) (2024-05-21)
 
 
