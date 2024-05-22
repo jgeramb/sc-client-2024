@@ -229,7 +229,7 @@ public class MoveUtil {
             }
         }
 
-        final double passengersToInclude = shouldMoveTowardsGoal || canEnemyCollectPassengerBeforePlayer ? 0.25 : move.getPassengers();
+        final double passengersToInclude = move.getPassengers() * (shouldMoveTowardsGoal || canEnemyCollectPassengerBeforePlayer ? 0.25 : 1);
 
         return (move.isGoal() || preventsGoal ? 100 : 0)
                 + (preventsPassenger ? 1.25 : 0)
