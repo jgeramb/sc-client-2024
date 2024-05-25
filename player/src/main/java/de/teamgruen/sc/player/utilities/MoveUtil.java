@@ -105,7 +105,7 @@ public class MoveUtil {
                             expandedMove.turn(possibleDirection);
 
                         final Map.Entry<Move, Double> bestNextMoveEntry = getBestNextMove(
-                                gameState, turn + 1,
+                                gameState, turn,
                                 playerShip, enemyShip,
                                 null, coal, expandedMove
                         );
@@ -201,7 +201,7 @@ public class MoveUtil {
                                       @NonNull Move move) {
         final Board board = gameState.getBoard();
         final boolean hasEnoughPassengers = ship.hasEnoughPassengers();
-        final boolean canEnemyWinByDistance = isEnemyAhead && move.getSegmentIndex() < 5;
+        final boolean canEnemyWinByDistance = isEnemyAhead && move.getSegmentIndex() < 4;
         final boolean shouldMoveTowardsGoal = canEnemyWinByDistance || (enemyShip.hasEnoughPassengers() && passengers >= 2);
         final double segmentDistance = getMoveSegmentDistance(board, ship, move);
         final int coalCost = Math.max(0, coalBefore - coalAfter - (turn < 2 ? 1 : 0));
@@ -229,7 +229,7 @@ public class MoveUtil {
             }
         }
 
-        final double passengersToInclude = move.getPassengers() * (shouldMoveTowardsGoal || canEnemyCollectPassengerBeforePlayer ? 0.25 : 1);
+        final double passengersToInclude = move.getPassengers() * (shouldMoveTowardsGoal || canEnemyCollectPassengerBeforePlayer ? 0.375 : 1);
 
         return (move.isGoal() || preventsGoal ? 100 : 0)
                 + (preventsPassenger ? 1.25 : 0)
@@ -350,7 +350,7 @@ public class MoveUtil {
                     if (bestNextMove == null)
                         return true;
 
-                    entry.setValue(entry.getValue() + bestNextMove.getValue() * 0.375);
+                    entry.setValue(entry.getValue() + bestNextMove.getValue() * 0.5);
                 }
 
                 return false;
