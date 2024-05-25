@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.2](https://github.com/jgeramb/software-challenge-client/compare/v1.9.1...v1.9.2) (2024-05-25)
+
+
+### Bug Fixes
+
+* **player/weighted:** edge case weight optimization + turn parameter fix ([1b4a894](https://github.com/jgeramb/software-challenge-client/commit/1b4a894563dbc7ba1462e07569413011ea3678c1))
+
 ## [1.9.1](https://github.com/jgeramb/software-challenge-client/compare/v1.9.0...v1.9.1) (2024-05-22)
 
 
