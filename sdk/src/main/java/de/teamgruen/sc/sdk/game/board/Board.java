@@ -613,7 +613,7 @@ public class Board {
             return false;
 
         try {
-            final Direction directionToDestination = Direction.fromVector3(position.copy().subtract(destination));
+            final Direction directionToDestination = Direction.fromVector3(destination.copy().subtract(position));
             final int turnCost = ship.getDirection().costTo(directionToDestination);
             final int coal = Math.min(2, ship.getCoal());
 
