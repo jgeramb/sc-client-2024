@@ -11,7 +11,6 @@ import de.teamgruen.sc.sdk.game.Move;
 import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.game.board.Board;
 import de.teamgruen.sc.sdk.game.board.Ship;
-import de.teamgruen.sc.sdk.logging.AnsiColor;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
@@ -143,7 +142,7 @@ public class MoveUtil {
                     entry.setValue(entry.getValue() + bestNextEntry.getValue() * 0.75);
 
                     bestNextDirections.put(move, bestNextDirection);
-
+                    
                     return true;
                 })
                 .max(Comparator.comparingDouble(Map.Entry::getValue))
@@ -203,30 +202,22 @@ public class MoveUtil {
         final Board board = gameState.getBoard();
         boolean preventsGoal = false, preventsPassenger = false, canEnemyCollectPassengerBeforePlayer = false;
 
-        if(enemyPosition != null) {
-            if (move.getPushes() > 0 && turn == gameState.getTurn()) {
-                final boolean isEnemyFinishing = enemyShip.hasEnoughPassengers()
-                        && enemyShip.getSpeed() == (board.isCounterCurrent(enemyPosition) ? 2 : 1)
-                        && board.getFieldAt(enemyPosition) instanceof Goal;
+        if(enemyPosition != null && move.getPushes() > 0) {
+            final boolean isEnemyFinishing = enemyShip.hasEnoughPassengers()
+                    && enemyShip.getSpeed() == (board.isCounterCurrent(enemyPosition) ? 2 : 1)
+                    && board.getFieldAt(enemyPosition) instanceof Goal;
 
-                preventsGoal = isEnemyFinishing || board.canFinishInNextRound(enemyShip, enemyPosition, shipPosition);
-                preventsPassenger = board.canCollectPassengerInNextRound(enemyShip, enemyPosition, shipPosition)
-                        && !board.canCollectPassengerInNextRound(enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
-            }
-
-            if (move.getPassengers() > 0) {
-                try {
-                    Direction.fromVector3(move.getEndPosition().copy().subtract(shipPosition));
-                } catch (IllegalArgumentException ignored) {
-                    // proceed if the direction is invalid, meaning the player needs at least 2 turns to reach the passenger
-                    canEnemyCollectPassengerBeforePlayer = board.canReachRequiredSpeed(enemyShip, enemyPosition, shipPosition, move.getEndPosition());
-                }
-            }
+            preventsGoal = isEnemyFinishing || board.canFinishInNextRound(enemyShip, enemyPosition, shipPosition);
+            preventsPassenger = board.canCollectPassengerInNextRound(enemyShip, enemyPosition, shipPosition)
+                    && !board.canCollectPassengerInNextRound(enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
         }
+
+        if (move.getPassengers() > 0 && gameState.getTurn() != turn)
+            canEnemyCollectPassengerBeforePlayer = board.canCollectPassengerInNextRound(enemyShip, enemyShip.getPosition(), shipPosition);
 
         final boolean hasEnoughPassengers = passengers >= 2;
         final boolean shouldMoveTowardsGoal = (isEnemyAhead && move.getSegmentIndex() < 4) || hasEnoughPassengers;
-        final double passengersToInclude = move.getPassengers() * (shouldMoveTowardsGoal || canEnemyCollectPassengerBeforePlayer ? 0.375 : 1);
+        final double passengersToInclude = move.getPassengers() * (canEnemyCollectPassengerBeforePlayer ? 0 : (shouldMoveTowardsGoal ? 0.375 : 1));
         final double segmentDistance = getMoveSegmentDistance(board, shipPosition, shipDirection, move);
         final int coalCost = Math.max(0, coalBefore - coalAfter - (turn < 2 ? 1 : 0));
 
