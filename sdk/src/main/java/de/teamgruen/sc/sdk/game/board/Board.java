@@ -578,6 +578,30 @@ public class Board {
     }
 
     /**
+     * @param position the ship's position
+     * @return the direction of the next segment or null if the ship is on the last segment
+     */
+    public Direction getNextSegmentDirection(@NonNull Vector3 position) {
+        final int segmentIndex = this.getSegmentIndex(position);
+
+        if(segmentIndex < this.segments.size() - 1)
+            return this.segments.get(segmentIndex + 1).direction();
+
+        return segmentIndex == 7 ? null : this.nextSegmentDirection;
+    }
+
+    /**
+     * @param position the ship's position
+     * @param direction the ship's direction
+     * @return the cost to reach the direction of the next segment (1 per turn)
+     */
+    public int getSegmentDirectionCost(@NonNull Vector3 position, @NonNull Direction direction) {
+        final Direction nextSegmentDirection = this.getNextSegmentDirection(position);
+
+        return nextSegmentDirection == null ? 0 : direction.costTo(nextSegmentDirection);
+    }
+
+    /**
      * Get the best push direction for the enemy ship.
      *
      * @param from the direction the ship is coming from
@@ -618,7 +642,8 @@ public class Board {
             }
 
             final double positionBonus = this.getSegmentDistance(pushPosition, enemyPosition) * (hasEnoughPassengers ? 4 : 2);
-            final double score = this.getMinTurns(enemyShip.getDirection(), pushPosition) + counterCurrentBonus + positionBonus;
+            final double directionCost = this.getSegmentDirectionCost(enemyPosition, currentDirection);
+            final double score = this.getMinTurns(enemyShip.getDirection(), pushPosition) + counterCurrentBonus + positionBonus + directionCost;
 
             if(score > maxScore) {
                 maxScore = score;

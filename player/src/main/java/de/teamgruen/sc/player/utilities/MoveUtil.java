@@ -122,8 +122,12 @@ public class MoveUtil {
                             continue;
 
                         final int nextCoalCost = bestNextMove.getCoalCost(possibleDirection, move.getTotalCost(), 1);
+                        int columnPoints = 0;
 
-                        if(bestNextMoveEntry.getValue() > bestNextScore || nextCoalCost < bestNextCoal) {
+                        if(board.getSegmentDistance(move.getEnemyEndPosition(), move.getEndPosition()) == 0)
+                            columnPoints = possibleDirection.toFieldColumn();
+
+                        if(bestNextMoveEntry.getValue() + columnPoints * 0.25 > bestNextScore || nextCoalCost < bestNextCoal) {
                             bestNextDirection = possibleDirection;
                             bestNextScore = bestNextMoveEntry.getValue();
                             bestNextCoal = nextCoalCost;
@@ -231,15 +235,21 @@ public class MoveUtil {
 
         final double passengersToInclude = move.getPassengers() * (shouldMoveTowardsGoal || canEnemyCollectPassengerBeforePlayer ? 0.375 : 1);
 
+        int columnPoints = 0;
+
+        if(move.getEnemyEndPosition() != null && board.getSegmentDistance(move.getEnemyEndPosition(), move.getEndPosition()) == 0)
+            columnPoints = move.getEndDirection().toFieldColumn();
+
         return (move.isGoal() || preventsGoal ? 100 : 0)
                 + (preventsPassenger ? 1.25 : 0)
                 + passengersToInclude * Math.max(0, 3 - passengers) * 4
                 + segmentDistance * (shouldMoveTowardsGoal ? 5 : (hasEnoughPassengers ? 2 : 1)) * (turn > 45 ? 2.5 : 1)
                 - coalCost * (hasEnoughPassengers ? 1 : 1.875)
-                - getSegmentDirectionCost(board, move.getEndPosition(), move.getEndDirection()) * 0.75
+                - board.getSegmentDirectionCost(move.getEndPosition(), move.getEndDirection()) * 0.75
                 - Math.max(0, move.getTotalCost() - 2) * Math.max(0, move.getSegmentIndex() - 4) * 0.375
                 + (move.getEnemyEndPosition() != null ? board.getMinTurns(enemyShip.getDirection(), move.getEnemyEndPosition()) : 0) * (move.getPushes() > 0 ? 0.25 : 0)
-                + move.getPushes() * (hasEnoughPassengers ? 0.5 : 0);
+                + move.getPushes() * (hasEnoughPassengers ? 0.5 : 0)
+                + columnPoints * 0.25;
     }
 
     /**
@@ -266,7 +276,7 @@ public class MoveUtil {
         final boolean isEnemyAhead = enemyPosition != null && isEnemyAhead(board, position, direction, enemyShip, enemyPosition);
         final boolean hasEnemyMorePoints = enemyShip.getPassengers() >= ship.getPassengers()
                 && board.getSegmentDistance(ship.getPosition(), enemyShip.getPosition()) >= 1.25;
-        final double segmentDirectionCost = getSegmentDirectionCost(board, position, direction);
+        final double segmentDirectionCost = board.getSegmentDirectionCost(position, direction);
         final int accelerationCoal = getAccelerationCoal(segmentDirectionCost, isEnemyAhead || hasEnemyMorePoints, coal - extraCoal);
         final Set<Move> moves = board.getMoves(ship, position, direction, enemyShip, enemyPosition,
                 speed, freeTurns, Math.min(coal, 1 + accelerationCoal + extraCoal), forceMultiplePushes);
@@ -420,7 +430,7 @@ public class MoveUtil {
         final Field destinationField = board.getFieldAt(destination);
         final boolean mustReachSpeed = destinationField instanceof Goal || board.canPickUpPassenger(destination);
         final int maxVelocity = getMaxVelocity(board, path);
-        final int segmentDirectionCost = getSegmentDirectionCost(board, playerShip.getPosition(), playerShip.getDirection());
+        final int segmentDirectionCost = board.getSegmentDirectionCost(playerShip.getPosition(), playerShip.getDirection());
         final int accelerationCoal = getAccelerationCoal(segmentDirectionCost, isEnemyAhead || hasEnemyMorePoints, playerShip.getCoal());
 
         int freeTurns = playerShip.getFreeTurns();
@@ -600,32 +610,6 @@ public class MoveUtil {
 
     /**
      * @param board the game board
-     * @param position the ship's position
-     * @return the direction of the next segment
-     */
-    public static Direction getNextSegmentDirection(@NonNull Board board, @NonNull Vector3 position) {
-        final int segmentIndex = board.getSegmentIndex(position);
-
-        if(segmentIndex < board.getSegments().size() - 1)
-            return board.getSegments().get(segmentIndex + 1).direction();
-
-        return null;
-    }
-
-    /**
-     * @param board the game board
-     * @param position the ship's position
-     * @param direction the ship's direction
-     * @return the cost to reach the direction of the next segment (1 per turn)
-     */
-    public static int getSegmentDirectionCost(@NonNull Board board, @NonNull Vector3 position, @NonNull Direction direction) {
-        final Direction nextSegmentDirection = getNextSegmentDirection(board, position);
-
-        return nextSegmentDirection == null ? 0 : direction.costTo(nextSegmentDirection);
-    }
-
-    /**
-     * @param board the game board
      * @param playerPosition the player's position
      * @param playerDirection the player's direction
      * @param enemyShip the enemy's ship
@@ -636,7 +620,7 @@ public class MoveUtil {
                                        @NonNull Vector3 playerPosition, @NonNull Direction playerDirection,
                                        @NonNull Ship enemyShip, @NonNull Vector3 enemyPosition) {
         final double segmentDistance = board.getSegmentDistance(playerPosition, enemyPosition);
-        final int requiredTurns = getSegmentDirectionCost(board, playerPosition, playerDirection);
+        final int requiredTurns = board.getSegmentDirectionCost(playerPosition, playerDirection);
 
         return segmentDistance >= (2.75 - requiredTurns * 0.125 - (enemyShip.getSpeed() / 4d));
     }
