@@ -94,7 +94,7 @@ public class MoveUtil {
                     // determine the best next direction
 
                     Direction bestNextDirection = null;
-                    double bestNextScore = Integer.MIN_VALUE;
+                    Map.Entry<Move, Double> bestNextEntry = null;
                     int bestNextCoal = Integer.MAX_VALUE;
 
                     for (int i = -leftFreeTurns; i <= leftFreeTurns; i++) {
@@ -104,32 +104,32 @@ public class MoveUtil {
                         if(possibleDirection != current)
                             expandedMove.turn(possibleDirection);
 
-                        final Map.Entry<Move, Double> bestNextMoveEntry = getBestNextMove(
+                        final Map.Entry<Move, Double> currentEntry = getBestNextMove(
                                 gameState, turn,
                                 playerShip, enemyShip,
                                 null, coal, expandedMove
                         );
 
-                        if(bestNextMoveEntry == null || bestNextMoveEntry.getValue() < bestNextScore)
+                        if(currentEntry == null || (bestNextEntry != null && currentEntry.getValue() < bestNextEntry.getValue()))
                             continue;
 
-                        final Move bestNextMove = bestNextMoveEntry.getKey();
-                        final boolean changedVelocity = bestNextMove.getTotalCost() == expandedMove.getTotalCost();
-                        final Action firstAction = bestNextMove.getActions().get(changedVelocity ? 0 : 1);
+                        final Move currentMove = currentEntry.getKey();
+                        final boolean changedVelocity = currentMove.getTotalCost() == expandedMove.getTotalCost();
+                        final Action firstAction = currentMove.getActions().get(changedVelocity ? 0 : 1);
 
                         // skip if the ship turns back to the first direction
                         if(firstAction instanceof Turn firstTurn && firstTurn.getDirection() == current)
                             continue;
 
-                        final int nextCoalCost = bestNextMove.getCoalCost(possibleDirection, move.getTotalCost(), 1);
+                        final int nextCoalCost = currentMove.getCoalCost(possibleDirection, move.getTotalCost(), 1);
                         int columnPoints = 0;
 
                         if(board.getSegmentDistance(move.getEnemyEndPosition(), move.getEndPosition()) == 0)
                             columnPoints = possibleDirection.toFieldColumn();
 
-                        if(bestNextMoveEntry.getValue() + columnPoints * 0.25 > bestNextScore || nextCoalCost < bestNextCoal) {
+                        if(bestNextEntry == null || currentEntry.getValue() + columnPoints * 0.25 > bestNextEntry.getValue() || nextCoalCost < bestNextCoal) {
                             bestNextDirection = possibleDirection;
-                            bestNextScore = bestNextMoveEntry.getValue();
+                            bestNextEntry = currentEntry;
                             bestNextCoal = nextCoalCost;
                         }
                     }
@@ -145,7 +145,7 @@ public class MoveUtil {
                             bestNextDirections.put(move, current.rotateTo(board.getNextSegmentDirection(), leftFreeTurns));
                     } else {
                         // update the score of the move based on the next move
-                        entry.setValue(entry.getValue() + bestNextScore * 0.75);
+                        entry.setValue(entry.getValue() + bestNextEntry.getValue() * 0.75);
 
                         bestNextDirections.put(move, bestNextDirection);
                     }
