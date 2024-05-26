@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.10.0](https://github.com/jgeramb/software-challenge-client/compare/v1.9.2...v1.10.0) (2024-05-26)
+
+
+### Features
+
+* **sdk/game; player/weighted:** move segment direction cost to board class + add bonus points for field column ([5f4db17](https://github.com/jgeramb/software-challenge-client/commit/5f4db171bf50cc638594dc2130a93b3d6deea639))
+
+
+### Bug Fixes
+
+* **player/weighted:** prevent collection of same passenger in further moves ([e2b7872](https://github.com/jgeramb/software-challenge-client/commit/e2b7872e4bc658de928d79424e973764c1619b23))
+* **player/weighted:** prevent ship from getting stuck at segment borders ([c147d85](https://github.com/jgeramb/software-challenge-client/commit/c147d851c24501bed16a94196f85183813cc7ae4))
+* **player/weighted:** use start position of current move instead of ship position + adjust weights ([d2b926b](https://github.com/jgeramb/software-challenge-client/commit/d2b926bd7a2393a6ee0e7ec5754a970614f47da9))
+
 ## [1.9.2](https://github.com/jgeramb/software-challenge-client/compare/v1.9.1...v1.9.2) (2024-05-25)
 
 
