@@ -713,6 +713,8 @@ public class Board {
             final int counterCurrentBonus = this.isCounterCurrent(pushPosition) ? 1 : 0;
             final boolean hasEnoughPassengers = enemyShip.hasEnoughPassengers();
 
+            double actionFieldCost = 0;
+
             if(!allowGoalAndPassengerPickUp) {
                 if(enemyShip.getSpeed() == 1 + counterCurrentBonus) {
                     if ((pushField instanceof Goal && hasEnoughPassengers) || this.canPickUpPassenger(pushPosition))
@@ -722,14 +724,14 @@ public class Board {
                 final Vector3 playerPosition = enemyPosition.copy().add(from.toVector3());
 
                 if(this.canFinishInNextRound(enemyShip, pushPosition, playerPosition))
-                    continue;
+                    actionFieldCost = 10;
 
                 if(this.canCollectPassengerInNextRound(enemyShip, pushPosition, playerPosition))
-                    continue;
+                    actionFieldCost = 5;
             }
 
             final double positionBonus = this.getSegmentDistance(pushPosition, enemyPosition) * (hasEnoughPassengers ? 4 : 2);
-            final double score = this.getMinTurns(enemyShip.getDirection(), pushPosition) + counterCurrentBonus + positionBonus;
+            final double score = this.getMinTurns(enemyShip.getDirection(), pushPosition) + counterCurrentBonus + positionBonus - actionFieldCost;
 
             if(score > maxScore) {
                 maxScore = score;
