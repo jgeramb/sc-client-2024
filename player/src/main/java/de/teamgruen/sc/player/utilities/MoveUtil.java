@@ -233,7 +233,7 @@ public class MoveUtil {
         if(move.getEnemyEndPosition() != null && board.getSegmentDistance(move.getEnemyEndPosition(), move.getEndPosition()) == 0)
             columnPoints = move.getEndDirection().toFieldColumn();
 
-        return (move.isGoal() || preventsGoal ? 100 : 0)
+        return (move.isGoal() ? 100 : (preventsGoal && hasEnoughPassengers ? 150 : 0))
                 + (preventsPassenger ? 1.25 : 0)
                 + passengersToInclude * Math.max(0, 3 - passengers) * 4
                 + segmentDistance * (shouldMoveTowardsGoal ? 4 : 1) * (turn > 45 ? 2.5 : 1)
