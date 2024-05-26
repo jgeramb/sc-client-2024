@@ -212,8 +212,15 @@ public class MoveUtil {
                     && !board.canCollectPassengerInNextRound(enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
         }
 
-        if (move.getPassengers() > 0 && gameState.getTurn() != turn)
-            canEnemyCollectPassengerBeforePlayer = board.canCollectPassengerInNextRound(enemyShip, enemyShip.getPosition(), shipPosition);
+        if (move.getPassengers() > 0 && turn > gameState.getTurn()) {
+            try {
+                // check whether the enemy is only one field away from the passenger
+                Direction.fromVector3(enemyShip.getPosition().copy().subtract(move.getEndPosition()));
+
+                canEnemyCollectPassengerBeforePlayer = board.canCollectPassengerInNextRound(enemyShip, enemyShip.getPosition(), shipPosition);
+            } catch (Exception ignored) {
+            }
+        }
 
         final boolean hasEnoughPassengers = passengers >= 2;
         final boolean shouldMoveTowardsGoal = (isEnemyAhead && move.getSegmentIndex() < 4) || hasEnoughPassengers;
