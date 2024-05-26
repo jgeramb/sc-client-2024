@@ -11,18 +11,16 @@ import de.teamgruen.sc.sdk.game.Move;
 import de.teamgruen.sc.sdk.game.Vector3;
 import de.teamgruen.sc.sdk.game.board.Board;
 import de.teamgruen.sc.sdk.game.board.Ship;
+import de.teamgruen.sc.sdk.logging.AnsiColor;
 import de.teamgruen.sc.sdk.protocol.data.Direction;
 import de.teamgruen.sc.sdk.protocol.data.actions.Action;
 import de.teamgruen.sc.sdk.protocol.data.actions.ActionFactory;
 import de.teamgruen.sc.sdk.protocol.data.actions.Turn;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Field;
 import de.teamgruen.sc.sdk.protocol.data.board.fields.Goal;
-import de.teamgruen.sc.sdk.protocol.data.board.fields.Passenger;
 import lombok.NonNull;
 
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class MoveUtil {
 
@@ -211,9 +209,9 @@ public class MoveUtil {
                         && enemyShip.getSpeed() == (board.isCounterCurrent(enemyPosition) ? 2 : 1)
                         && board.getFieldAt(enemyPosition) instanceof Goal;
 
-                preventsGoal = isEnemyFinishing || canFinishInNextRound(board, enemyShip, enemyPosition, shipPosition);
-                preventsPassenger = canCollectPassengerInNextRound(board, enemyShip, enemyPosition, shipPosition)
-                        && !canCollectPassengerInNextRound(board, enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
+                preventsGoal = isEnemyFinishing || board.canFinishInNextRound(enemyShip, enemyPosition, shipPosition);
+                preventsPassenger = board.canCollectPassengerInNextRound(enemyShip, enemyPosition, shipPosition)
+                        && !board.canCollectPassengerInNextRound(enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
             }
 
             if (move.getPassengers() > 0) {
@@ -221,7 +219,7 @@ public class MoveUtil {
                     Direction.fromVector3(move.getEndPosition().copy().subtract(shipPosition));
                 } catch (IllegalArgumentException ignored) {
                     // proceed if the direction is invalid, meaning the player needs at least 2 turns to reach the passenger
-                    canEnemyCollectPassengerBeforePlayer = canReachRequiredSpeed(board, enemyShip, enemyPosition, shipPosition, move.getEndPosition());
+                    canEnemyCollectPassengerBeforePlayer = board.canReachRequiredSpeed(enemyShip, enemyPosition, shipPosition, move.getEndPosition());
                 }
             }
         }
@@ -623,99 +621,6 @@ public class MoveUtil {
         final int requiredTurns = board.getSegmentDirectionCost(playerPosition, playerDirection);
 
         return segmentDistance >= (2.75 - requiredTurns * 0.125 - (enemyShip.getSpeed() / 4d));
-    }
-
-    /**
-     * @param board the game board
-     * @param ship the ship
-     * @param position the ship's position
-     * @param enemyPosition the enemy's position
-     * @param destination the position to reach
-     * @return whether the enemy can reach the destination with the required speed in the next round
-     */
-    public static boolean canReachRequiredSpeed(@NonNull Board board,
-                                                @NonNull Ship ship, @NonNull Vector3 position,
-                                                @NonNull Vector3 enemyPosition,
-                                                @NonNull Vector3 destination) {
-        if(enemyPosition.equals(destination))
-            return false;
-
-        try {
-            final Direction enemyDirection = Direction.fromVector3(position.copy().subtract(destination));
-            final int turnCost = ship.getDirection().costTo(enemyDirection);
-            final int coal = Math.min(2, ship.getCoal());
-
-            if (turnCost <= 1 + coal) {
-                final int remainingCoal = coal - Math.max(0, turnCost - 1);
-                final int minReachableSpeed = ship.getSpeed() - 1 - remainingCoal;
-                final int requiredSpeed = board.isCounterCurrent(destination) ? 2 : 1;
-
-                if (minReachableSpeed <= requiredSpeed)
-                    return true;
-            }
-        } catch (IllegalArgumentException ignored) {
-            // ignore invalid directions
-        }
-
-        return false;
-    }
-
-    /**
-     * @param board the game board
-     * @param ship the ship
-     * @param position the ship's position
-     * @param enemyPosition the enemy's position
-     * @param actionPositions the positions of the action fields
-     * @return whether the ship can reach an action field in the next round
-     */
-    public static boolean canReachActionFieldInNextRound(@NonNull Board board,
-                                                         @NonNull Ship ship, @NonNull Vector3 position,
-                                                         @NonNull Vector3 enemyPosition,
-                                                         @NonNull Set<Vector3> actionPositions) {
-        for (Direction direction : Direction.values()) {
-            final Vector3 neighbourPosition = position.copy().add(direction.toVector3());
-
-            if(actionPositions.contains(neighbourPosition) && canReachRequiredSpeed(board, ship, position, enemyPosition, neighbourPosition))
-                return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * @param board the game board
-     * @param ship the ship
-     * @param position the ship's position
-     * @param enemyPosition the enemy's position
-     * @return whether the ship can collect a passenger in the next round
-     */
-    public static boolean canCollectPassengerInNextRound(@NonNull Board board,
-                                                         @NonNull Ship ship, @NonNull Vector3 position,
-                                                         @NonNull Vector3 enemyPosition) {
-        final Set<Vector3> collectPositions = board.getPassengerFields()
-                .entrySet()
-                .stream()
-                .map((entry) -> entry.getKey().copy().add(((Passenger) entry.getValue()).getDirection().toVector3()))
-                .filter(Predicate.not(board::isBlocked))
-                .collect(Collectors.toSet());
-
-        return canReachActionFieldInNextRound(board, ship, position, enemyPosition, collectPositions);
-    }
-
-    /**
-     * @param board the game board
-     * @param ship the ship
-     * @param position the ship's position
-     * @param enemyPosition the enemy's position
-     * @return whether the ship finish the game in the next round
-     */
-    public static boolean canFinishInNextRound(@NonNull Board board,
-                                               @NonNull Ship ship, @NonNull Vector3 position,
-                                               @NonNull Vector3 enemyPosition) {
-        if(!ship.hasEnoughPassengers())
-            return false;
-
-        return canReachActionFieldInNextRound(board, ship, position, enemyPosition, board.getGoalFields().keySet());
     }
 
 }

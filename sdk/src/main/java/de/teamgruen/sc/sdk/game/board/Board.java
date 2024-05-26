@@ -602,6 +602,86 @@ public class Board {
     }
 
     /**
+     * @param ship the ship
+     * @param position the ship's position
+     * @param enemyPosition the enemy's position
+     * @param destination the position to reach
+     * @return whether the ship can reach the destination with the required speed in the next round
+     */
+    public boolean canReachRequiredSpeed(@NonNull Ship ship, @NonNull Vector3 position, Vector3 enemyPosition, @NonNull Vector3 destination) {
+        if(Objects.equals(enemyPosition, destination))
+            return false;
+
+        try {
+            final Direction directionToDestination = Direction.fromVector3(position.copy().subtract(destination));
+            final int turnCost = ship.getDirection().costTo(directionToDestination);
+            final int coal = Math.min(2, ship.getCoal());
+
+            if (turnCost <= 1 + coal) {
+                final int remainingCoal = coal - Math.max(0, turnCost - 1);
+                final int minReachableSpeed = ship.getSpeed() - 1 - remainingCoal;
+                final int requiredSpeed = this.isCounterCurrent(destination) ? 2 : 1;
+
+                if (minReachableSpeed <= requiredSpeed)
+                    return true;
+            }
+        } catch (IllegalArgumentException ignored) {
+            // ignore invalid directions
+        }
+
+        return false;
+    }
+
+    /**
+     * @param ship the ship
+     * @param position the ship's position
+     * @param enemyPosition the enemy's position
+     * @param actionPositions the positions of the action fields
+     * @return whether the ship can reach an action field in the next round
+     */
+    public boolean canReachActionFieldInNextRound(@NonNull Ship ship, @NonNull Vector3 position, Vector3 enemyPosition,
+                                                  @NonNull Set<Vector3> actionPositions) {
+        for (Direction direction : Direction.values()) {
+            final Vector3 neighbourPosition = position.copy().add(direction.toVector3());
+
+            if(actionPositions.contains(neighbourPosition) && canReachRequiredSpeed(ship, position, enemyPosition, neighbourPosition))
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param ship the ship
+     * @param position the ship's position
+     * @param enemyPosition the enemy's position
+     * @return whether the ship can collect a passenger in the next round
+     */
+    public boolean canCollectPassengerInNextRound(@NonNull Ship ship, @NonNull Vector3 position, Vector3 enemyPosition) {
+        final Set<Vector3> collectPositions = this.getPassengerFields()
+                .entrySet()
+                .stream()
+                .map((entry) -> entry.getKey().copy().add(((Passenger) entry.getValue()).getDirection().toVector3()))
+                .filter(Predicate.not(this::isBlocked))
+                .collect(Collectors.toSet());
+
+        return canReachActionFieldInNextRound(ship, position, enemyPosition, collectPositions);
+    }
+
+    /**
+     * @param ship the ship
+     * @param position the ship's position
+     * @param enemyPosition the enemy's position
+     * @return whether the ship finish the game in the next round
+     */
+    public boolean canFinishInNextRound(@NonNull Ship ship, @NonNull Vector3 position, Vector3 enemyPosition) {
+        if(!ship.hasEnoughPassengers())
+            return false;
+
+        return canReachActionFieldInNextRound(ship, position, enemyPosition, this.getGoalFields().keySet());
+    }
+
+    /**
      * Get the best push direction for the enemy ship.
      *
      * @param from the direction the ship is coming from
