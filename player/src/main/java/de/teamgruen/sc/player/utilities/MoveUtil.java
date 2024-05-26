@@ -71,7 +71,7 @@ public class MoveUtil {
                     if(move.isGoal())
                         return true;
 
-                    if(entry.getValue() < -3)
+                    if(entry.getValue() < -3.5)
                         return false;
 
                     int turnCost = 0;
@@ -163,7 +163,7 @@ public class MoveUtil {
         }
 
         // loose intentionally if the ship will be stuck in the next 2 rounds
-        return Optional.of(moves.keySet().iterator().next());
+        return moves.entrySet().stream().max(Comparator.comparingDouble(Map.Entry::getValue)).map(Map.Entry::getKey);
     }
 
     /**
@@ -355,7 +355,7 @@ public class MoveUtil {
                     if (bestNextMove == null)
                         return true;
 
-                    entry.setValue(entry.getValue() + bestNextMove.getValue() * 0.75);
+                    entry.setValue(entry.getValue() + bestNextMove.getValue() * 0.675);
                 }
 
                 return false;
