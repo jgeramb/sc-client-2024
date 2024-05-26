@@ -642,8 +642,7 @@ public class Board {
             }
 
             final double positionBonus = this.getSegmentDistance(pushPosition, enemyPosition) * (hasEnoughPassengers ? 4 : 2);
-            final double directionCost = this.getSegmentDirectionCost(enemyPosition, currentDirection);
-            final double score = this.getMinTurns(enemyShip.getDirection(), pushPosition) + counterCurrentBonus + positionBonus + directionCost;
+            final double score = this.getMinTurns(enemyShip.getDirection(), pushPosition) + counterCurrentBonus + positionBonus;
 
             if(score > maxScore) {
                 maxScore = score;

@@ -212,9 +212,8 @@ public class MoveUtilTest {
 
         final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, 500);
         final List<Action> expectedActions = List.of(
-                ActionFactory.changeVelocity(-1),
-                ActionFactory.turn(Direction.DOWN_RIGHT),
-                ActionFactory.forward(1)
+                ActionFactory.forward(1),
+                ActionFactory.turn(Direction.DOWN_RIGHT)
         );
 
         assertTrue(actualMove.isPresent());

@@ -141,18 +141,10 @@ public class MoveUtil {
                     if(bestNextDirection == null)
                         return false;
 
-                    if(endsAtLastSegmentBorder(board, move, move.getCoalCost(direction, speed, freeTurns))) {
-                        // update the score of the move if it ends at the last segment border
-                        entry.setValue(entry.getValue() + 1.5);
+                    // update the score of the move based on the next move
+                    entry.setValue(entry.getValue() + bestNextEntry.getValue() * 0.75);
 
-                        if(move.getSegmentIndex() < 7)
-                            bestNextDirections.put(move, current.rotateTo(board.getNextSegmentDirection(), leftFreeTurns));
-                    } else {
-                        // update the score of the move based on the next move
-                        entry.setValue(entry.getValue() + bestNextEntry.getValue() * 0.75);
-
-                        bestNextDirections.put(move, bestNextDirection);
-                    }
+                    bestNextDirections.put(move, bestNextDirection);
 
                     return true;
                 })
@@ -162,7 +154,7 @@ public class MoveUtil {
 
         if(bestMove != null) {
             // turn to the best direction if the ship was not turned yet
-            if (!endsAtLastSegmentBorder(board, bestMove, 0) && bestNextDirections.containsKey(bestMove)) {
+            if (bestNextDirections.containsKey(bestMove)) {
                 final Direction nextDirection = bestNextDirections.get(bestMove);
                 final Direction endDirection = bestMove.getEndDirection();
 
