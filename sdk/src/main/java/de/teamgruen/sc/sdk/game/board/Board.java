@@ -713,11 +713,18 @@ public class Board {
             final int counterCurrentBonus = this.isCounterCurrent(pushPosition) ? 1 : 0;
             final boolean hasEnoughPassengers = enemyShip.hasEnoughPassengers();
 
-            if(!allowGoalAndPassengerPickUp && enemyShip.getSpeed() <= 2 + counterCurrentBonus + enemyShip.getCoal()) {
-                if(pushField instanceof Goal && hasEnoughPassengers)
+            if(!allowGoalAndPassengerPickUp) {
+                if(enemyShip.getSpeed() == 1 + counterCurrentBonus) {
+                    if ((pushField instanceof Goal && hasEnoughPassengers) || this.canPickUpPassenger(pushPosition))
+                        continue;
+                }
+
+                final Vector3 playerPosition = enemyPosition.copy().add(from.toVector3());
+
+                if(this.canFinishInNextRound(enemyShip, pushPosition, playerPosition))
                     continue;
 
-                if(this.canPickUpPassenger(pushPosition))
+                if(this.canCollectPassengerInNextRound(enemyShip, pushPosition, playerPosition))
                     continue;
             }
 
