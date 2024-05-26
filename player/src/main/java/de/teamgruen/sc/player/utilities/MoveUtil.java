@@ -110,7 +110,12 @@ public class MoveUtil {
                                 null, coal, expandedMove
                         );
 
-                        if(currentEntry == null || (bestNextEntry != null && currentEntry.getValue() < bestNextEntry.getValue()))
+                        if(currentEntry == null)
+                            continue;
+
+                        double currentScore = currentEntry.getValue() - Math.abs(i) * 0.125;
+
+                        if((bestNextEntry != null && currentEntry.getValue() < bestNextEntry.getValue()))
                             continue;
 
                         final Move currentMove = currentEntry.getKey();
@@ -122,12 +127,11 @@ public class MoveUtil {
                             continue;
 
                         final int nextCoalCost = currentMove.getCoalCost(possibleDirection, move.getTotalCost(), 1);
-                        int columnPoints = 0;
 
                         if(board.getSegmentDistance(move.getEnemyEndPosition(), move.getEndPosition()) == 0)
-                            columnPoints = possibleDirection.toFieldColumn();
+                            currentScore += possibleDirection.toFieldColumn() * 0.25;
 
-                        if(bestNextEntry == null || currentEntry.getValue() + columnPoints * 0.25 > bestNextEntry.getValue() || nextCoalCost < bestNextCoal) {
+                        if(bestNextEntry == null || currentScore > bestNextEntry.getValue() || nextCoalCost < bestNextCoal) {
                             bestNextDirection = possibleDirection;
                             bestNextEntry = currentEntry;
                             bestNextCoal = nextCoalCost;
@@ -368,7 +372,8 @@ public class MoveUtil {
 
                 return false;
             });
-        }
+        } else
+            moves.entrySet().removeIf(entry -> entry.getKey().getEndPosition().equals(previousMove.getEndPosition()) && entry.getKey().getPassengers() > 0);
 
         return moves.entrySet().stream()
                 .max(Comparator.comparingDouble(Map.Entry::getValue))
