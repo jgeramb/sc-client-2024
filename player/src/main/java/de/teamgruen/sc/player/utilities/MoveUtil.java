@@ -207,12 +207,15 @@ public class MoveUtil {
                 && enemyPosition != null && !(board.getFieldAt(enemyPosition) instanceof Goal);
         boolean preventsGoal = false, preventsPassenger = false, canEnemyCollectPassengerBeforePlayer = false;
 
-        if(turn == gameState.getTurn() && enemyPosition != null && (move.getPushes() > 0 || preventsGoalPassively)) {
-            final boolean isEnemyFinishing = enemyShip.hasEnoughPassengers()
-                    && enemyShip.getSpeed() <= (board.isCounterCurrent(enemyPosition) ? 2 : 1)
-                    && board.getFieldAt(enemyPosition) instanceof Goal;
+        if(turn == gameState.getTurn() && enemyPosition != null) {
+            if(move.getPushes() > 0 || preventsGoalPassively) {
+                final boolean isEnemyFinishing = enemyShip.hasEnoughPassengers()
+                        && enemyShip.getSpeed() <= (board.isCounterCurrent(enemyPosition) ? 2 : 1)
+                        && board.getFieldAt(enemyPosition) instanceof Goal;
 
-            preventsGoal = isEnemyFinishing || board.canFinishInNextRound(enemyShip, enemyPosition, shipPosition);
+                preventsGoal = isEnemyFinishing || board.canFinishInNextRound(enemyShip, enemyPosition, shipPosition);
+            }
+
             preventsPassenger = board.canCollectPassengerInNextRound(enemyShip, enemyPosition, shipPosition)
                     && !board.canCollectPassengerInNextRound(enemyShip, move.getEnemyEndPosition(), move.getEndPosition());
         }
