@@ -328,10 +328,11 @@ public class MoveUtil {
         );
         final int remainingCoal = coal - coalCost;
         final int passengers = ship.getPassengers() + (hasPreviousMove ? previousMove.getPassengers() : 0) + move.getPassengers();
+        final Vector3 enemyPosition = hasPreviousMove ? null : move.getEnemyEndPosition();
 
         Map<Move, Double> moves = getPossibleMoves(
                 gameState, newTurn,
-                ship, move.getEndPosition(), move.getEndDirection(), enemyShip, null,
+                ship, move.getEndPosition(), move.getEndDirection(), enemyShip, enemyPosition,
                 passengers, move.getTotalCost(), 1, remainingCoal, 0,
                 false
         );
@@ -339,7 +340,7 @@ public class MoveUtil {
         if(moves.isEmpty()) {
             moves = getPossibleMoves(
                     gameState, newTurn,
-                    ship, move.getEndPosition(), move.getEndDirection(), enemyShip, null,
+                    ship, move.getEndPosition(), move.getEndDirection(), enemyShip, enemyPosition,
                     passengers, move.getTotalCost(), 1, remainingCoal, 0,
                      true
             );
