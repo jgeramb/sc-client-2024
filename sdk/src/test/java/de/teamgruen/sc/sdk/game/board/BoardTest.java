@@ -266,9 +266,13 @@ public class BoardTest {
 
     @Test
     public void testGetBestPushDirection_CounterCurrent() {
+        final Ship enemyShip = this.gameState.getEnemyShip();
+        enemyShip.setSpeed(3);
+        enemyShip.setCoal(0);
+
         assertEquals(Direction.DOWN_LEFT, this.board.getBestPushDirection(
                 Direction.DOWN_RIGHT,
-                this.gameState.getEnemyShip(),
+                enemyShip,
                 new Vector3(0, 4, -4),
                 false
         ));
@@ -285,9 +289,11 @@ public class BoardTest {
     }
 
     @Test
-    public void testGetBestPushDirection_MinCoalCost() {
+    public void testGetBestPushDirection_MinTurns() {
         final Ship enemyShip = this.gameState.getEnemyShip();
         enemyShip.setDirection(Direction.DOWN_LEFT);
+        enemyShip.setSpeed(3);
+        enemyShip.setCoal(0);
 
         assertEquals(Direction.DOWN_LEFT, this.board.getBestPushDirection(
                 Direction.RIGHT,
@@ -301,6 +307,8 @@ public class BoardTest {
     public void testGetBestPushDirection_SegmentDistance() {
         final Ship enemyShip = this.gameState.getEnemyShip();
         enemyShip.setDirection(Direction.DOWN_LEFT);
+        enemyShip.setSpeed(3);
+        enemyShip.setCoal(0);
 
         assertEquals(Direction.UP_LEFT, this.board.getBestPushDirection(
                 Direction.RIGHT,
@@ -316,7 +324,7 @@ public class BoardTest {
         enemyShip.setPassengers(2);
         enemyShip.setSpeed(2);
 
-        assertEquals(Direction.RIGHT, this.board.getBestPushDirection(
+        assertEquals(Direction.DOWN_RIGHT, this.board.getBestPushDirection(
                 Direction.DOWN_LEFT,
                 enemyShip,
                 new Vector3(-5, 9, -4),
@@ -330,7 +338,7 @@ public class BoardTest {
         enemyShip.setDirection(Direction.DOWN_RIGHT);
         enemyShip.setSpeed(1);
 
-        assertEquals(Direction.DOWN_RIGHT, this.board.getBestPushDirection(
+        assertEquals(Direction.RIGHT, this.board.getBestPushDirection(
                 Direction.DOWN_RIGHT,
                 enemyShip,
                 new Vector3(0, 5, -5),
