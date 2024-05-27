@@ -142,7 +142,7 @@ public class MoveUtil {
                     entry.setValue(entry.getValue() + bestNextEntry.getValue() * 0.75);
 
                     bestNextDirections.put(move, bestNextDirection);
-                    
+
                     return true;
                 })
                 .max(Comparator.comparingDouble(Map.Entry::getValue))
@@ -236,9 +236,9 @@ public class MoveUtil {
         if(move.getEnemyEndPosition() != null && board.getSegmentDistance(move.getEnemyEndPosition(), move.getEndPosition()) == 0)
             columnPoints = move.getEndDirection().toFieldColumn();
 
-        return (move.isGoal() ? 100 : (preventsGoal && hasEnoughPassengers ? 100.5 : 0))
+        return (move.isGoal() ? 100 : (preventsGoal && hasEnoughPassengers && (coalBefore - coalCost > 0) ? 100.5 : 0))
                 + (preventsPassenger ? 3.75 : 0)
-                + passengersToInclude * Math.max(0, 3 - passengers) * 4
+                + passengersToInclude * (passengers >= 2 ? 1 : 2) * 4
                 + segmentDistance * (shouldMoveTowardsGoal ? 4 : 2) * (turn > 45 ? 2.5 : 1)
                 - coalCost * (hasEnoughPassengers ? 1 : 1.875)
                 - board.getSegmentDirectionCost(move.getEndPosition(), move.getEndDirection()) * 0.875
