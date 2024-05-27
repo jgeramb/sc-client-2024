@@ -207,7 +207,7 @@ public class MoveUtil {
 
         if(enemyPosition != null && (move.getPushes() > 0 || preventsGoalPassively)) {
             final boolean isEnemyFinishing = enemyShip.hasEnoughPassengers()
-                    && enemyShip.getSpeed() == (board.isCounterCurrent(enemyPosition) ? 2 : 1)
+                    && enemyShip.getSpeed() <= (board.isCounterCurrent(enemyPosition) ? 2 : 1)
                     && board.getFieldAt(enemyPosition) instanceof Goal;
 
             preventsGoal = isEnemyFinishing || board.canFinishInNextRound(enemyShip, enemyPosition, shipPosition);
