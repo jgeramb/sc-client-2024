@@ -9,7 +9,7 @@
 
     <groupId>de.teamgruen.sc</groupId>
     <artifactId>client</artifactId>
-    <version>1.11.1</version>
+    <version>1.11.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
