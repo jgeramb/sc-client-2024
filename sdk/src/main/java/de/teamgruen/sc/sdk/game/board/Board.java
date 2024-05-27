@@ -518,7 +518,7 @@ public class Board {
 
             final int totalMovementPoints = usedMovementPoints + advanceInfo.getCost();
 
-            if(totalMovementPoints == (isCounterCurrent ? 2 : 1) && minReachableSpeed <= totalMovementPoints) {
+            if(totalMovementPoints <= (isCounterCurrent ? 2 : 1) && minReachableSpeed <= totalMovementPoints) {
                 if (field instanceof Goal && playerShip.hasEnoughPassengers()) {
                     advanceInfo.setResult(AdvanceInfo.Result.GOAL);
                     break;
@@ -716,7 +716,7 @@ public class Board {
             double actionFieldCost = 0;
 
             if(!allowGoalAndPassengerPickUp) {
-                if(enemyShip.getSpeed() == 1 + counterCurrentBonus) {
+                if(enemyShip.getSpeed() <= 1 + counterCurrentBonus) {
                     if ((pushField instanceof Goal && hasEnoughPassengers) || this.canPickUpPassenger(pushPosition))
                         continue;
                 }
