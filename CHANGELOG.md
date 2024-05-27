@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.11.4](https://github.com/jgeramb/software-challenge-client/compare/v1.11.3...v1.11.4) (2024-05-27)
+
+
+### Bug Fixes
+
+* **player/weighted:** force collection of at least 2 passengers ([5c20380](https://github.com/jgeramb/software-challenge-client/commit/5c20380f3bf5fa3476876aa5bd2fc301831f10bf))
+* **player/weighted:** only require push or passive condition for goal prevention ([5c0c1b1](https://github.com/jgeramb/software-challenge-client/commit/5c0c1b1894d3efa5667b2dde7faaa0c265d42687))
+* **player/weighted:** prevent getting stuck due to too high speeds ([8f306fb](https://github.com/jgeramb/software-challenge-client/commit/8f306fbd0569f0b2621c9c24d94ebbaac61353ed))
+
 ## [1.11.3](https://github.com/jgeramb/software-challenge-client/compare/v1.11.2...v1.11.3) (2024-05-27)
 
 
