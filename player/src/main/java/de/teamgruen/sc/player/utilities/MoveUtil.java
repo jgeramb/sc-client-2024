@@ -201,7 +201,8 @@ public class MoveUtil {
                                       @NonNull Move move) {
         final Board board = gameState.getBoard();
         final boolean preventsGoalPassively = board.getFieldAt(move.getEndPosition()) instanceof Goal
-                && !board.canFinishInNextRound(enemyShip, enemyShip.getPosition(), shipPosition);
+                && !board.canFinishInNextRound(enemyShip, enemyShip.getPosition(), shipPosition)
+                && enemyPosition != null && !(board.getFieldAt(enemyPosition) instanceof Goal);
         boolean preventsGoal = false, preventsPassenger = false, canEnemyCollectPassengerBeforePlayer = false;
 
         if(enemyPosition != null && (move.getPushes() > 0 || preventsGoalPassively)) {
