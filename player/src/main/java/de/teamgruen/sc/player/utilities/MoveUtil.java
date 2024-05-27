@@ -226,7 +226,7 @@ public class MoveUtil {
 
         final boolean hasEnoughPassengers = passengers >= 2;
         final boolean shouldMoveTowardsGoal = (isEnemyAhead && move.getSegmentIndex() < 4) || hasEnoughPassengers;
-        final double passengersToInclude = move.getPassengers() * (canEnemyCollectPassengerBeforePlayer ? 0 : (shouldMoveTowardsGoal ? 0.375 : 1));
+        final double passengersToInclude = move.getPassengers() * (canEnemyCollectPassengerBeforePlayer ? 0 : (shouldMoveTowardsGoal ? 0.5 : 1));
         final double segmentDistance = getMoveSegmentDistance(board, shipPosition, shipDirection, move);
         final int coalCost = Math.max(0, coalBefore - coalAfter - (turn < 2 ? 1 : 0));
 
@@ -238,7 +238,7 @@ public class MoveUtil {
         return (move.isGoal() ? 100 : (preventsGoal && hasEnoughPassengers ? 100.5 : 0))
                 + (preventsPassenger ? 3.75 : 0)
                 + passengersToInclude * Math.max(0, 3 - passengers) * 4
-                + segmentDistance * (shouldMoveTowardsGoal ? 4 : 1) * (turn > 45 ? 2.5 : 1)
+                + segmentDistance * (shouldMoveTowardsGoal ? 4 : 2) * (turn > 45 ? 2.5 : 1)
                 - coalCost * (hasEnoughPassengers ? 1 : 1.875)
                 - board.getSegmentDirectionCost(move.getEndPosition(), move.getEndDirection()) * 0.875
                 - Math.max(0, move.getTotalCost() - 2) * Math.max(0, move.getSegmentIndex() - 4) * 0.25
