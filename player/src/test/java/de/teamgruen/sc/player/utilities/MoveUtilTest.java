@@ -310,6 +310,7 @@ public class MoveUtilTest {
         assertEquals(1, MoveUtil.getAccelerationCoal(
                 3,
                 false,
+                false,
                 6
         ));
     }
@@ -319,6 +320,7 @@ public class MoveUtilTest {
         assertEquals(1, MoveUtil.getAccelerationCoal(
                 0,
                 true,
+                false,
                 6
         ));
     }
@@ -327,6 +329,7 @@ public class MoveUtilTest {
     public void testGetAccelerationCoal_NoCoalAvailable() {
         assertEquals(0, MoveUtil.getAccelerationCoal(
                 3,
+                true,
                 true,
                 0
         ));
