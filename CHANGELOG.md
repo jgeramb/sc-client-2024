@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.11.2](https://github.com/jgeramb/software-challenge-client/compare/v1.11.1...v1.11.2) (2024-05-27)
+
+
+### Bug Fixes
+
+* **player/weighted:** allow goal prevention even if the player does not have enough passengers ([f8882d6](https://github.com/jgeramb/software-challenge-client/commit/f8882d6e82fe6bdacbce34b1b6d09c8db29b32ea))
+* **player/weighted:** force deceleration if the ship shall not move towards the goal yet ([82efb98](https://github.com/jgeramb/software-challenge-client/commit/82efb984e96462ad8b6f1d98cf854394486cc34b))
+* **player/weighted:** increase coal cost ([32089db](https://github.com/jgeramb/software-challenge-client/commit/32089db5115705d8cff6922875bed875caabb2d7))
+* **player/weighted:** only ignore enemy position in 2nd forecast ([fd6a7ca](https://github.com/jgeramb/software-challenge-client/commit/fd6a7ca1a5ba8d6d43c7e0f58bb69406d00d7b0e))
+* **player/weighted:** prioritize distance when near end of map instead of when near last round ([af2a836](https://github.com/jgeramb/software-challenge-client/commit/af2a836c8d77b2b4f335b0c09f962bad04da2654))
+
 ## [1.11.1](https://github.com/jgeramb/software-challenge-client/compare/v1.11.0...v1.11.1) (2024-05-27)
 
 
