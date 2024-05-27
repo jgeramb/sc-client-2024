@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.1](https://github.com/jgeramb/software-challenge-client/compare/v1.11.0...v1.11.1) (2024-05-27)
+
+
+### Bug Fixes
+
+* **player/weighted:** also allow finishing with all lower speeds ([46e6151](https://github.com/jgeramb/software-challenge-client/commit/46e61511e9cbfe82680de2dd457c9b15b5c10b92))
+* **sdk/game:** also allow finishing and collection of passengers with all lower speeds ([20349da](https://github.com/jgeramb/software-challenge-client/commit/20349daf675b3110b95af7e50fa2746594d627de))
+
 ## [1.11.0](https://github.com/jgeramb/software-challenge-client/compare/v1.10.0...v1.11.0) (2024-05-27)
 
 
