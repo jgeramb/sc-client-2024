@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.11.0](https://github.com/jgeramb/software-challenge-client/compare/v1.10.0...v1.11.0) (2024-05-27)
+
+
+### Features
+
+* **player/weighted:** allow more coal usage when the player has enough passengers ([886265b](https://github.com/jgeramb/software-challenge-client/commit/886265b2d630d6b1b942a16f602503a1688421ec))
+* **player/weighted:** always reserve one coal ([00c5a32](https://github.com/jgeramb/software-challenge-client/commit/00c5a32365658cc1f83de293bfdd035dd2b4706b))
+
+
+### Bug Fixes
+
+* **player/weighted:** adjust distance + passenger weights ([50ce007](https://github.com/jgeramb/software-challenge-client/commit/50ce0076076e5023fc656c283c75b3fd6752388f))
+* **player/weighted:** adjust forecast weight + use best move when loosing intentionally ([6fe5581](https://github.com/jgeramb/software-challenge-client/commit/6fe55812a2a63f4b92798cedbfa64230ea6ae129))
+* **player/weighted:** adjust weights ([ac42f1e](https://github.com/jgeramb/software-challenge-client/commit/ac42f1e11b1104580c587f91bab737c86bf9eede))
+* **player/weighted:** fix passenger collection prevention ([542b7c3](https://github.com/jgeramb/software-challenge-client/commit/542b7c33ca4fe29493db665dc63c414d0984282f))
+* **player/weighted:** fix passive goal prevention check ([365a0f3](https://github.com/jgeramb/software-challenge-client/commit/365a0f30da2c9c2d41036b8776e5376ed3f5c99f))
+* **player/weighted:** increase points for preventing a goal ([a21f101](https://github.com/jgeramb/software-challenge-client/commit/a21f10108a2c0a0ab32cb58cbf53c71383731eba))
+* **player/weighted:** increase points for preventing the collection of a passenger ([2600791](https://github.com/jgeramb/software-challenge-client/commit/260079124a6c37bfe03e52c28815b49f7e7137e8))
+* **player/weighted:** make sure the enemy is near the same passenger field ([3deb29c](https://github.com/jgeramb/software-challenge-client/commit/3deb29c4f4883392d266358f16f94b0715b3be21))
+* **sdk/game:** fix direction logic of canReachRequiredSpeed method ([f0140c1](https://github.com/jgeramb/software-challenge-client/commit/f0140c1032cfaa2654ca9613002713ae8e27cdfc))
+* **sdk/game:** fix passenger collection prevention logic for pushing ([cdd22e4](https://github.com/jgeramb/software-challenge-client/commit/cdd22e40ce3e8c0359e2bc484cb97dfaa5f901d6))
+* **sdk/game:** reduce score instead of skipping the direction ([e9adff6](https://github.com/jgeramb/software-challenge-client/commit/e9adff621b586f167ee2119e4f60712ed7b1b633))
+
 ## [1.10.0](https://github.com/jgeramb/software-challenge-client/compare/v1.9.2...v1.10.0) (2024-05-26)
 
 
