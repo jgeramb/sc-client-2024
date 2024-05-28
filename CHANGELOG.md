@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.5](https://github.com/jgeramb/software-challenge-client/compare/v1.11.4...v1.11.5) (2024-05-28)
+
+
+### Bug Fixes
+
+* **player/weighted:** allow more coal usage when near the end of the map ([95154c6](https://github.com/jgeramb/software-challenge-client/commit/95154c670b219b8f529fe9326afb3267de5459be))
+
 ## [1.11.4](https://github.com/jgeramb/software-challenge-client/compare/v1.11.3...v1.11.4) (2024-05-27)
 
 
