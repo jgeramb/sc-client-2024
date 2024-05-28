@@ -9,7 +9,7 @@
     <parent>
         <groupId>de.teamgruen.sc</groupId>
         <artifactId>client</artifactId>
-        <version>1.11.4</version>
+        <version>1.11.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>sdk</artifactId>
