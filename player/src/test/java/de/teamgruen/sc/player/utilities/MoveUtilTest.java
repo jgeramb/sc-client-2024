@@ -308,6 +308,7 @@ public class MoveUtilTest {
     @Test
     public void testGetAccelerationCoal_SegmentCost() {
         assertEquals(1, MoveUtil.getAccelerationCoal(
+                0,
                 3,
                 false,
                 false,
@@ -319,6 +320,7 @@ public class MoveUtilTest {
     public void testGetAccelerationCoal_EnemyAhead() {
         assertEquals(1, MoveUtil.getAccelerationCoal(
                 0,
+                0,
                 true,
                 false,
                 6
@@ -328,6 +330,7 @@ public class MoveUtilTest {
     @Test
     public void testGetAccelerationCoal_NoCoalAvailable() {
         assertEquals(0, MoveUtil.getAccelerationCoal(
+                0,
                 3,
                 true,
                 true,

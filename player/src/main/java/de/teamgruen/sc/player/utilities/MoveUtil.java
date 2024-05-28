@@ -244,7 +244,7 @@ public class MoveUtil {
         return (move.isGoal() ? 100 : (preventsGoal && (coalBefore - coalCost > 0) ? 100 : 0))
                 + (preventsPassenger ? 3.75 : 0)
                 + passengersToInclude * 12
-                + segmentDistance * (shouldMoveTowardsGoal ? 3 : 2) * (move.getSegmentIndex() >= 6 ? (hasEnoughPassengers ? 2.5 : 0.25) : 1)
+                + segmentDistance * (shouldMoveTowardsGoal ? 3 : 2) * (move.getSegmentIndex() >= 5 ? (hasEnoughPassengers ? 2.5 : 0.25) : 1)
                 - coalCost * (hasEnoughPassengers ? 1 : 2)
                 - board.getSegmentDirectionCost(move.getEndPosition(), move.getEndDirection()) * 0.875
                 - Math.max(0, move.getTotalCost() - 3) * Math.max(1, move.getSegmentIndex() - 5) * 0.5
@@ -279,6 +279,7 @@ public class MoveUtil {
                 && board.getSegmentDistance(ship.getPosition(), enemyShip.getPosition()) >= 1.25;
         final double segmentDirectionCost = board.getSegmentDirectionCost(position, direction);
         final int accelerationCoal = getAccelerationCoal(
+                board.getSegmentIndex(position),
                 segmentDirectionCost,
                 isEnemyAhead || hasEnemyMorePoints,
                 passengers >= 2,
@@ -409,17 +410,19 @@ public class MoveUtil {
     }
 
     /**
-     * Allows more coal usage if the enemy is ahead, the player likely needs to turn 180° in the next round
-     * or the player has enough passengers.
+     * Allows more coal usage if the player is near the end of the map, enemy is ahead, the player
+     * likely needs to turn 180° in the next round or the player has enough passengers.
      *
+     * @param segmentIndex the index of the current segment
      * @param segmentDirectionCost the cost to turn to the direction of the next segment
      * @param isEnemyAhead whether the enemy is ahead of the player
      * @param hasEnoughPassengers whether the player has enough passengers
      * @param coal the available coal
      * @return the amount of coal to use for acceleration
      */
-    public static int getAccelerationCoal(double segmentDirectionCost, boolean isEnemyAhead, boolean hasEnoughPassengers, int coal) {
-        return Math.min(coal, isEnemyAhead || segmentDirectionCost == 3 || hasEnoughPassengers ? 1 : 0);
+    public static int getAccelerationCoal(int segmentIndex, double segmentDirectionCost, boolean isEnemyAhead,
+                                          boolean hasEnoughPassengers, int coal) {
+        return Math.min(coal, segmentIndex >= 5 || isEnemyAhead || segmentDirectionCost == 3 || hasEnoughPassengers ? 1 : 0);
     }
 
     /**
@@ -446,6 +449,7 @@ public class MoveUtil {
         final int maxVelocity = getMaxVelocity(board, path);
         final int segmentDirectionCost = board.getSegmentDirectionCost(playerShip.getPosition(), playerShip.getDirection());
         final int accelerationCoal = getAccelerationCoal(
+                board.getSegmentIndex(playerShip.getPosition()),
                 segmentDirectionCost,
                 isEnemyAhead || hasEnemyMorePoints,
                 playerShip.hasEnoughPassengers(),
