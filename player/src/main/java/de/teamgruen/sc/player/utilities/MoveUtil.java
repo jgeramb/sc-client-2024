@@ -230,9 +230,11 @@ public class MoveUtil {
             }
         }
 
+        final Ship playerShip = gameState.getPlayerShip();
+        final boolean isEnemyOverallAhead = isEnemyAhead(board, playerShip.getPosition(), playerShip.getDirection(), enemyShip, enemyShip.getPosition());
         final boolean hasEnoughPassengers = passengers >= 2;
-        final boolean shouldMoveTowardsGoal = (isEnemyAhead && move.getSegmentIndex() < 4) || hasEnoughPassengers;
-        final double passengersToInclude = move.getPassengers() * (canEnemyCollectPassengerBeforePlayer ? 0 : (shouldMoveTowardsGoal ? 0.5 : 1));
+        final boolean shouldMoveTowardsGoal = (isEnemyOverallAhead && move.getSegmentIndex() < 4) || hasEnoughPassengers;
+        final double passengersToInclude = move.getPassengers() * (canEnemyCollectPassengerBeforePlayer ? 0 : (shouldMoveTowardsGoal ? 0.25 : 1));
         final double segmentDistance = getMoveSegmentDistance(board, shipPosition, shipDirection, move);
         final int coalCost = Math.max(0, coalBefore - coalAfter - (turn < 2 ? 1 : 0));
 
@@ -244,12 +246,13 @@ public class MoveUtil {
         return (move.isGoal() ? 100 : (preventsGoal && (coalBefore - coalCost > 0) ? 100 : 0))
                 + (preventsPassenger ? 3.75 : 0)
                 + passengersToInclude * 12
-                + segmentDistance * (shouldMoveTowardsGoal ? 3 : 2) * (move.getSegmentIndex() >= 5 ? (hasEnoughPassengers ? 2.5 : 0.25) : 1)
+                + segmentDistance * (shouldMoveTowardsGoal ? 3.5 : 2) * (move.getSegmentIndex() >= 5 ? (hasEnoughPassengers ? 2.5 : 0.25) : 1)
+                + (isEnemyAhead ? move.getTotalCost() * 0.5 : 0)
                 - coalCost * (hasEnoughPassengers ? 1 : 2)
                 - board.getSegmentDirectionCost(move.getEndPosition(), move.getEndDirection()) * 0.875
-                - Math.max(0, move.getTotalCost() - 3) * Math.max(1, move.getSegmentIndex() - 5) * 0.5
+                - Math.max(0, move.getTotalCost() - 3) * Math.max(1, move.getSegmentIndex() - 4) * 0.5
                 + (move.getEnemyEndPosition() != null ? board.getMinTurns(enemyShip.getDirection(), move.getEnemyEndPosition()) : 0) * (move.getPushes() > 0 ? 0.25 : 0)
-                + move.getPushes() * (hasEnoughPassengers ? 0.5 : 0)
+                + move.getPushes() * (hasEnoughPassengers ? 0.5 : 0.25)
                 + columnPoints * 0.25;
     }
 
@@ -325,6 +328,11 @@ public class MoveUtil {
                                                           @NonNull Ship ship, @NonNull Ship enemyShip,
                                                           Move previousMove, int coal,
                                                           @NonNull Move move) {
+        final double fullSegmentDistance = getMoveSegmentDistance(gameState.getBoard(), ship.getPosition(), ship.getDirection(), move);
+
+        if(fullSegmentDistance < -1.25)
+            return null;
+
         final int newTurn = turn + 1;
         final boolean hasPreviousMove = previousMove != null;
         final int coalCost = move.getCoalCost(
@@ -348,14 +356,19 @@ public class MoveUtil {
                     gameState, newTurn,
                     ship, move.getEndPosition(), move.getEndDirection(), enemyShip, enemyPosition,
                     passengers, move.getTotalCost(), 1, remainingCoal, 0,
-                     true
+                    true
             );
 
             if(moves.isEmpty())
                 return null;
         }
 
-        if(!hasPreviousMove) {
+        final boolean shouldCheckForPassengers = gameState.getTurn() + 1 == turn
+                && fullSegmentDistance > 0.75
+                && passengers < 2
+                && move.getTotalCost() <= 2;
+
+        if(!hasPreviousMove || shouldCheckForPassengers) {
             moves.entrySet().removeIf(entry -> {
                 if(entry.getValue() < -3.5)
                     return true;
@@ -626,7 +639,7 @@ public class MoveUtil {
     public static double getMoveSegmentDistance(Board board, Vector3 initialPosition, Direction initialDirection, Move move) {
         final int deltaSegmentIndex = move.getSegmentIndex() - board.getSegmentIndex(initialPosition);
         final double deltaSegmentColumn = (move.getSegmentColumn() - board.getSegmentColumn(initialPosition)) / 4d;
-        final double deltaFieldColumn = (move.getEndDirection().toFieldColumn() -initialDirection.toFieldColumn()) / 16d;
+        final double deltaFieldColumn = (move.getEndDirection().toFieldColumn() - initialDirection.toFieldColumn()) / 16d;
 
         return deltaSegmentIndex + deltaSegmentColumn + deltaFieldColumn;
     }
@@ -645,7 +658,7 @@ public class MoveUtil {
         final double segmentDistance = board.getSegmentDistance(playerPosition, enemyPosition);
         final int requiredTurns = board.getSegmentDirectionCost(playerPosition, playerDirection);
 
-        return segmentDistance >= (2.75 - requiredTurns * 0.125 - (enemyShip.getSpeed() / 4d));
+        return segmentDistance >= (2.75 - requiredTurns * 0.25 - (enemyShip.getSpeed() / 3.5d));
     }
 
 }
