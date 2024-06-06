@@ -71,7 +71,7 @@ public class MoveUtil {
                     if(move.isGoal())
                         return true;
 
-                    if(entry.getValue() < -3.5)
+                    if(entry.getValue() < -3)
                         return false;
 
                     int turnCost = 0;
@@ -330,7 +330,7 @@ public class MoveUtil {
                                                           @NonNull Move move) {
         final double fullSegmentDistance = getMoveSegmentDistance(gameState.getBoard(), ship.getPosition(), ship.getDirection(), move);
 
-        if(fullSegmentDistance < -1.25)
+        if(fullSegmentDistance < -1.0)
             return null;
 
         final int newTurn = turn + 1;
@@ -370,7 +370,7 @@ public class MoveUtil {
 
         if(!hasPreviousMove || shouldCheckForPassengers) {
             moves.entrySet().removeIf(entry -> {
-                if(entry.getValue() < -3.5)
+                if(entry.getValue() < -3)
                     return true;
 
                 final Move nextMove = entry.getKey();
