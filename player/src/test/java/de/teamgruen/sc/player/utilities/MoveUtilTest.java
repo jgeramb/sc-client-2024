@@ -140,8 +140,7 @@ public class MoveUtilTest {
 
         final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, 500);
         final List<Action> expectedActions = List.of(
-                ActionFactory.changeVelocity(1),
-                ActionFactory.forward(2),
+                ActionFactory.forward(1),
                 ActionFactory.turn(Direction.RIGHT)
         );
 
