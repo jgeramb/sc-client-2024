@@ -369,7 +369,8 @@ public class MoveUtil {
         final boolean shouldCheckForPassengers = gameState.getTurn() + 1 == turn
                 && fullSegmentDistance > 0.75
                 && passengers < 2
-                && move.getTotalCost() <= 2;
+                && move.getTotalCost() <= 2
+                && move.getPassengers() == 0;
 
         if(!hasPreviousMove || shouldCheckForPassengers) {
             moves.entrySet().removeIf(entry -> {
