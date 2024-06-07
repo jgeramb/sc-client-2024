@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.2](https://github.com/jgeramb/software-challenge-client/compare/v1.12.1...v1.12.2) (2024-06-07)
+
+
+### Bug Fixes
+
+* **player/weighted:** don't add depth level if the ship already collected a passenger ([5d01d8b](https://github.com/jgeramb/software-challenge-client/commit/5d01d8b05db0a95e82203ababa6bc47bb521827f))
+
 ## [1.12.1](https://github.com/jgeramb/software-challenge-client/compare/v1.12.0...v1.12.1) (2024-06-07)
 
 
