@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.12.1](https://github.com/jgeramb/software-challenge-client/compare/v1.12.0...v1.12.1) (2024-06-07)
+
+
+### Bug Fixes
+
+* **player/weighted:** last refinements for optimal move choice ([ebdeb8b](https://github.com/jgeramb/software-challenge-client/commit/ebdeb8bd13090806245e30b76b13e72238f34259))
+* **player/weighted:** reduce computation for bad moves ([70af0fb](https://github.com/jgeramb/software-challenge-client/commit/70af0fbcd82efc232bc6e3867282abdd6ccb96b1))
+
 ## [1.12.0](https://github.com/jgeramb/software-challenge-client/compare/v1.11.5...v1.12.0) (2024-06-06)
 
 
