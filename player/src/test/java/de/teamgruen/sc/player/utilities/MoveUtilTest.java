@@ -211,8 +211,7 @@ public class MoveUtilTest {
 
         final Optional<Move> actualMove = MoveUtil.getMostEfficientMove(this.gameState, 500);
         final List<Action> expectedActions = List.of(
-                ActionFactory.forward(1),
-                ActionFactory.turn(Direction.DOWN_RIGHT)
+                ActionFactory.forward(1)
         );
 
         assertTrue(actualMove.isPresent());
@@ -305,24 +304,13 @@ public class MoveUtilTest {
     }
 
     @Test
-    public void testGetAccelerationCoal_SegmentCost() {
-        assertEquals(1, MoveUtil.getAccelerationCoal(
-                0,
-                3,
-                false,
-                false,
-                6
-        ));
-    }
-
-    @Test
     public void testGetAccelerationCoal_EnemyAhead() {
         assertEquals(1, MoveUtil.getAccelerationCoal(
                 0,
-                0,
                 true,
                 false,
-                6
+                6,
+                false
         ));
     }
 
@@ -330,10 +318,10 @@ public class MoveUtilTest {
     public void testGetAccelerationCoal_NoCoalAvailable() {
         assertEquals(0, MoveUtil.getAccelerationCoal(
                 0,
-                3,
                 true,
                 true,
-                0
+                0,
+                false
         ));
     }
 
